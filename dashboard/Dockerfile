@@ -39,8 +39,9 @@ RUN npm run build
 FROM public.ecr.aws/docker/library/node:20-alpine AS runner
 WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs && \
+# Install wget for health checks and create non-root user
+RUN apk add --no-cache wget && \
+    addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # Set production environment
