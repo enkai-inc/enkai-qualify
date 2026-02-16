@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "d93fa7b770dd55e500b457b90f6f3f447277420f00c3a10a7fcc907b02cadced": {
+      "displayName": "metis-dev-network Template",
+      "source": {
+        "path": "metis-dev-network.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "882384879235-us-east-1-ed407d43": {
+          "bucketName": "cdk-hnb659fds-assets-882384879235-us-east-1",
+          "objectKey": "d93fa7b770dd55e500b457b90f6f3f447277420f00c3a10a7fcc907b02cadced.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::882384879235:role/cdk-hnb659fds-file-publishing-role-882384879235-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

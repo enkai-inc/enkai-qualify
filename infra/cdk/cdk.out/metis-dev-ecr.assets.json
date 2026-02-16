@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "6550af1a4f0d39dfe57d796406e658fb03bf75330d4be0f6bfe029dafa777d41": {
+      "displayName": "metis-dev-ecr Template",
+      "source": {
+        "path": "metis-dev-ecr.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "882384879235-us-east-1-7609d960": {
+          "bucketName": "cdk-hnb659fds-assets-882384879235-us-east-1",
+          "objectKey": "6550af1a4f0d39dfe57d796406e658fb03bf75330d4be0f6bfe029dafa777d41.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::882384879235:role/cdk-hnb659fds-file-publishing-role-882384879235-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

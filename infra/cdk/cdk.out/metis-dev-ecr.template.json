@@ -1,0 +1,233 @@
+{
+ "Resources": {
+  "DashboardRepo8A026B6F": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "EmptyOnDelete": true,
+    "ImageScanningConfiguration": {
+     "ScanOnPush": true
+    },
+    "ImageTagMutability": "MUTABLE",
+    "LifecyclePolicy": {
+     "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Keep last 10 images\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"imageCountMoreThan\",\"countNumber\":10},\"action\":{\"type\":\"expire\"}}]}"
+    },
+    "RepositoryName": "metis-dev-dashboard"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecr/DashboardRepo/Resource"
+   }
+  },
+  "ApiRepoEFA7BA97": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "EmptyOnDelete": true,
+    "ImageScanningConfiguration": {
+     "ScanOnPush": true
+    },
+    "ImageTagMutability": "MUTABLE",
+    "LifecyclePolicy": {
+     "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Keep last 10 images\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"imageCountMoreThan\",\"countNumber\":10},\"action\":{\"type\":\"expire\"}}]}"
+    },
+    "RepositoryName": "metis-dev-api"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecr/ApiRepo/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/0XHSwqAIBAA0LO010ls074DBHWAMDOYPhrOWER094gWrR5Pgy5KUJk5SNphlgv2cLVs7CzMQZ2zEa7GbYGQQzxFNfp/99s68Zb4Fj4MDibKd61AK1DZRIgyJs+4Omg+H1NH6fxuAAAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecr/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "DashboardRepoUri": {
+   "Description": "Dashboard ECR repository URI",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "DashboardRepo8A026B6F",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "DashboardRepo8A026B6F",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "DashboardRepo8A026B6F"
+      }
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "metis-dev-dashboard-repo-uri"
+   }
+  },
+  "ApiRepoUri": {
+   "Description": "API ECR repository URI",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "ApiRepoEFA7BA97",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "ApiRepoEFA7BA97",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "ApiRepoEFA7BA97"
+      }
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "metis-dev-api-repo-uri"
+   }
+  },
+  "ExportsOutputFnGetAttDashboardRepo8A026B6FArnC1423797": {
+   "Value": {
+    "Fn::GetAtt": [
+     "DashboardRepo8A026B6F",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "metis-dev-ecr:ExportsOutputFnGetAttDashboardRepo8A026B6FArnC1423797"
+   }
+  },
+  "ExportsOutputFnGetAttApiRepoEFA7BA97ArnACFF43BA": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ApiRepoEFA7BA97",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "metis-dev-ecr:ExportsOutputFnGetAttApiRepoEFA7BA97ArnACFF43BA"
+   }
+  },
+  "ExportsOutputRefDashboardRepo8A026B6F86BC0D7A": {
+   "Value": {
+    "Ref": "DashboardRepo8A026B6F"
+   },
+   "Export": {
+    "Name": "metis-dev-ecr:ExportsOutputRefDashboardRepo8A026B6F86BC0D7A"
+   }
+  },
+  "ExportsOutputRefApiRepoEFA7BA97FC7F6607": {
+   "Value": {
+    "Ref": "ApiRepoEFA7BA97"
+   },
+   "Export": {
+    "Name": "metis-dev-ecr:ExportsOutputRefApiRepoEFA7BA97FC7F6607"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

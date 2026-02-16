@@ -1,0 +1,339 @@
+import * as cdk from 'aws-cdk-lib';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as elasticache from 'aws-cdk-lib/aws-elasticache';
+import { Construct } from 'constructs';
+
+export interface EcsStackProps extends cdk.StackProps {
+  projectName: string;
+  environment: string;
+  vpc: ec2.Vpc;
+  dashboardRepository: ecr.Repository;
+  apiRepository: ecr.Repository;
+  databaseSecret: secretsmanager.Secret;
+  redisCluster: elasticache.CfnCacheCluster;
+}
+
+/**
+ * ECS Stack - Fargate cluster, services, and ALB
+ *
+ * Creates:
+ * - ECS Fargate cluster
+ * - Application Load Balancer
+ * - Dashboard service (Next.js on port 3000)
+ * - API service (FastAPI on port 8000)
+ * - Task definitions with proper IAM roles
+ */
+export class EcsStack extends cdk.Stack {
+  public readonly cluster: ecs.Cluster;
+  public readonly dashboardService: ecs.FargateService;
+  public readonly apiService: ecs.FargateService;
+  public readonly alb: elbv2.ApplicationLoadBalancer;
+
+  constructor(scope: Construct, id: string, props: EcsStackProps) {
+    super(scope, id, props);
+
+    const {
+      projectName,
+      environment,
+      vpc,
+      dashboardRepository,
+      apiRepository,
+      databaseSecret,
+      redisCluster,
+    } = props;
+    const isProd = environment === 'prod';
+
+    // ECS Cluster
+    this.cluster = new ecs.Cluster(this, 'Cluster', {
+      clusterName: `${projectName}-${environment}-cluster`,
+      vpc,
+      containerInsightsV2: isProd ? ecs.ContainerInsights.ENABLED : ecs.ContainerInsights.DISABLED,
+    });
+
+    // Application Load Balancer
+    this.alb = new elbv2.ApplicationLoadBalancer(this, 'ALB', {
+      vpc,
+      internetFacing: true,
+      loadBalancerName: `${projectName}-${environment}-alb`,
+      securityGroup: new ec2.SecurityGroup(this, 'AlbSG', {
+        vpc,
+        securityGroupName: `${projectName}-${environment}-alb-sg`,
+        description: 'Security group for ALB',
+        allowAllOutbound: true,
+      }),
+    });
+
+    // Allow HTTP/HTTPS traffic to ALB
+    this.alb.connections.allowFromAnyIpv4(ec2.Port.tcp(80));
+    this.alb.connections.allowFromAnyIpv4(ec2.Port.tcp(443));
+
+    // HTTP Listener - default action set later based on environment
+    const httpListener = this.alb.addListener('HttpListener', {
+      port: 80,
+      open: true,
+    });
+
+    // Service security group
+    const serviceSG = new ec2.SecurityGroup(this, 'ServiceSG', {
+      vpc,
+      securityGroupName: `${projectName}-${environment}-service-sg`,
+      description: 'Security group for ECS services',
+      allowAllOutbound: true,
+    });
+
+    // Allow ALB to reach services
+    serviceSG.addIngressRule(
+      ec2.Peer.securityGroupId(this.alb.connections.securityGroups[0].securityGroupId),
+      ec2.Port.tcp(3000),
+      'Allow ALB to dashboard'
+    );
+    serviceSG.addIngressRule(
+      ec2.Peer.securityGroupId(this.alb.connections.securityGroups[0].securityGroupId),
+      ec2.Port.tcp(8000),
+      'Allow ALB to API'
+    );
+
+    // Dashboard Task Definition
+    const dashboardTaskDef = new ecs.FargateTaskDefinition(
+      this,
+      'DashboardTaskDef',
+      {
+        memoryLimitMiB: isProd ? 1024 : 512,
+        cpu: isProd ? 512 : 256,
+        family: `${projectName}-${environment}-dashboard`,
+      }
+    );
+
+    const dashboardLogGroup = new logs.LogGroup(this, 'DashboardLogs', {
+      logGroupName: `/ecs/${projectName}/${environment}/dashboard`,
+      retention: logs.RetentionDays.ONE_MONTH,
+      removalPolicy: isProd
+        ? cdk.RemovalPolicy.RETAIN
+        : cdk.RemovalPolicy.DESTROY,
+    });
+
+    // Use placeholder image for initial deployment, pipeline will update
+    const usePlaceholder = this.node.tryGetContext('usePlaceholderImages') === 'true';
+
+    dashboardTaskDef.addContainer('dashboard', {
+      containerName: 'dashboard',
+      image: usePlaceholder
+        ? ecs.ContainerImage.fromRegistry('public.ecr.aws/nginx/nginx:alpine')
+        : ecs.ContainerImage.fromEcrRepository(dashboardRepository, 'latest'),
+      portMappings: [{ containerPort: usePlaceholder ? 80 : 3000 }],
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: dashboardLogGroup,
+        streamPrefix: 'dashboard',
+      }),
+      environment: {
+        NODE_ENV: 'production',
+        NEXT_PUBLIC_API_URL: `http://api.${projectName}.internal:8000`,
+      },
+      healthCheck: usePlaceholder ? undefined : {
+        command: [
+          'CMD-SHELL',
+          'wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1',
+        ],
+        interval: cdk.Duration.seconds(30),
+        timeout: cdk.Duration.seconds(10),
+        retries: 3,
+        startPeriod: cdk.Duration.seconds(60),
+      },
+    });
+
+    // API Task Definition
+    const apiTaskDef = new ecs.FargateTaskDefinition(this, 'ApiTaskDef', {
+      memoryLimitMiB: isProd ? 1024 : 512,
+      cpu: isProd ? 512 : 256,
+      family: `${projectName}-${environment}-api`,
+    });
+
+    // Grant API access to database secret
+    databaseSecret.grantRead(apiTaskDef.taskRole);
+
+    const apiLogGroup = new logs.LogGroup(this, 'ApiLogs', {
+      logGroupName: `/ecs/${projectName}/${environment}/api`,
+      retention: logs.RetentionDays.ONE_MONTH,
+      removalPolicy: isProd
+        ? cdk.RemovalPolicy.RETAIN
+        : cdk.RemovalPolicy.DESTROY,
+    });
+
+    apiTaskDef.addContainer('api', {
+      containerName: 'api',
+      image: usePlaceholder
+        ? ecs.ContainerImage.fromRegistry('public.ecr.aws/nginx/nginx:alpine')
+        : ecs.ContainerImage.fromEcrRepository(apiRepository, 'latest'),
+      portMappings: [{ containerPort: usePlaceholder ? 80 : 8000 }],
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: apiLogGroup,
+        streamPrefix: 'api',
+      }),
+      environment: {
+        ENVIRONMENT: environment,
+        DEBUG: isProd ? 'false' : 'true',
+        REDIS_URL: `redis://${redisCluster.attrRedisEndpointAddress}:6379/0`,
+      },
+      secrets: usePlaceholder ? undefined : {
+        DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret, 'connectionString'),
+      },
+      healthCheck: usePlaceholder ? undefined : {
+        command: [
+          'CMD-SHELL',
+          'python -c "import urllib.request; urllib.request.urlopen(\'http://localhost:8000/health\')" || exit 1',
+        ],
+        interval: cdk.Duration.seconds(30),
+        timeout: cdk.Duration.seconds(10),
+        retries: 3,
+        startPeriod: cdk.Duration.seconds(60),
+      },
+    });
+
+    // Dashboard Service
+    this.dashboardService = new ecs.FargateService(this, 'DashboardService', {
+      cluster: this.cluster,
+      serviceName: `${projectName}-${environment}-dashboard`,
+      taskDefinition: dashboardTaskDef,
+      desiredCount: isProd ? 2 : 1,
+      securityGroups: [serviceSG],
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      enableExecuteCommand: true,
+      circuitBreaker: { rollback: true },
+      minHealthyPercent: 100,
+      maxHealthyPercent: 200,
+      deploymentController: {
+        type: ecs.DeploymentControllerType.ECS,
+      },
+    });
+
+    // API Service
+    this.apiService = new ecs.FargateService(this, 'ApiService', {
+      cluster: this.cluster,
+      serviceName: `${projectName}-${environment}-api`,
+      taskDefinition: apiTaskDef,
+      desiredCount: isProd ? 2 : 1,
+      securityGroups: [serviceSG],
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      enableExecuteCommand: true,
+      circuitBreaker: { rollback: true },
+      minHealthyPercent: 100,
+      maxHealthyPercent: 200,
+      deploymentController: {
+        type: ecs.DeploymentControllerType.ECS,
+      },
+    });
+
+    // Dashboard target group
+    const dashboardTargetGroup = new elbv2.ApplicationTargetGroup(
+      this,
+      'DashboardTG',
+      {
+        vpc,
+        port: usePlaceholder ? 80 : 3000,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        targetType: elbv2.TargetType.IP,
+        healthCheck: {
+          path: usePlaceholder ? '/' : '/api/health',
+          interval: cdk.Duration.seconds(30),
+          timeout: cdk.Duration.seconds(10),
+          healthyThresholdCount: 2,
+          unhealthyThresholdCount: 3,
+        },
+        targets: [this.dashboardService],
+      }
+    );
+
+    // API target group
+    const apiTargetGroup = new elbv2.ApplicationTargetGroup(this, 'ApiTG', {
+      vpc,
+      port: usePlaceholder ? 80 : 8000,
+      protocol: elbv2.ApplicationProtocol.HTTP,
+      targetType: elbv2.TargetType.IP,
+      healthCheck: {
+        path: usePlaceholder ? '/' : '/health',
+        interval: cdk.Duration.seconds(30),
+        timeout: cdk.Duration.seconds(10),
+        healthyThresholdCount: 2,
+        unhealthyThresholdCount: 3,
+      },
+      targets: [this.apiService],
+    });
+
+    // Configure listener rules based on environment
+    if (isProd) {
+      // Redirect HTTP to HTTPS in production
+      httpListener.addAction('RedirectToHttps', {
+        action: elbv2.ListenerAction.redirect({
+          protocol: 'HTTPS',
+          port: '443',
+          permanent: true,
+        }),
+      });
+    } else {
+      // Dev: route API paths to API service, everything else to dashboard
+      httpListener.addAction('ApiRoute', {
+        priority: 10,
+        conditions: [elbv2.ListenerCondition.pathPatterns(['/api/*', '/health', '/docs', '/redoc'])],
+        action: elbv2.ListenerAction.forward([apiTargetGroup]),
+      });
+
+      // Default: forward to dashboard
+      httpListener.addTargetGroups('DefaultTargetGroup', {
+        targetGroups: [dashboardTargetGroup],
+      });
+    }
+
+    // Auto-scaling for production
+    if (isProd) {
+      const dashboardScaling = this.dashboardService.autoScaleTaskCount({
+        minCapacity: 2,
+        maxCapacity: 10,
+      });
+      dashboardScaling.scaleOnCpuUtilization('CpuScaling', {
+        targetUtilizationPercent: 70,
+        scaleInCooldown: cdk.Duration.seconds(60),
+        scaleOutCooldown: cdk.Duration.seconds(60),
+      });
+
+      const apiScaling = this.apiService.autoScaleTaskCount({
+        minCapacity: 2,
+        maxCapacity: 10,
+      });
+      apiScaling.scaleOnCpuUtilization('CpuScaling', {
+        targetUtilizationPercent: 70,
+        scaleInCooldown: cdk.Duration.seconds(60),
+        scaleOutCooldown: cdk.Duration.seconds(60),
+      });
+    }
+
+    // Outputs
+    new cdk.CfnOutput(this, 'AlbDnsName', {
+      value: this.alb.loadBalancerDnsName,
+      description: 'ALB DNS name',
+      exportName: `${projectName}-${environment}-alb-dns`,
+    });
+
+    new cdk.CfnOutput(this, 'ClusterArn', {
+      value: this.cluster.clusterArn,
+      description: 'ECS cluster ARN',
+      exportName: `${projectName}-${environment}-cluster-arn`,
+    });
+
+    new cdk.CfnOutput(this, 'DashboardServiceArn', {
+      value: this.dashboardService.serviceArn,
+      description: 'Dashboard service ARN',
+      exportName: `${projectName}-${environment}-dashboard-service-arn`,
+    });
+
+    new cdk.CfnOutput(this, 'ApiServiceArn', {
+      value: this.apiService.serviceArn,
+      description: 'API service ARN',
+      exportName: `${projectName}-${environment}-api-service-arn`,
+    });
+  }
+}
