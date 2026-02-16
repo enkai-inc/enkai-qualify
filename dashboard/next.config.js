@@ -33,17 +33,8 @@ const nextConfig = {
     unoptimized: process.env.NODE_ENV === 'development',
   },
 
-  // API proxy rewrites
-  // Proxy to backend API except for local routes like /api/health
-  async rewrites() {
-    return [
-      {
-        // Proxy API routes to backend, excluding /api/health
-        source: '/api/:path((?!health).*)',
-        destination: process.env.API_URL || 'http://localhost:8000/api/:path*',
-      },
-    ];
-  },
+  // Note: API routing handled by middleware.ts
+  // /api/health served locally, other /api/* routes proxied to backend
 
   // Headers for security
   async headers() {
