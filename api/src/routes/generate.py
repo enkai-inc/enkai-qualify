@@ -1,0 +1,34 @@
+"""Generation API routes."""
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from ..services.ai import ConsensusEngine, GenerationInput
+
+router = APIRouter(prefix="/generate", tags=["generation"])
+engine = ConsensusEngine()
+
+
+class GenerateRequest(BaseModel):
+    industry: str
+    target_market: str
+    technologies: list[str]
+    description: str | None = None
+
+
+class GenerateResponse(BaseModel):
+    ideas: list[dict]
+    model_agreement: float
+    total_cost: float
+
+
+@router.post("/ideas", response_model=GenerateResponse)
+async def generate_ideas(request: GenerateRequest):
+    try:
+        input = GenerationInput(**request.model_dump())
+        result = await engine.generate_with_consensus(input)
+        return GenerateResponse(
+            ideas=[idea.model_dump() for idea in result.ideas],
+            model_agreement=result.model_agreement,
+            total_cost=result.total_cost
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
