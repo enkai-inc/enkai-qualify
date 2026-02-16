@@ -111,7 +111,7 @@ export class EcsStack extends cdk.Stack {
 
     // Grant ECR pull permissions (needed even when using placeholder images
     // because pipeline will update to use ECR images)
-    dashboardRepository.grantPull(dashboardTaskDef.executionRole!);
+    dashboardRepository.grantPull(dashboardTaskDef.obtainExecutionRole());
 
     const dashboardLogGroup = new logs.LogGroup(this, 'DashboardLogs', {
       logGroupName: `/ecs/${projectName}/${environment}/dashboard`,
@@ -158,7 +158,7 @@ export class EcsStack extends cdk.Stack {
     });
 
     // Grant ECR pull permissions
-    apiRepository.grantPull(apiTaskDef.executionRole!);
+    apiRepository.grantPull(apiTaskDef.obtainExecutionRole());
 
     // Grant API access to database secret
     databaseSecret.grantRead(apiTaskDef.taskRole);
