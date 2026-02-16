@@ -13,7 +13,8 @@ const nextConfig = {
   // Enable experimental features
   experimental: {
     instrumentationHook: true,
-    typedRoutes: true,
+    // Disabled until all routes are defined
+    // typedRoutes: true,
   },
 
   // Environment variables available on client
