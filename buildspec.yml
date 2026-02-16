@@ -1,0 +1,100 @@
+# Metis Build Specification for AWS CodeBuild
+# Builds both dashboard and api containers in parallel
+#
+# Environment variables required:
+#   - AWS_REGION: AWS region (provided by CodeBuild)
+#   - AWS_ACCOUNT_ID: AWS account ID
+#   - DASHBOARD_REPO_URI: ECR repository URI for dashboard
+#   - API_REPO_URI: ECR repository URI for api
+#   - ENVIRONMENT: Deployment environment (dev/prod)
+
+version: 0.2
+
+env:
+  variables:
+    DOCKER_BUILDKIT: "1"
+    COMPOSE_DOCKER_CLI_BUILD: "1"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Build started on $(date)"
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+      # Extract commit hash for image tagging
+      - export COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - export IMAGE_TAG=${COMMIT_HASH:-latest}
+      - echo "Image tag: $IMAGE_TAG"
+
+  build:
+    commands:
+      - echo "Building Docker images..."
+
+      # Build dashboard image
+      - |
+        echo "Building dashboard..."
+        cd dashboard
+        docker build \
+          --build-arg BUILDKIT_INLINE_CACHE=1 \
+          -t $DASHBOARD_REPO_URI:latest \
+          -t $DASHBOARD_REPO_URI:$IMAGE_TAG \
+          .
+        cd ..
+
+      # Build API image
+      - |
+        echo "Building API..."
+        cd api
+        docker build \
+          --build-arg BUILDKIT_INLINE_CACHE=1 \
+          -t $API_REPO_URI:latest \
+          -t $API_REPO_URI:$IMAGE_TAG \
+          .
+        cd ..
+
+  post_build:
+    commands:
+      - echo "Pushing Docker images to ECR..."
+
+      # Push dashboard images
+      - docker push $DASHBOARD_REPO_URI:latest
+      - docker push $DASHBOARD_REPO_URI:$IMAGE_TAG
+
+      # Push API images
+      - docker push $API_REPO_URI:latest
+      - docker push $API_REPO_URI:$IMAGE_TAG
+
+      # Generate image definitions for ECS deployment
+      - echo "Generating image definitions..."
+      - |
+        cat > imagedefinitions-dashboard.json << EOF
+        [
+          {
+            "name": "dashboard",
+            "imageUri": "$DASHBOARD_REPO_URI:$IMAGE_TAG"
+          }
+        ]
+        EOF
+      - |
+        cat > imagedefinitions-api.json << EOF
+        [
+          {
+            "name": "api",
+            "imageUri": "$API_REPO_URI:$IMAGE_TAG"
+          }
+        ]
+        EOF
+
+      - echo "Build completed on $(date)"
+
+artifacts:
+  files:
+    - imagedefinitions-dashboard.json
+    - imagedefinitions-api.json
+  discard-paths: yes
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'
+    - '/root/.npm/**/*'

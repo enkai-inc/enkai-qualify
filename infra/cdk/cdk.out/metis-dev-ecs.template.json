@@ -1,0 +1,921 @@
+{
+ "Resources": {
+  "ClusterEB0386A7": {
+   "Type": "AWS::ECS::Cluster",
+   "Properties": {
+    "ClusterName": "metis-dev-cluster",
+    "ClusterSettings": [
+     {
+      "Name": "containerInsights",
+      "Value": "disabled"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/Cluster/Resource"
+   }
+  },
+  "AlbSGE6D0E5D1": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Security group for ALB",
+    "GroupName": "metis-dev-alb-sg",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow all outbound traffic by default",
+      "IpProtocol": "-1"
+     }
+    ],
+    "SecurityGroupIngress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "from 0.0.0.0/0:80",
+      "FromPort": 80,
+      "IpProtocol": "tcp",
+      "ToPort": 80
+     },
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "from 0.0.0.0/0:443",
+      "FromPort": 443,
+      "IpProtocol": "tcp",
+      "ToPort": 443
+     }
+    ],
+    "VpcId": {
+     "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpc8378EB38272D6E3A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/AlbSG/Resource"
+   }
+  },
+  "ALBAEE750D2": {
+   "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+   "Properties": {
+    "LoadBalancerAttributes": [
+     {
+      "Key": "deletion_protection.enabled",
+      "Value": "false"
+     }
+    ],
+    "Name": "metis-dev-alb",
+    "Scheme": "internet-facing",
+    "SecurityGroups": [
+     {
+      "Fn::GetAtt": [
+       "AlbSGE6D0E5D1",
+       "GroupId"
+      ]
+     }
+    ],
+    "Subnets": [
+     {
+      "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpcPublicSubnet1Subnet5C2D37C4FFA2B456"
+     },
+     {
+      "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpcPublicSubnet2Subnet691E08A351552740"
+     }
+    ],
+    "Type": "application"
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ALB/Resource"
+   }
+  },
+  "ALBHttpListener04CE8CD0": {
+   "Type": "AWS::ElasticLoadBalancingV2::Listener",
+   "Properties": {
+    "DefaultActions": [
+     {
+      "TargetGroupArn": {
+       "Ref": "DashboardTG962E3F6C"
+      },
+      "Type": "forward"
+     }
+    ],
+    "LoadBalancerArn": {
+     "Ref": "ALBAEE750D2"
+    },
+    "Port": 80,
+    "Protocol": "HTTP"
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ALB/HttpListener/Resource"
+   }
+  },
+  "ALBHttpListenerApiRouteRule8917C7E9": {
+   "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+   "Properties": {
+    "Actions": [
+     {
+      "TargetGroupArn": {
+       "Ref": "ApiTGB123314B"
+      },
+      "Type": "forward"
+     }
+    ],
+    "Conditions": [
+     {
+      "Field": "path-pattern",
+      "PathPatternConfig": {
+       "Values": [
+        "/api/*",
+        "/health",
+        "/docs",
+        "/redoc"
+       ]
+      }
+     }
+    ],
+    "ListenerArn": {
+     "Ref": "ALBHttpListener04CE8CD0"
+    },
+    "Priority": 10
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ALB/HttpListener/ApiRouteRule/Resource"
+   }
+  },
+  "ServiceSG3DD30CA4": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Security group for ECS services",
+    "GroupName": "metis-dev-service-sg",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow all outbound traffic by default",
+      "IpProtocol": "-1"
+     }
+    ],
+    "SecurityGroupIngress": [
+     {
+      "Description": "Allow ALB to dashboard",
+      "FromPort": 3000,
+      "IpProtocol": "tcp",
+      "SourceSecurityGroupId": {
+       "Fn::GetAtt": [
+        "AlbSGE6D0E5D1",
+        "GroupId"
+       ]
+      },
+      "ToPort": 3000
+     },
+     {
+      "Description": "Allow ALB to API",
+      "FromPort": 8000,
+      "IpProtocol": "tcp",
+      "SourceSecurityGroupId": {
+       "Fn::GetAtt": [
+        "AlbSGE6D0E5D1",
+        "GroupId"
+       ]
+      },
+      "ToPort": 8000
+     }
+    ],
+    "VpcId": {
+     "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpc8378EB38272D6E3A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ServiceSG/Resource"
+   }
+  },
+  "ServiceSGfrommetisdevecsAlbSGBB7D6482806FF9205A": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Load balancer to target",
+    "FromPort": 80,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "ServiceSG3DD30CA4",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "AlbSGE6D0E5D1",
+      "GroupId"
+     ]
+    },
+    "ToPort": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ServiceSG/from metisdevecsAlbSGBB7D6482:80"
+   }
+  },
+  "DashboardTaskDefTaskRole9B8E3167": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/DashboardTaskDef/TaskRole/Resource"
+   }
+  },
+  "DashboardTaskDefTaskRoleDefaultPolicy57E2CFCC": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": "logs:DescribeLogGroups",
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "DashboardTaskDefTaskRoleDefaultPolicy57E2CFCC",
+    "Roles": [
+     {
+      "Ref": "DashboardTaskDefTaskRole9B8E3167"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/DashboardTaskDef/TaskRole/DefaultPolicy/Resource"
+   }
+  },
+  "DashboardTaskDef833291EC": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "NODE_ENV",
+        "Value": "production"
+       },
+       {
+        "Name": "NEXT_PUBLIC_API_URL",
+        "Value": "http://api.metis.internal:8000"
+       }
+      ],
+      "Essential": true,
+      "Image": "public.ecr.aws/nginx/nginx:alpine",
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "DashboardLogs349004DD"
+        },
+        "awslogs-stream-prefix": "dashboard",
+        "awslogs-region": "us-east-1"
+       }
+      },
+      "Name": "dashboard",
+      "PortMappings": [
+       {
+        "ContainerPort": 80,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "256",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "DashboardTaskDefExecutionRoleE1CCFD0F",
+      "Arn"
+     ]
+    },
+    "Family": "metis-dev-dashboard",
+    "Memory": "512",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "DashboardTaskDefTaskRole9B8E3167",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/DashboardTaskDef/Resource"
+   }
+  },
+  "DashboardTaskDefExecutionRoleE1CCFD0F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/DashboardTaskDef/ExecutionRole/Resource"
+   }
+  },
+  "DashboardTaskDefExecutionRoleDefaultPolicyB51C1079": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "DashboardLogs349004DD",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "DashboardTaskDefExecutionRoleDefaultPolicyB51C1079",
+    "Roles": [
+     {
+      "Ref": "DashboardTaskDefExecutionRoleE1CCFD0F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/DashboardTaskDef/ExecutionRole/DefaultPolicy/Resource"
+   }
+  },
+  "DashboardLogs349004DD": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/metis/dev/dashboard",
+    "RetentionInDays": 30
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/DashboardLogs/Resource"
+   }
+  },
+  "ApiTaskDefTaskRole76FB19FA": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ApiTaskDef/TaskRole/Resource"
+   }
+  },
+  "ApiTaskDefTaskRoleDefaultPolicy66F6BAC0": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::ImportValue": "metis-dev-database:ExportsOutputRefDatabaseSecret86DBB7B353068790"
+       }
+      },
+      {
+       "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": "logs:DescribeLogGroups",
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ApiTaskDefTaskRoleDefaultPolicy66F6BAC0",
+    "Roles": [
+     {
+      "Ref": "ApiTaskDefTaskRole76FB19FA"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ApiTaskDef/TaskRole/DefaultPolicy/Resource"
+   }
+  },
+  "ApiTaskDef37DBDBD0": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "ENVIRONMENT",
+        "Value": "dev"
+       },
+       {
+        "Name": "DEBUG",
+        "Value": "true"
+       },
+       {
+        "Name": "REDIS_URL",
+        "Value": {
+         "Fn::Join": [
+          "",
+          [
+           "redis://",
+           {
+            "Fn::ImportValue": "metis-dev-database:ExportsOutputFnGetAttRedisClusterRedisEndpointAddress2C712DA2"
+           },
+           ":6379/0"
+          ]
+         ]
+        }
+       }
+      ],
+      "Essential": true,
+      "Image": "public.ecr.aws/nginx/nginx:alpine",
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "ApiLogs3D05D88B"
+        },
+        "awslogs-stream-prefix": "api",
+        "awslogs-region": "us-east-1"
+       }
+      },
+      "Name": "api",
+      "PortMappings": [
+       {
+        "ContainerPort": 80,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "256",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "ApiTaskDefExecutionRoleE6ABB053",
+      "Arn"
+     ]
+    },
+    "Family": "metis-dev-api",
+    "Memory": "512",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "ApiTaskDefTaskRole76FB19FA",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ApiTaskDef/Resource"
+   }
+  },
+  "ApiTaskDefExecutionRoleE6ABB053": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ApiTaskDef/ExecutionRole/Resource"
+   }
+  },
+  "ApiTaskDefExecutionRoleDefaultPolicy358EAD94": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ApiLogs3D05D88B",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ApiTaskDefExecutionRoleDefaultPolicy358EAD94",
+    "Roles": [
+     {
+      "Ref": "ApiTaskDefExecutionRoleE6ABB053"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ApiTaskDef/ExecutionRole/DefaultPolicy/Resource"
+   }
+  },
+  "ApiLogs3D05D88B": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/metis/dev/api",
+    "RetentionInDays": 30
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ApiLogs/Resource"
+   }
+  },
+  "DashboardService73233129": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "ClusterEB0386A7"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "DeploymentCircuitBreaker": {
+      "Enable": true,
+      "Rollback": true
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 100
+    },
+    "DeploymentController": {
+     "Type": "ECS"
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "EnableExecuteCommand": true,
+    "HealthCheckGracePeriodSeconds": 60,
+    "LaunchType": "FARGATE",
+    "LoadBalancers": [
+     {
+      "ContainerName": "dashboard",
+      "ContainerPort": 80,
+      "TargetGroupArn": {
+       "Ref": "DashboardTG962E3F6C"
+      }
+     }
+    ],
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::GetAtt": [
+         "ServiceSG3DD30CA4",
+         "GroupId"
+        ]
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpcPrivateSubnet1Subnet536B997AFD4CC940"
+       },
+       {
+        "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpcPrivateSubnet2Subnet3788AAA1380949A3"
+       }
+      ]
+     }
+    },
+    "ServiceName": "metis-dev-dashboard",
+    "TaskDefinition": {
+     "Ref": "DashboardTaskDef833291EC"
+    }
+   },
+   "DependsOn": [
+    "ALBHttpListenerApiRouteRule8917C7E9",
+    "ALBHttpListener04CE8CD0",
+    "DashboardTaskDefTaskRoleDefaultPolicy57E2CFCC",
+    "DashboardTaskDefTaskRole9B8E3167"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/DashboardService/Service"
+   }
+  },
+  "ApiServiceC9037CF0": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "ClusterEB0386A7"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "DeploymentCircuitBreaker": {
+      "Enable": true,
+      "Rollback": true
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 100
+    },
+    "DeploymentController": {
+     "Type": "ECS"
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "EnableExecuteCommand": true,
+    "HealthCheckGracePeriodSeconds": 60,
+    "LaunchType": "FARGATE",
+    "LoadBalancers": [
+     {
+      "ContainerName": "api",
+      "ContainerPort": 80,
+      "TargetGroupArn": {
+       "Ref": "ApiTGB123314B"
+      }
+     }
+    ],
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::GetAtt": [
+         "ServiceSG3DD30CA4",
+         "GroupId"
+        ]
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpcPrivateSubnet1Subnet536B997AFD4CC940"
+       },
+       {
+        "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpcPrivateSubnet2Subnet3788AAA1380949A3"
+       }
+      ]
+     }
+    },
+    "ServiceName": "metis-dev-api",
+    "TaskDefinition": {
+     "Ref": "ApiTaskDef37DBDBD0"
+    }
+   },
+   "DependsOn": [
+    "ALBHttpListenerApiRouteRule8917C7E9",
+    "ApiTaskDefTaskRoleDefaultPolicy66F6BAC0",
+    "ApiTaskDefTaskRole76FB19FA"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ApiService/Service"
+   }
+  },
+  "DashboardTG962E3F6C": {
+   "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+   "Properties": {
+    "HealthCheckIntervalSeconds": 30,
+    "HealthCheckPath": "/",
+    "HealthCheckTimeoutSeconds": 10,
+    "HealthyThresholdCount": 2,
+    "Port": 80,
+    "Protocol": "HTTP",
+    "TargetGroupAttributes": [
+     {
+      "Key": "stickiness.enabled",
+      "Value": "false"
+     }
+    ],
+    "TargetType": "ip",
+    "UnhealthyThresholdCount": 3,
+    "VpcId": {
+     "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpc8378EB38272D6E3A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/DashboardTG/Resource"
+   }
+  },
+  "ApiTGB123314B": {
+   "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+   "Properties": {
+    "HealthCheckIntervalSeconds": 30,
+    "HealthCheckPath": "/",
+    "HealthCheckTimeoutSeconds": 10,
+    "HealthyThresholdCount": 2,
+    "Port": 80,
+    "Protocol": "HTTP",
+    "TargetGroupAttributes": [
+     {
+      "Key": "stickiness.enabled",
+      "Value": "false"
+     }
+    ],
+    "TargetType": "ip",
+    "UnhealthyThresholdCount": 3,
+    "VpcId": {
+     "Fn::ImportValue": "metis-dev-network:ExportsOutputRefVpc8378EB38272D6E3A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ApiTG/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/31PyWrDMBD9ltxl1aiXXtuUlkCgxc69TOSJmFiRjBaHIPTvxVtwS+lp3jab4OLxiZcbuPpCNm2h6chTHUC2DK7+K6H0PG119AEd257MAt/AKQh4AN++4okMBbJmCPxWrAlABt1Km3trdD1JHJpmmBlKwVONMjoKt3dnYzfZ/wk7oxx6nxlq8IGkttAcQYORZFQveHruOk0Sht17C83L6E3v/ODrHPmAZs4s+A+/ihrXmZGvcgdwCsP97hXNjODCU2WnAWP9tJrkbaATykxb5XnaW3UfseCcB/YRQxdDZsY2yM/+oRclFyUvN2dPVLhoAl2QV1P9BjbkpjTsAQAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "AlbDnsName": {
+   "Description": "ALB DNS name",
+   "Value": {
+    "Fn::GetAtt": [
+     "ALBAEE750D2",
+     "DNSName"
+    ]
+   },
+   "Export": {
+    "Name": "metis-dev-alb-dns"
+   }
+  },
+  "ClusterArn": {
+   "Description": "ECS cluster ARN",
+   "Value": {
+    "Fn::GetAtt": [
+     "ClusterEB0386A7",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "metis-dev-cluster-arn"
+   }
+  },
+  "DashboardServiceArn": {
+   "Description": "Dashboard service ARN",
+   "Value": {
+    "Ref": "DashboardService73233129"
+   },
+   "Export": {
+    "Name": "metis-dev-dashboard-service-arn"
+   }
+  },
+  "ApiServiceArn": {
+   "Description": "API service ARN",
+   "Value": {
+    "Ref": "ApiServiceC9037CF0"
+   },
+   "Export": {
+    "Name": "metis-dev-api-service-arn"
+   }
+  },
+  "ExportsOutputRefClusterEB0386A796A0E3FE": {
+   "Value": {
+    "Ref": "ClusterEB0386A7"
+   },
+   "Export": {
+    "Name": "metis-dev-ecs:ExportsOutputRefClusterEB0386A796A0E3FE"
+   }
+  },
+  "ExportsOutputFnGetAttDashboardService73233129NameF4E94A9B": {
+   "Value": {
+    "Fn::GetAtt": [
+     "DashboardService73233129",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "metis-dev-ecs:ExportsOutputFnGetAttDashboardService73233129NameF4E94A9B"
+   }
+  },
+  "ExportsOutputFnGetAttApiServiceC9037CF0Name3E44BA2D": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ApiServiceC9037CF0",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "metis-dev-ecs:ExportsOutputFnGetAttApiServiceC9037CF0Name3E44BA2D"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

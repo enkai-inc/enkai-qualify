@@ -20,9 +20,13 @@
     "design_dir": "docs/design",
     "feature_spec_template": "docs/atlas/tier4-implementation/01-feature-specification-template.md",
     "dashboard_dir": "dashboard",
+    "api_dir": "api",
     "builder_dir": "builder",
     "infra_dir": "infra/cdk",
-    "test_uat_dir": "dashboard/src/tests/uat"
+    "test_uat_dir": "dashboard/src/tests/uat",
+    "dockerfile_dashboard": "dashboard/Dockerfile",
+    "dockerfile_api": "api/Dockerfile",
+    "buildspec": "buildspec.yml"
   },
   "context_files": [
     "README.md"
@@ -37,15 +41,28 @@
   "aws": {
     "profile": "default",
     "region": "us-east-1",
-    "stack_prefix": "MyProject",
+    "stack_prefix": "metis",
     "stacks": {
-      "dns": "${stack_prefix}DNSAuthStack-dev",
-      "builder": "${stack_prefix}BuilderStack-dev",
-      "dashboard": "${stack_prefix}DashboardStack-dev"
+      "network": "${stack_prefix}-${environment}-network",
+      "ecr": "${stack_prefix}-${environment}-ecr",
+      "database": "${stack_prefix}-${environment}-database",
+      "ecs": "${stack_prefix}-${environment}-ecs",
+      "pipeline": "${stack_prefix}-${environment}-pipeline"
     },
     "services": {
-      "dashboard_url": "https://app.example.com",
-      "api_url": "https://api.example.com"
+      "dashboard_url": "https://app.metis.dev",
+      "api_url": "https://api.metis.dev",
+      "dashboard_service": "${stack_prefix}-${environment}-dashboard",
+      "api_service": "${stack_prefix}-${environment}-api",
+      "cluster": "${stack_prefix}-${environment}-cluster"
+    },
+    "ecr": {
+      "dashboard_repo": "${stack_prefix}-${environment}-dashboard",
+      "api_repo": "${stack_prefix}-${environment}-api"
+    },
+    "secrets": {
+      "db_credentials": "${secrets_prefix}/${environment}/db-credentials",
+      "api_keys": "${secrets_prefix}/${environment}/api-keys"
     }
   },
   "secrets": {
