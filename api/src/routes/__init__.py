@@ -5,6 +5,8 @@ from fastapi import APIRouter
 from .discovery import router as discovery_router
 from .generate import router as generate_router
 from .packs import router as packs_router
+from .billing import router as billing_router
+from .webhooks import router as webhooks_router
 
 router = APIRouter()
 
@@ -12,6 +14,8 @@ router = APIRouter()
 router.include_router(generate_router)
 router.include_router(discovery_router)
 router.include_router(packs_router)
+router.include_router(billing_router)
+router.include_router(webhooks_router)
 
 
 @router.get("/")
