@@ -1,0 +1,13 @@
+{
+  "moduleId": "auth-clerk",
+  "displayName": "Clerk Authentication",
+  "description": "Complete auth with OAuth, session management, and user profiles",
+  "category": "auth",
+  "dependencies": ["nextjs-base"],
+  "workUnits": [
+    {"workItemId": "clerk-001", "title": "Install Clerk SDK", "files": ["package.json"]},
+    {"workItemId": "clerk-002", "title": "Configure middleware", "files": ["middleware.ts"]},
+    {"workItemId": "clerk-003", "title": "Add auth components", "files": ["components/auth/UserButton.tsx", "components/auth/SignInButton.tsx"]}
+  ],
+  "tags": ["auth", "clerk", "oauth"]
+}

@@ -1,0 +1,15 @@
+{
+  "moduleId": "nextjs-base",
+  "displayName": "Next.js Base",
+  "description": "Next.js 14 App Router foundation with TypeScript and Tailwind",
+  "category": "framework",
+  "dependencies": [],
+  "workUnits": [
+    {"workItemId": "nextjs-001", "title": "Initialize Next.js project", "files": ["package.json", "next.config.js"]},
+    {"workItemId": "nextjs-002", "title": "Configure TypeScript", "files": ["tsconfig.json"]},
+    {"workItemId": "nextjs-003", "title": "Setup Tailwind CSS", "files": ["tailwind.config.ts", "postcss.config.js"]},
+    {"workItemId": "nextjs-004", "title": "Create app layout", "files": ["app/layout.tsx", "app/globals.css"]},
+    {"workItemId": "nextjs-005", "title": "Add environment config", "files": [".env.example", "lib/env.ts"]}
+  ],
+  "tags": ["nextjs", "react", "typescript", "tailwind"]
+}

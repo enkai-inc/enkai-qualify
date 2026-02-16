@@ -1,0 +1,13 @@
+{
+  "moduleId": "infra-cdk",
+  "displayName": "AWS CDK Infrastructure",
+  "description": "Infrastructure as code with AWS CDK",
+  "category": "infrastructure",
+  "dependencies": [],
+  "workUnits": [
+    {"workItemId": "cdk-001", "title": "Initialize CDK app", "files": ["infra/cdk/package.json", "infra/cdk/cdk.json"]},
+    {"workItemId": "cdk-002", "title": "Create ECS stack", "files": ["infra/cdk/lib/ecs-stack.ts"]},
+    {"workItemId": "cdk-003", "title": "Create database stack", "files": ["infra/cdk/lib/database-stack.ts"]}
+  ],
+  "tags": ["infrastructure", "cdk", "aws"]
+}
