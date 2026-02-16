@@ -5,7 +5,7 @@
 # =============================================================================
 # Stage 1: Builder
 # =============================================================================
-FROM python:3.12-slim AS builder
+FROM public.ecr.aws/docker/library/python:3.12-slim AS builder
 WORKDIR /app
 
 # Install build dependencies
@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # =============================================================================
 # Stage 2: Production Runner
 # =============================================================================
-FROM python:3.12-slim AS runner
+FROM public.ecr.aws/docker/library/python:3.12-slim AS runner
 WORKDIR /app
 
 # Create non-root user for security

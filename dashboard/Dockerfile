@@ -5,7 +5,7 @@
 # =============================================================================
 # Stage 1: Dependencies
 # =============================================================================
-FROM node:20-alpine AS deps
+FROM public.ecr.aws/docker/library/node:20-alpine AS deps
 WORKDIR /app
 
 # Install dependencies for native modules
@@ -20,7 +20,7 @@ RUN npm ci && npm cache clean --force
 # =============================================================================
 # Stage 2: Builder
 # =============================================================================
-FROM node:20-alpine AS builder
+FROM public.ecr.aws/docker/library/node:20-alpine AS builder
 WORKDIR /app
 
 # Copy dependencies from deps stage
@@ -36,7 +36,7 @@ RUN npm run build
 # =============================================================================
 # Stage 3: Production Runner
 # =============================================================================
-FROM node:20-alpine AS runner
+FROM public.ecr.aws/docker/library/node:20-alpine AS runner
 WORKDIR /app
 
 # Create non-root user for security
