@@ -33,8 +33,8 @@ const nextConfig = {
     unoptimized: process.env.NODE_ENV === 'development',
   },
 
-  // Note: API routing handled by middleware.ts
-  // /api/health served locally, other /api/* routes proxied to backend
+  // Note: /api/health is handled by local API route
+  // Other API routes are proxied via ALB listener rules, not rewrites
 
   // Headers for security
   async headers() {
