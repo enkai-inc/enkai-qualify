@@ -3,10 +3,13 @@
 from fastapi import APIRouter
 from .generate import router as generate_router
 
+from .discovery import router as discovery_router
+
 router = APIRouter()
 
 # Include sub-routers
 router.include_router(generate_router)
+router.include_router(discovery_router)
 
 
 @router.get("/")
