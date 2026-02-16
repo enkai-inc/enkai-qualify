@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PricingTable } from '@/components/billing/PricingTable';
 
@@ -14,7 +14,8 @@ interface Subscription {
   current_period_end: string;
 }
 
-export default function BillingPage() {
+// Wrapper component that uses useSearchParams
+function BillingContent() {
   const searchParams = useSearchParams();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -211,6 +212,19 @@ export default function BillingPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// Main export with Suspense boundary for useSearchParams
+export default function BillingPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+      </div>
+    }>
+      <BillingContent />
+    </Suspense>
   );
 }
 
