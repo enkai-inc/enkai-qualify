@@ -2,11 +2,11 @@
   "$schema": "project-config-schema",
   "$comment": "Project-specific configuration. Update these values when importing .claude/ into a new repo.",
   "project": {
-    "name": "pedro",
-    "display_name": "Pedro",
+    "name": "metis",
+    "display_name": "Metis",
     "description": "Project description",
     "repo_owner": "tegryan-ddo",
-    "repo_name": "pedro"
+    "repo_name": "metis"
   },
   "paths": {
     "docs_root": "docs",
@@ -25,15 +25,13 @@
     "test_uat_dir": "dashboard/src/tests/uat"
   },
   "context_files": [
-    "CLAUDE.md",
-    "PROJECT_SPEC.md",
-    "MILESTONES.md"
+    "README.md"
   ],
   "github": {
     "labels": {
-      "build": "pedro:build",
-      "in_progress": "pedro:in-progress",
-      "needs_human": "pedro:needs-human"
+      "build": "metis:build",
+      "in_progress": "metis:in-progress",
+      "needs_human": "metis:needs-human"
     }
   },
   "aws": {
@@ -51,7 +49,7 @@
     }
   },
   "secrets": {
-    "prefix": "pedro",
+    "prefix": "metis",
     "pattern": "${prefix}/{environment}/*"
   },
   "worktree": {
@@ -77,7 +75,7 @@
     "differentiators": []
   },
   "token_optimization": {
-    "cache_prefix": "pedro",
+    "cache_prefix": "metis",
     "s3_bucket_env_var": "CLAUDE_ATLAS_CACHE_BUCKET",
     "warn_threshold_tokens": 30000,
     "critical_threshold_tokens": 50000
