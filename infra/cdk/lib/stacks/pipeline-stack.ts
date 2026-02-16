@@ -190,7 +190,7 @@ export class PipelineStack extends cdk.Stack {
       repo: 'metis', // Update with actual repo
       branch: environment === 'prod' ? 'main' : 'develop',
       output: sourceOutput,
-      connectionArn: `arn:aws:codestar-connections:${this.region}:${this.account}:connection/PLACEHOLDER`, // TODO: Replace with actual connection ARN
+      connectionArn: 'arn:aws:codeconnections:us-east-1:882384879235:connection/36b17d25-a4cc-467d-94fb-4cea5e6bc986',
       triggerOnPush: true,
     });
 
