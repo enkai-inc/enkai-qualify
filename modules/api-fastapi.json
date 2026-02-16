@@ -1,0 +1,15 @@
+{
+  "moduleId": "api-fastapi",
+  "displayName": "FastAPI Backend",
+  "description": "FastAPI backend with async support",
+  "category": "backend",
+  "dependencies": [],
+  "workUnits": [
+    {"workItemId": "fastapi-001", "title": "Initialize FastAPI", "files": ["api/pyproject.toml"]},
+    {"workItemId": "fastapi-002", "title": "Create main app", "files": ["api/src/main.py"]},
+    {"workItemId": "fastapi-003", "title": "Add routes", "files": ["api/src/routes/__init__.py"]},
+    {"workItemId": "fastapi-004", "title": "Add models", "files": ["api/src/models/__init__.py"]},
+    {"workItemId": "fastapi-005", "title": "Configure CORS", "files": ["api/src/middleware.py"]}
+  ],
+  "tags": ["backend", "fastapi", "python"]
+}

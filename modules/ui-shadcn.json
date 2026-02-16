@@ -1,0 +1,14 @@
+{
+  "moduleId": "ui-shadcn",
+  "displayName": "ShadCN UI",
+  "description": "Beautiful UI components with ShadCN",
+  "category": "ui",
+  "dependencies": ["nextjs-base"],
+  "workUnits": [
+    {"workItemId": "shadcn-001", "title": "Initialize ShadCN", "files": ["components.json"]},
+    {"workItemId": "shadcn-002", "title": "Add Button component", "files": ["components/ui/button.tsx"]},
+    {"workItemId": "shadcn-003", "title": "Add Card component", "files": ["components/ui/card.tsx"]},
+    {"workItemId": "shadcn-004", "title": "Add Input components", "files": ["components/ui/input.tsx", "components/ui/textarea.tsx"]}
+  ],
+  "tags": ["ui", "shadcn", "components"]
+}

@@ -10,10 +10,10 @@ const nextConfig = {
   // Disable x-powered-by header for security
   poweredByHeader: false,
 
-  // Enable experimental features for App Router
+  // Enable experimental features
   experimental: {
-    // Instrument for OpenTelemetry tracing (optional)
     instrumentationHook: true,
+    typedRoutes: true,
   },
 
   // Environment variables available on client
@@ -23,26 +23,23 @@ const nextConfig = {
 
   // Image optimization configuration
   images: {
-    // Allow images from specific domains
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '**.amazonaws.com',
       },
     ],
-    // Optimize for container deployment
     unoptimized: process.env.NODE_ENV === 'development',
   },
 
-  // Webpack configuration
-  webpack: (config, { isServer }) => {
-    // Handle SVGs as React components
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
-
-    return config;
+  // API proxy rewrites
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: process.env.API_URL || 'http://localhost:8000/api/:path*',
+      },
+    ];
   },
 
   // Headers for security

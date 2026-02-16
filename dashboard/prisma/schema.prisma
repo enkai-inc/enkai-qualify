@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  clerkId       String         @unique
+  email         String         @unique
+  name          String?
+  ideas         Idea[]
+  packs         Pack[]
+  subscription  Subscription?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Idea {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  description    String         @db.Text
+  industry       String
+  targetMarket   String
+  technologies   String[]
+  features       Json
+  currentVersion Int            @default(1)
+  versions       IdeaVersion[]
+  validations    Validation[]
+  packs          Pack[]
+  status         IdeaStatus     @default(DRAFT)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model IdeaVersion {
+  id        String        @id @default(cuid())
+  ideaId    String
+  idea      Idea          @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  version   Int
+  snapshot  Json
+  summary   String
+  parentId  String?
+  parent    IdeaVersion?  @relation("VersionBranch", fields: [parentId], references: [id])
+  children  IdeaVersion[] @relation("VersionBranch")
+  createdAt DateTime      @default(now())
+
+  @@unique([ideaId, version])
+  @@index([ideaId])
+}
+
+model Validation {
+  id               String   @id @default(cuid())
+  ideaId           String
+  idea             Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  version          Int
+  keywordScore     Int
+  painPointScore   Int
+  competitionScore Int
+  revenueEstimate  Int
+  overallScore     Int
+  details          Json
+  createdAt        DateTime @default(now())
+
+  @@index([ideaId])
+}
+
+model Pack {
+  id            String         @id @default(cuid())
+  ideaId        String
+  idea          Idea           @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  modules       String[]
+  complexity    PackComplexity
+  workUnitCount Int
+  s3Key         String?
+  downloadUrl   String?
+  expiresAt     DateTime?
+  status        PackStatus     @default(PENDING)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([ideaId])
+}
+
+model Module {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  displayName  String
+  description  String   @db.Text
+  category     String
+  workUnits    Json
+  dependencies String[]
+  tags         String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Subscription {
+  id                   String           @id @default(cuid())
+  userId               String           @unique
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier                 SubscriptionTier @default(FREE)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  ideasUsed            Int              @default(0)
+  packsUsed            Int              @default(0)
+  periodStart          DateTime         @default(now())
+  periodEnd            DateTime
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+}
+
+enum IdeaStatus {
+  DRAFT
+  VALIDATED
+  PACK_GENERATED
+  ARCHIVED
+}
+
+enum PackStatus {
+  PENDING
+  GENERATING
+  READY
+  EXPIRED
+  FAILED
+}
+
+enum PackComplexity {
+  MVP
+  STANDARD
+  FULL
+}
+
+enum SubscriptionTier {
+  FREE
+  EXPLORER
+  BUILDER
+  AGENCY
+}
