@@ -34,13 +34,24 @@ const nextConfig = {
   },
 
   // API proxy rewrites
+  // Exclude /api/health which is handled by Next.js API route
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: process.env.API_URL || 'http://localhost:8000/api/:path*',
-      },
-    ];
+    return {
+      beforeFiles: [
+        // Do not rewrite health check - handled by local API route
+        {
+          source: '/api/health',
+          destination: '/api/health',
+        },
+      ],
+      afterFiles: [
+        // Proxy other API routes to backend
+        {
+          source: '/api/:path*',
+          destination: process.env.API_URL || 'http://localhost:8000/api/:path*',
+        },
+      ],
+    };
   },
 
   // Headers for security
