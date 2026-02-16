@@ -1,0 +1,174 @@
+{
+  "$schema": "Observatory watchlist — repos to monitor for Claude config improvements",
+  "version": 1,
+  "scan_config": {
+    "max_repos_per_scan": 20,
+    "max_files_per_repo": 10,
+    "proposal_threshold": "medium",
+    "digest_frequency": "weekly"
+  },
+  "repos": [
+    {
+      "owner": "anthropics",
+      "name": "skills",
+      "branch": "main",
+      "patterns": [".claude/skills/**", "**/*.md"],
+      "category": "official-skills",
+      "priority": "high",
+      "notes": "Official Anthropic skill patterns — canonical reference for skill structure"
+    },
+    {
+      "owner": "obra",
+      "name": "superpowers",
+      "branch": "main",
+      "patterns": ["skills/**", "CLAUDE.md", "**/*.md"],
+      "category": "skill-framework",
+      "priority": "high",
+      "notes": "Agentic skills framework with 20+ battle-tested skills (TDD, debugging, collaboration)"
+    },
+    {
+      "owner": "affaan-m",
+      "name": "everything-claude-code",
+      "branch": "main",
+      "patterns": [".claude/**", "CLAUDE.md", "hooks/**", "agents/**"],
+      "category": "production-config",
+      "priority": "high",
+      "notes": "Production config from Anthropic hackathon winner — token optimization (37% reduction), context management"
+    },
+    {
+      "owner": "Piebald-AI",
+      "name": "claude-code-system-prompts",
+      "branch": "main",
+      "patterns": ["**/*.md", "**/*.txt"],
+      "category": "system-prompts",
+      "priority": "high",
+      "notes": "Extracted Claude Code system prompts — updated within minutes of each release"
+    },
+    {
+      "owner": "modelcontextprotocol",
+      "name": "servers",
+      "branch": "main",
+      "patterns": ["src/**", "README.md"],
+      "category": "mcp-servers",
+      "priority": "medium",
+      "notes": "Official MCP server reference implementations (GitHub, Git, Postgres, Puppeteer, etc.)"
+    },
+    {
+      "owner": "anthropics",
+      "name": "claude-cookbooks",
+      "branch": "main",
+      "patterns": ["**/*.md", "**/*.py", "**/*.ipynb"],
+      "category": "official-patterns",
+      "priority": "medium",
+      "notes": "Official Anthropic recipes for effective Claude usage and agent patterns"
+    },
+    {
+      "owner": "parcadei",
+      "name": "Continuous-Claude-v3",
+      "branch": "main",
+      "patterns": [".claude/**", "hooks/**", "**/*.md"],
+      "category": "context-management",
+      "priority": "high",
+      "notes": "Context persistence across sessions via ledgers and handoffs — solves context pollution"
+    },
+    {
+      "owner": "disler",
+      "name": "claude-code-hooks-mastery",
+      "branch": "main",
+      "patterns": ["hooks/**", ".claude/**", "**/*.py", "**/*.md"],
+      "category": "hook-patterns",
+      "priority": "medium",
+      "notes": "Deep dive into hook patterns — PreToolUse/PostToolUse for validation, policies, automation"
+    },
+    {
+      "owner": "hesreallyhim",
+      "name": "awesome-claude-code",
+      "branch": "main",
+      "patterns": ["README.md"],
+      "category": "ecosystem-index",
+      "priority": "medium",
+      "notes": "Curated index of skills, hooks, commands, orchestrators — discover new repos to add to watchlist"
+    },
+    {
+      "owner": "ruvnet",
+      "name": "claude-flow",
+      "branch": "main",
+      "patterns": ["CLAUDE.md", "agents/**", ".claude/**", "**/*.md"],
+      "category": "orchestration",
+      "priority": "medium",
+      "notes": "Multi-agent orchestration platform — swarm patterns, session persistence, CI/CD templates"
+    },
+    {
+      "owner": "RchGrav",
+      "name": "claudebox",
+      "branch": "main",
+      "patterns": [".claude/**", "CLAUDE.md", "claude/**", "commands/**"],
+      "category": "container-config",
+      "priority": "high",
+      "notes": "Docker dev environment for Claude Code — BMad agents/tasks, dev profiles, PR templates"
+    },
+    {
+      "owner": "AutoForgeAI",
+      "name": "autoforge",
+      "branch": "master",
+      "patterns": [".claude/**", "CLAUDE.md", "mcp_server/**", "agent.py"],
+      "category": "agent-framework",
+      "priority": "high",
+      "notes": "Autonomous agent framework — skills, commands, agents, MCP server, spec-driven coding templates"
+    },
+    {
+      "owner": "github",
+      "name": "spec-kit",
+      "branch": "main",
+      "patterns": ["AGENTS.md", "templates/**", "memory/**", "scripts/**", "**/*.md"],
+      "category": "spec-driven-dev",
+      "priority": "high",
+      "notes": "GitHub's spec-driven dev toolkit — AGENTS.md, command templates, constitution patterns"
+    },
+    {
+      "owner": "bmad-code-org",
+      "name": "BMAD-METHOD",
+      "branch": "main",
+      "patterns": [".claude/skills/**", "docs/**", "**/*.md"],
+      "category": "agile-methodology",
+      "priority": "high",
+      "notes": "Agile AI dev method — skills (changelog, triage, release), agent prompts, elicitation patterns"
+    },
+    {
+      "owner": "sandstream",
+      "name": "ralph-inferno",
+      "branch": "main",
+      "patterns": ["core/.claude/**", "core/.codex/**", "core/templates/**", "core/phases/**", "**/*.md"],
+      "category": "autonomous-workflow",
+      "priority": "medium",
+      "notes": "Autonomous dev workflow — phase-based commands (idea/plan/review/deploy), CLAUDE.md templates, agent utils"
+    },
+    {
+      "owner": "AndyMik90",
+      "name": "Auto-Claude",
+      "branch": "main",
+      "patterns": [".claude/**", "CLAUDE.md", "apps/backend/agents/**", "**/*.md"],
+      "category": "multi-session-agent",
+      "priority": "medium",
+      "notes": "Autonomous multi-session coding — agent orchestration, memory manager, planner, session management"
+    },
+    {
+      "owner": "SuperClaude-Org",
+      "name": "SuperClaude_Framework",
+      "branch": "master",
+      "patterns": [".claude/**", "CLAUDE.md", "AGENTS.md", "docs/**", "**/*.md"],
+      "category": "config-framework",
+      "priority": "high",
+      "notes": "Configuration framework — cognitive personas, confidence-check skill, parallel indexing, context window analysis"
+    },
+    {
+      "owner": "NeoLabHQ",
+      "name": "context-engineering-kit",
+      "branch": "master",
+      "patterns": ["CLAUDE.md", "plugins/**", "docs/**", ".claude/**"],
+      "category": "context-engineering",
+      "priority": "high",
+      "notes": "Context engineering techniques with minimal token footprint — commands-over-skills philosophy, specialized agents, setup-commands pattern"
+    }
+  ]
+}

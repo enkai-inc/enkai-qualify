@@ -1,0 +1,98 @@
+# Design Phase Status Template
+#
+# This file tracks the progress of a feature through the Double Diamond design process.
+# Create this file at: docs/design/${FEATURE_ID}/status.yml
+
+feature_id: "GH-XXX"  # Replace with actual issue number
+title: ""             # Feature title
+created_at: ""        # ISO 8601 timestamp
+current_phase: "discover"  # discover | define | develop | deliver | complete
+
+# Track phase history for duration analysis
+phase_history:
+  - phase: "discover"
+    started_at: ""     # ISO 8601 timestamp
+    completed_at: null # null until phase completes
+    gate_status: null  # COMPLETE | INCOMPLETE | BLOCKED
+    duration_minutes: null
+  - phase: "define"
+    started_at: null
+    completed_at: null
+    gate_status: null
+    duration_minutes: null
+  - phase: "develop"
+    started_at: null
+    completed_at: null
+    gate_status: null
+    duration_minutes: null
+  - phase: "deliver"
+    started_at: null
+    completed_at: null
+    gate_status: null
+    duration_minutes: null
+
+# Agents involved in this design
+agents:
+  - name: "design-product-manager"
+    phases: ["discover", "define", "deliver"]
+    last_activity: null
+  - name: "design-ux-researcher"
+    phases: ["discover", "develop"]
+    last_activity: null
+  - name: "design-product-designer"
+    phases: ["discover", "define", "develop"]
+    last_activity: null
+  - name: "design-tech-lead"
+    phases: ["discover", "define", "develop"]
+    last_activity: null
+  - name: "design-stakeholder"
+    phases: ["define"]
+    last_activity: null
+  - name: "design-engineer"
+    phases: ["develop", "deliver"]
+    last_activity: null
+  - name: "design-content-strategist"
+    phases: ["develop", "deliver"]
+    last_activity: null
+  - name: "design-qa-engineer"
+    phases: ["deliver"]
+    last_activity: null
+  - name: "design-product-marketer"
+    phases: ["deliver"]
+    last_activity: null
+
+# Re-loops track when gates trigger return to earlier phases
+reloops: []
+# Example:
+# - from_phase: "define"
+#   to_phase: "discover"
+#   reason: "Conflicting ICP assumptions"
+#   timestamp: "2026-02-14T10:00:00Z"
+
+# Current blockers
+blocking_issues: []
+# Example:
+# - issue: "Need stakeholder input on pricing model"
+#   severity: "major"
+#   created_at: "2026-02-14T10:00:00Z"
+#   resolved_at: null
+
+# Depth mode for this design run
+depth_mode: "full"  # full | lightweight | discover-only
+
+# Human checkpoints
+human_checkpoints:
+  research_approved: false
+  discover_approved: false
+  define_approved: false
+  develop_approved: false
+  deliver_approved: false
+
+# Last activity timestamp for stale detection
+last_activity: ""  # ISO 8601 timestamp
+
+# GitHub tracking
+github:
+  tracking_issue: null  # Issue number
+  sub_issues: []        # List of decomposed issue numbers
+  pr: null              # PR number when implementation complete

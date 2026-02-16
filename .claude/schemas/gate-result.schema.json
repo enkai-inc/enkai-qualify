@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "gate-result.schema.json",
+  "title": "Design Phase Gate Result",
+  "description": "Machine-readable result of a design phase gate validation",
+  "type": "object",
+  "required": ["feature_id", "gate", "status", "checks", "summary"],
+  "properties": {
+    "feature_id": {
+      "type": "string",
+      "description": "GitHub issue number with prefix (e.g., GH-123)",
+      "pattern": "^GH-[0-9]+$"
+    },
+    "gate": {
+      "type": "string",
+      "enum": ["discover", "define", "develop", "deliver"],
+      "description": "The design phase gate being validated"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["COMPLETE", "INCOMPLETE", "BLOCKED"],
+      "description": "Overall gate validation result"
+    },
+    "checks": {
+      "type": "array",
+      "description": "Individual validation checks performed",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "passed"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Machine-readable check identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable check name"
+          },
+          "passed": {
+            "type": "boolean",
+            "description": "Whether the check passed"
+          },
+          "evidence": {
+            "type": "array",
+            "description": "File paths or descriptions supporting the check result",
+            "items": { "type": "string" }
+          },
+          "remediation": {
+            "type": "string",
+            "description": "Hint for how to fix a failing check"
+          }
+        }
+      }
+    },
+    "missing_files": {
+      "type": "array",
+      "description": "Required artifacts that were not found",
+      "items": { "type": "string" }
+    },
+    "failed_checks": {
+      "type": "array",
+      "description": "IDs of checks that failed",
+      "items": { "type": "string" }
+    },
+    "blocking_issues": {
+      "type": "array",
+      "description": "Critical issues that block proceeding",
+      "items": {
+        "type": "object",
+        "required": ["issue", "severity"],
+        "properties": {
+          "issue": { "type": "string" },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "major"]
+          },
+          "resolution": { "type": "string" }
+        }
+      }
+    },
+    "reloop": {
+      "type": "string",
+      "enum": ["none", "discover", "define", "develop"],
+      "description": "If the gate triggers a re-loop, which phase to return to",
+      "default": "none"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "description": "References to specific evidence supporting the gate decision",
+      "items": { "type": "string" }
+    },
+    "spikes_pending": {
+      "type": "array",
+      "description": "Technical spikes that must complete before proceeding",
+      "items": { "type": "string" }
+    },
+    "deferred_items": {
+      "type": "array",
+      "description": "Items explicitly deferred to future work",
+      "items": {
+        "type": "object",
+        "required": ["item", "reason"],
+        "properties": {
+          "item": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "critical_bugs": {
+      "type": "integer",
+      "description": "Count of critical bugs (deliver gate only)",
+      "minimum": 0
+    },
+    "major_bugs": {
+      "type": "integer",
+      "description": "Count of major bugs (deliver gate only)",
+      "minimum": 0
+    },
+    "summary": {
+      "type": "string",
+      "description": "Human-readable summary of the gate validation result"
+    },
+    "validated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when validation was performed"
+    }
+  },
+  "additionalProperties": false
+}

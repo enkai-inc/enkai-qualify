@@ -1,0 +1,76 @@
+{
+  "$schema": "skill-rings-schema",
+  "$comment": "Deployment rings control which skill descriptions load by default. Commands-over-skills: only load what you need.",
+  "version": "1.0.0",
+  "updated": "2026-02-14",
+  "rings": {
+    "always": {
+      "description": "Core workflow skills loaded in every session. High daily usage.",
+      "skills": [
+        "build",
+        "scrum",
+        "bug",
+        "execute",
+        "verify",
+        "plan"
+      ]
+    },
+    "frequent": {
+      "description": "Commonly used skills loaded on demand via /command invocation.",
+      "skills": [
+        "design",
+        "dd",
+        "deploy",
+        "code-review",
+        "test",
+        "clean",
+        "resolve",
+        "confidence-check",
+        "correct-course",
+        "feature-dev",
+        "mon",
+        "checker"
+      ]
+    },
+    "specialized": {
+      "description": "Niche skills for specific workflows. Loaded only when explicitly invoked.",
+      "skills": [
+        "atlas",
+        "context",
+        "critic",
+        "deps",
+        "do-competitively",
+        "frontend-design",
+        "gh-triage",
+        "idea",
+        "judge-with-debate",
+        "maint",
+        "marketing",
+        "mcp-builder",
+        "observatory",
+        "pnyx",
+        "ratchet",
+        "rollback",
+        "root-cause-trace",
+        "secrets",
+        "skillify",
+        "tdd-discipline",
+        "contract-review"
+      ]
+    },
+    "archive": {
+      "description": "Deprecated or superseded skills. Not loaded unless manually referenced.",
+      "skills": [
+        "eval"
+      ],
+      "notes": {
+        "eval": "Absorbed by /scrum in unified build system (v2). Use /scrum for issue processing."
+      }
+    }
+  },
+  "token_budget": {
+    "always_ring_target_bytes": 60000,
+    "total_skill_bytes": 334245,
+    "notes": "Always ring should stay under 60KB total. Review quarterly."
+  }
+}

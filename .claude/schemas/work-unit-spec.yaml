@@ -1,0 +1,125 @@
+# Work Unit Specification Schema
+#
+# A Work Unit is a Codex-simple task that can be executed mechanically by a builder agent.
+# Constraints:
+#   - ≤2 files modified
+#   - ≤50 lines of code
+#   - 0 decisions required
+#   - <5 minutes to implement
+#
+# The Scrum Master decomposes issues into Work Units, and Codex Builders execute them.
+
+work_unit:
+  # Unique identifier for this work unit
+  id: "issue-{issue_number}-wu-{sequence}"
+
+  # Parent GitHub issue number
+  parent_issue: 123
+
+  # Sequence within the parent issue (1, 2, 3, ...)
+  sequence: 1
+
+  # Brief summary of what this work unit does
+  summary: "Add password hash utility"
+
+  # Dependencies on other work units (must complete first)
+  depends_on: []  # List of work unit IDs
+
+  # Context for the builder (what to read before implementing)
+  context:
+    # Files to read for context (with optional line ranges)
+    files:
+      - path: "src/utils/crypto.ts"
+        relevant_lines: "1-25"  # Optional: specific lines to focus on
+
+    # Patterns to follow (references to existing code)
+    patterns:
+      - "Follow async/await pattern from src/utils/db.ts"
+      - "Use error handling pattern from src/utils/api.ts"
+
+    # Hard constraints that must be respected
+    constraints:
+      - "Use bcrypt with cost factor 12"
+      - "Export from src/utils/index.ts"
+
+  # Implementation instructions (pre-written code to apply)
+  implementation:
+    - file: "src/utils/crypto.ts"
+      action: "create"  # create | append | prepend | replace
+      # For replace action, specify the target
+      target: null  # e.g., "function hashPassword" for replacement
+      code: |
+        import bcrypt from 'bcrypt';
+
+        const COST_FACTOR = 12;
+
+        export async function hashPassword(password: string): Promise<string> {
+          return bcrypt.hash(password, COST_FACTOR);
+        }
+
+        export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+          return bcrypt.compare(password, hash);
+        }
+
+  # Tests to add (pre-written test code)
+  tests:
+    file: "src/utils/__tests__/crypto.test.ts"
+    action: "create"  # create | append
+    code: |
+      import { hashPassword, verifyPassword } from '../crypto';
+
+      describe('crypto utils', () => {
+        it('should hash a password', async () => {
+          const hash = await hashPassword('test123');
+          expect(hash).toBeDefined();
+          expect(hash).not.toBe('test123');
+        });
+
+        it('should verify correct password', async () => {
+          const hash = await hashPassword('test123');
+          const result = await verifyPassword('test123', hash);
+          expect(result).toBe(true);
+        });
+
+        it('should reject incorrect password', async () => {
+          const hash = await hashPassword('test123');
+          const result = await verifyPassword('wrong', hash);
+          expect(result).toBe(false);
+        });
+      });
+
+  # Verification commands (must all succeed)
+  verification:
+    commands:
+      - "npx tsc --noEmit"
+      - "npm test -- crypto.test.ts"
+    success_criteria:
+      - "Exit code 0 for all commands"
+      - "3 tests pass"
+
+  # Commit details
+  commit:
+    message: "feat(auth): add password hash utility"
+    scope: "auth"  # Conventional commit scope
+
+# Schema validation rules
+$schema:
+  required:
+    - work_unit.id
+    - work_unit.parent_issue
+    - work_unit.sequence
+    - work_unit.summary
+    - work_unit.implementation
+    - work_unit.verification
+    - work_unit.commit
+
+  constraints:
+    max_files: 2
+    max_lines: 50
+    max_implementation_time_minutes: 5
+
+  valid_actions:
+    - create
+    - append
+    - prepend
+    - replace

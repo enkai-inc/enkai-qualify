@@ -1,0 +1,133 @@
+{
+  "$schema": "project-config-schema",
+  "$comment": "Project-specific configuration. Update these values when importing .claude/ into a new repo.",
+  "project": {
+    "name": "pedro",
+    "display_name": "Pedro",
+    "description": "Project description",
+    "repo_owner": "tegryan-ddo",
+    "repo_name": "pedro"
+  },
+  "paths": {
+    "docs_root": "docs",
+    "atlas_dir": "docs/atlas",
+    "atlas_features_dir": "docs/atlas/features",
+    "atlas_tiers": {
+      "strategic": "docs/atlas/tier1-strategic",
+      "architecture": "docs/atlas/tier2-architecture",
+      "implementation": "docs/atlas/tier4-implementation"
+    },
+    "design_dir": "docs/design",
+    "feature_spec_template": "docs/atlas/tier4-implementation/01-feature-specification-template.md",
+    "dashboard_dir": "dashboard",
+    "builder_dir": "builder",
+    "infra_dir": "infra/cdk",
+    "test_uat_dir": "dashboard/src/tests/uat"
+  },
+  "context_files": [
+    "CLAUDE.md",
+    "PROJECT_SPEC.md",
+    "MILESTONES.md"
+  ],
+  "github": {
+    "labels": {
+      "build": "pedro:build",
+      "in_progress": "pedro:in-progress",
+      "needs_human": "pedro:needs-human"
+    }
+  },
+  "aws": {
+    "profile": "default",
+    "region": "us-east-1",
+    "stack_prefix": "MyProject",
+    "stacks": {
+      "dns": "${stack_prefix}DNSAuthStack-dev",
+      "builder": "${stack_prefix}BuilderStack-dev",
+      "dashboard": "${stack_prefix}DashboardStack-dev"
+    },
+    "services": {
+      "dashboard_url": "https://app.example.com",
+      "api_url": "https://api.example.com"
+    }
+  },
+  "secrets": {
+    "prefix": "pedro",
+    "pattern": "${prefix}/{environment}/*"
+  },
+  "worktree": {
+    "base_dir_pattern": "../worktree-{purpose}-{id}",
+    "bugfix_pattern": "../bugfix-{session_id}",
+    "scrum_pattern": "../worktree-scrum-{n}"
+  },
+  "scrum": {
+    "worker_count": 6,
+    "poll_interval_seconds": 15,
+    "work_unit_timeout_minutes": 5
+  },
+  "monitoring": {
+    "log_groups": [],
+    "dashboards": [],
+    "alarms": []
+  },
+  "marketing": {
+    "product_name": "My Product",
+    "tagline": "Product tagline",
+    "target_audience": "Developers",
+    "key_features": [],
+    "differentiators": []
+  },
+  "token_optimization": {
+    "cache_prefix": "pedro",
+    "s3_bucket_env_var": "CLAUDE_ATLAS_CACHE_BUCKET",
+    "warn_threshold_tokens": 30000,
+    "critical_threshold_tokens": 50000
+  },
+  "context_modes": {
+    "default": "dev",
+    "contexts_dir": ".claude/contexts",
+    "modes": {
+      "dev": {
+        "file": "dev.md",
+        "description": "Implementation focus \u2014 write code, run tests, iterate",
+        "skills": [
+          "eval",
+          "build",
+          "bug",
+          "execute",
+          "feature-dev",
+          "tdd-discipline",
+          "deploy",
+          "mcp-builder",
+          "maint",
+          "deps",
+          "rollback",
+          "clean"
+        ]
+      },
+      "research": {
+        "file": "research.md",
+        "description": "Exploration focus \u2014 read widely, document findings, recommend",
+        "skills": [
+          "dd",
+          "design",
+          "idea",
+          "observatory",
+          "plan",
+          "confidence-check"
+        ]
+      },
+      "review": {
+        "file": "review.md",
+        "description": "Analysis focus \u2014 read thoroughly, prioritize by severity, suggest fixes",
+        "skills": [
+          "code-review",
+          "critic",
+          "checker",
+          "verify",
+          "gh-triage",
+          "correct-course"
+        ]
+      }
+    }
+  }
+}

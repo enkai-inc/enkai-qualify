@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Pre-commit hook: runs Python unit tests before allowing a commit.
+# Install via: .claude/setup.sh or manually:
+#   cp .claude/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -euo pipefail
+
+# Collect test directories that exist
+TEST_DIRS=()
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+for dir in "$REPO_ROOT/.claude/hooks/token-optimization" "$REPO_ROOT/.claude/scripts"; do
+  if compgen -G "$dir/test_*.py" > /dev/null 2>&1; then
+    TEST_DIRS+=("$dir")
+  fi
+done
+
+# Skip if no test files found
+if [ ${#TEST_DIRS[@]} -eq 0 ]; then
+  exit 0
+fi
+
+echo "Running pre-commit tests..."
+if ! python3 -m pytest "${TEST_DIRS[@]}" -x -q 2>&1; then
+  echo ""
+  echo "Pre-commit tests failed. Fix the failures above or use --no-verify to skip."
+  exit 1
+fi

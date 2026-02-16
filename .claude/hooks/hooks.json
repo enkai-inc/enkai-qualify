@@ -1,0 +1,57 @@
+[
+  {
+    "matcher": "tool == 'Bash' && tool_input.command matches '(npm run dev|pnpm dev|yarn dev|next dev)'",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "python3 -c \"import sys,json; print(json.dumps({'decision':'block','reason':'Dev server must run in tmux for log access. Use: tmux new-session -d -s dev \\\"npm run dev\\\" && tmux attach -t dev'}))\" 2>/dev/null || echo '{\"decision\":\"allow\"}'",
+        "timeout": 5000
+      }
+    ],
+    "description": "Block dev servers outside tmux — ensures log access"
+  },
+  {
+    "matcher": "tool == 'Bash' && tool_input.command matches '(npm install|npm ci|npm test|npx playwright|cargo build|docker build|pytest|vitest)'",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "python3 -c \"import sys; print('{\\\"decision\\\":\\\"allow\\\"}'); sys.stderr.write('[Hint] Consider running long commands in tmux: tmux new-session -d -s work \\\"<command>\\\"\\n')\"",
+        "timeout": 3000
+      }
+    ],
+    "description": "Suggest tmux for long-running commands"
+  },
+  {
+    "matcher": "tool == 'Write' || tool == 'Edit'",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "python3 .claude/hooks/audit-trail.py",
+        "timeout": 5000
+      }
+    ],
+    "description": "Track file writes/edits in audit trail"
+  },
+  {
+    "matcher": "tool == 'Write' || tool == 'Edit'",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "python3 .claude/hooks/session-manager.py",
+        "timeout": 5000
+      }
+    ],
+    "description": "Track session metrics for lifecycle management"
+  },
+  {
+    "matcher": "tool == 'Bash' && tool_input.command matches '/(eval|build|bug|execute|feature-dev|tdd-discipline|deploy|mcp-builder|maint|deps|rollback|clean|dd|design|idea|observatory|plan|confidence-check|code-review|critic|checker|verify|gh-triage|correct-course|scrum)'",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "python3 .claude/hooks/context-loader.py",
+        "timeout": 3000
+      }
+    ],
+    "description": "Load mode-based context (dev/research/review) on skill invocation for token reduction"
+  }
+]

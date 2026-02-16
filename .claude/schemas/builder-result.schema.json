@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "builder-result.schema.json",
+  "title": "Codex Builder Result",
+  "description": "Result output from a Codex Builder executing a Work Unit",
+  "type": "object",
+  "required": ["work_unit_id", "success", "timestamp"],
+  "properties": {
+    "work_unit_id": {
+      "type": "string",
+      "description": "ID of the Work Unit that was executed",
+      "pattern": "^issue-[0-9]+-wu-[0-9]+$"
+    },
+    "parent_issue": {
+      "type": "integer",
+      "description": "GitHub issue number this Work Unit belongs to",
+      "minimum": 1
+    },
+    "success": {
+      "type": "boolean",
+      "description": "Whether the Work Unit was successfully completed"
+    },
+    "commit_sha": {
+      "type": ["string", "null"],
+      "description": "Git commit SHA if implementation was committed",
+      "pattern": "^[a-f0-9]{7,40}$"
+    },
+    "branch": {
+      "type": ["string", "null"],
+      "description": "Git branch where commit was made"
+    },
+    "files_modified": {
+      "type": "array",
+      "description": "List of files that were created or modified",
+      "items": {
+        "type": "object",
+        "required": ["path", "action", "lines_changed"],
+        "properties": {
+          "path": { "type": "string" },
+          "action": {
+            "type": "string",
+            "enum": ["created", "modified", "deleted"]
+          },
+          "lines_changed": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "tests_added": {
+      "type": "integer",
+      "description": "Number of test cases added",
+      "minimum": 0
+    },
+    "verification": {
+      "type": "object",
+      "description": "Results of verification commands",
+      "properties": {
+        "commands_run": {
+          "type": "integer",
+          "description": "Number of verification commands executed"
+        },
+        "commands_passed": {
+          "type": "integer",
+          "description": "Number of verification commands that passed"
+        },
+        "output": {
+          "type": "string",
+          "description": "Combined output from verification commands (truncated)"
+        }
+      }
+    },
+    "duration_seconds": {
+      "type": "number",
+      "description": "Time taken to execute the Work Unit",
+      "minimum": 0
+    },
+    "error": {
+      "type": ["object", "null"],
+      "description": "Error details if the Work Unit failed",
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": ["context_read", "implementation", "tests", "verification", "commit"],
+          "description": "Which phase failed"
+        },
+        "message": {
+          "type": "string",
+          "description": "Error message"
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed error output (truncated)"
+        },
+        "recoverable": {
+          "type": "boolean",
+          "description": "Whether the error might be recoverable with a retry"
+        }
+      },
+      "required": ["phase", "message"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the Work Unit completed"
+    },
+    "builder_id": {
+      "type": "string",
+      "description": "Identifier of the builder that executed this Work Unit",
+      "pattern": "^builder-[0-9]+$"
+    },
+    "worktree_path": {
+      "type": "string",
+      "description": "Path to the git worktree where work was done"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "work_unit_id": "issue-123-wu-004",
+      "parent_issue": 123,
+      "success": true,
+      "commit_sha": "abc1234",
+      "branch": "feature/issue-123",
+      "files_modified": [
+        { "path": "src/utils/crypto.ts", "action": "created", "lines_changed": 15 },
+        { "path": "src/utils/__tests__/crypto.test.ts", "action": "created", "lines_changed": 25 }
+      ],
+      "tests_added": 3,
+      "verification": {
+        "commands_run": 2,
+        "commands_passed": 2,
+        "output": "PASS src/utils/__tests__/crypto.test.ts\n  crypto utils\n    ✓ should hash a password (5ms)\n    ✓ should verify correct password (3ms)\n    ✓ should reject incorrect password (2ms)"
+      },
+      "duration_seconds": 45.2,
+      "error": null,
+      "timestamp": "2026-02-14T10:30:00Z",
+      "builder_id": "builder-1",
+      "worktree_path": "../worktree-scrum-1"
+    },
+    {
+      "work_unit_id": "issue-124-wu-002",
+      "parent_issue": 124,
+      "success": false,
+      "commit_sha": null,
+      "branch": "feature/issue-124",
+      "files_modified": [
+        { "path": "src/api/auth.ts", "action": "modified", "lines_changed": 8 }
+      ],
+      "tests_added": 0,
+      "verification": {
+        "commands_run": 2,
+        "commands_passed": 1,
+        "output": "error TS2345: Argument of type 'string' is not assignable..."
+      },
+      "duration_seconds": 30.5,
+      "error": {
+        "phase": "verification",
+        "message": "Type check failed",
+        "details": "error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'",
+        "recoverable": true
+      },
+      "timestamp": "2026-02-14T10:32:00Z",
+      "builder_id": "builder-3",
+      "worktree_path": "../worktree-scrum-3"
+    }
+  ]
+}
