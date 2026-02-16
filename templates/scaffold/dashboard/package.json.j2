@@ -1,0 +1,24 @@
+{
+  "name": "dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest"
+  },
+  "dependencies": {
+{% for name, version in dependencies.items() %}
+    "{{ name }}": "{{ version }}"{% if not loop.last %},{% endif %}
+
+{% endfor %}
+  },
+  "devDependencies": {
+{% for name, version in dev_dependencies.items() %}
+    "{{ name }}": "{{ version }}"{% if not loop.last %},{% endif %}
+
+{% endfor %}
+  }
+}
