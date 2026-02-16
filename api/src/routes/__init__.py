@@ -1,8 +1,12 @@
 """API routes registration."""
 
 from fastapi import APIRouter
+from .generate import router as generate_router
 
 router = APIRouter()
+
+# Include sub-routers
+router.include_router(generate_router)
 
 
 @router.get("/")
