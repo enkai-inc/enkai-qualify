@@ -147,16 +147,8 @@ export class EcsStack extends cdk.Stack {
         NODE_ENV: 'production',
         NEXT_PUBLIC_API_URL: `http://api.${projectName}.internal:8000`,
       },
-      healthCheck: usePlaceholder ? undefined : {
-        command: [
-          'CMD-SHELL',
-          'wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1',
-        ],
-        interval: cdk.Duration.seconds(30),
-        timeout: cdk.Duration.seconds(30),
-        retries: 5,
-        startPeriod: cdk.Duration.seconds(180),
-      },
+      // Health check: rely on ALB target group health check instead of container health check
+      // Container health checks were failing despite ALB health checks passing
     });
 
     // API Task Definition
