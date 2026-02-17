@@ -27,6 +27,7 @@ dependencies = [
     "structlog>=24.2.0",
     "python-dotenv>=1.0.1",
     "orjson>=3.10.6",
+    "anthropic>=0.35.0",
 ]
 
 [project.optional-dependencies]
@@ -56,6 +57,9 @@ python_version = "3.11"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
