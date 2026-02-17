@@ -3,6 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
@@ -113,6 +114,14 @@ export class EcsStack extends cdk.Stack {
     // because pipeline will update to use ECR images)
     dashboardRepository.grantPull(dashboardTaskDef.obtainExecutionRole());
 
+    // Grant ECR authorization (required for pulling from any ECR, must be resource: *)
+    dashboardTaskDef.obtainExecutionRole().addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ['ecr:GetAuthorizationToken'],
+        resources: ['*'],
+      })
+    );
+
     const dashboardLogGroup = new logs.LogGroup(this, 'DashboardLogs', {
       logGroupName: `/ecs/${projectName}/${environment}/dashboard`,
       retention: logs.RetentionDays.ONE_MONTH,
@@ -159,6 +168,14 @@ export class EcsStack extends cdk.Stack {
 
     // Grant ECR pull permissions
     apiRepository.grantPull(apiTaskDef.obtainExecutionRole());
+
+    // Grant ECR authorization (required for pulling from any ECR, must be resource: *)
+    apiTaskDef.obtainExecutionRole().addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ['ecr:GetAuthorizationToken'],
+        resources: ['*'],
+      })
+    );
 
     // Grant API access to database secret
     databaseSecret.grantRead(apiTaskDef.taskRole);
