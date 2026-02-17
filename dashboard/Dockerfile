@@ -60,9 +60,9 @@ USER nextjs
 # Expose port
 EXPOSE 3000
 
-# Health check using wget (available by default in alpine)
+# Health check using node (guaranteed available in this container)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=180s --retries=5 \
-    CMD wget -q --spider http://127.0.0.1:3000/api/health || exit 1
+    CMD node -e "const http = require('http'); http.get('http://127.0.0.1:3000/api/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"
 
 # Start the application
 CMD ["node", "server.js"]
