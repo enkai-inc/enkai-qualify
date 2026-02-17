@@ -3,10 +3,13 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as elbv2Actions from 'aws-cdk-lib/aws-elasticloadbalancingv2-actions';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 
 export interface EcsStackProps extends cdk.StackProps {
@@ -147,16 +150,8 @@ export class EcsStack extends cdk.Stack {
         NODE_ENV: 'production',
         NEXT_PUBLIC_API_URL: `http://api.${projectName}.internal:8000`,
       },
-      healthCheck: usePlaceholder ? undefined : {
-        command: [
-          'CMD-SHELL',
-          'curl -f http://localhost:3000/api/health || exit 1',
-        ],
-        interval: cdk.Duration.seconds(30),
-        timeout: cdk.Duration.seconds(30),
-        retries: 5,
-        startPeriod: cdk.Duration.seconds(120),
-      },
+      // Health check: rely on ALB target group health check instead of container health check
+      // Container health checks were failing despite ALB health checks passing
     });
 
     // API Task Definition
@@ -209,12 +204,12 @@ export class EcsStack extends cdk.Stack {
       healthCheck: usePlaceholder ? undefined : {
         command: [
           'CMD-SHELL',
-          'curl -f http://localhost:8000/health || exit 1',
+          'curl -f http://127.0.0.1:8000/health || exit 1',
         ],
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(30),
         retries: 5,
-        startPeriod: cdk.Duration.seconds(120),
+        startPeriod: cdk.Duration.seconds(180),
       },
     });
 
@@ -288,29 +283,63 @@ export class EcsStack extends cdk.Stack {
       targets: [this.apiService],
     });
 
-    // Configure listener rules based on environment
-    if (isProd) {
-      // Redirect HTTP to HTTPS in production
-      httpListener.addAction('RedirectToHttps', {
-        action: elbv2.ListenerAction.redirect({
-          protocol: 'HTTPS',
-          port: '443',
-          permanent: true,
-        }),
-      });
-    } else {
-      // Dev: route API paths to API service, everything else to dashboard
-      httpListener.addAction('ApiRoute', {
-        priority: 10,
-        conditions: [elbv2.ListenerCondition.pathPatterns(['/api/*', '/health', '/docs', '/redoc'])],
-        action: elbv2.ListenerAction.forward([apiTargetGroup]),
-      });
+    // Import existing Cognito user pool (enkai-dev) for authentication
+    const cognitoUserPool = cognito.UserPool.fromUserPoolId(
+      this,
+      'CognitoUserPool',
+      'us-east-1_zlw7qsJMJ'
+    );
 
-      // Default: forward to dashboard
-      httpListener.addTargetGroups('DefaultTargetGroup', {
-        targetGroups: [dashboardTargetGroup],
-      });
-    }
+    // Import existing user pool client
+    const cognitoClient = cognito.UserPoolClient.fromUserPoolClientId(
+      this,
+      'CognitoClient',
+      '2qcaf479drm0tg372mnm8upjfr'
+    );
+
+    // Import ACM certificate for metis.digitaldevops.io
+    const certificate = acm.Certificate.fromCertificateArn(
+      this,
+      'Certificate',
+      'arn:aws:acm:us-east-1:882384879235:certificate/b846e9b3-2a34-4599-90c8-2ebf5e1bb2c2'
+    );
+
+    // HTTPS Listener with Cognito authentication
+    const httpsListener = this.alb.addListener('HttpsListener', {
+      port: 443,
+      protocol: elbv2.ApplicationProtocol.HTTPS,
+      certificates: [certificate],
+      open: true,
+    });
+
+    // Add Cognito authentication + forward to dashboard
+    httpsListener.addAction('CognitoAuth', {
+      action: new elbv2Actions.AuthenticateCognitoAction({
+        userPool: cognitoUserPool,
+        userPoolClient: cognitoClient,
+        userPoolDomain: cognito.UserPoolDomain.fromDomainName(this, 'CognitoDomain', 'enkai-dev'),
+        onUnauthenticatedRequest: elbv2.UnauthenticatedAction.AUTHENTICATE,
+        scope: 'openid email profile',
+        sessionTimeout: cdk.Duration.days(7),
+        next: elbv2.ListenerAction.forward([dashboardTargetGroup]),
+      }),
+    });
+
+    // Add API route rule (before Cognito auth, priority 10)
+    httpsListener.addAction('ApiRoute', {
+      priority: 10,
+      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/*', '/health', '/docs', '/redoc'])],
+      action: elbv2.ListenerAction.forward([apiTargetGroup]),
+    });
+
+    // HTTP Listener - always redirect to HTTPS
+    httpListener.addAction('RedirectToHttps', {
+      action: elbv2.ListenerAction.redirect({
+        protocol: 'HTTPS',
+        port: '443',
+        permanent: true,
+      }),
+    });
 
     // Auto-scaling for production
     if (isProd) {

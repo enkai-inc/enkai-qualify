@@ -314,12 +314,12 @@
       "HealthCheck": {
        "Command": [
         "CMD-SHELL",
-        "wget -q --spider http://127.0.0.1:3000/api/health || exit 1"
+        "node -e \"require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""
        ],
        "Interval": 30,
-       "Retries": 5,
-       "StartPeriod": 180,
-       "Timeout": 30
+       "Retries": 3,
+       "StartPeriod": 60,
+       "Timeout": 10
       },
       "Image": {
        "Fn::Join": [
@@ -594,12 +594,12 @@
       "HealthCheck": {
        "Command": [
         "CMD-SHELL",
-        "curl -f http://127.0.0.1:8000/health || exit 1"
+        "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"
        ],
        "Interval": 30,
-       "Retries": 5,
-       "StartPeriod": 180,
-       "Timeout": 30
+       "Retries": 3,
+       "StartPeriod": 60,
+       "Timeout": 10
       },
       "Image": {
        "Fn::Join": [

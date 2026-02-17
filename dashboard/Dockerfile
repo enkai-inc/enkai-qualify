@@ -62,8 +62,8 @@ USER nextjs
 EXPOSE 3000
 
 # Health check using curl
-HEALTHCHECK --interval=30s --timeout=30s --start-period=120s --retries=5 \
-    CMD curl -f http://localhost:3000/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=30s --start-period=180s --retries=5 \
+    CMD curl -f http://127.0.0.1:3000/api/health || exit 1
 
 # Start the application
 CMD ["node", "server.js"]

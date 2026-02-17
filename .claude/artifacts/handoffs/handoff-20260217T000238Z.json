@@ -1,0 +1,16 @@
+{
+  "session_end": "2026-02-17T00:02:38.711183+00:00",
+  "summary": {
+    "session_end": "2026-02-17T00:02:38.711183+00:00",
+    "compaction_stats": {
+      "total_compactions": 0,
+      "total_tokens_saved": 0,
+      "total_original_tokens": 0
+    },
+    "cache_stats": {
+      "hits": 0,
+      "misses": 0
+    }
+  },
+  "handoff_type": "session_stop"
+}

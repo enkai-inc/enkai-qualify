@@ -1,16 +1,16 @@
 {
   "version": "48.0.0",
   "files": {
-    "a8403641a105be28915105b9d9405fba9384ffc0d21bbd74d7590b47c1f17dfb": {
+    "63379017efa739c1aff96cfdf728560035e44af593092a9992272e178f069095": {
       "displayName": "metis-dev-ecs Template",
       "source": {
         "path": "metis-dev-ecs.template.json",
         "packaging": "file"
       },
       "destinations": {
-        "882384879235-us-east-1-964e5486": {
+        "882384879235-us-east-1-0382156c": {
           "bucketName": "cdk-hnb659fds-assets-882384879235-us-east-1",
-          "objectKey": "a8403641a105be28915105b9d9405fba9384ffc0d21bbd74d7590b47c1f17dfb.json",
+          "objectKey": "63379017efa739c1aff96cfdf728560035e44af593092a9992272e178f069095.json",
           "region": "us-east-1",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::882384879235:role/cdk-hnb659fds-file-publishing-role-882384879235-us-east-1"
         }
