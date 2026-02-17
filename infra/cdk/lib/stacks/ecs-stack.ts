@@ -150,12 +150,12 @@ export class EcsStack extends cdk.Stack {
       healthCheck: usePlaceholder ? undefined : {
         command: [
           'CMD-SHELL',
-          'curl -f http://localhost:3000/api/health || exit 1',
+          'wget -q --spider http://127.0.0.1:3000/api/health || exit 1',
         ],
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(30),
         retries: 5,
-        startPeriod: cdk.Duration.seconds(120),
+        startPeriod: cdk.Duration.seconds(180),
       },
     });
 
@@ -209,12 +209,12 @@ export class EcsStack extends cdk.Stack {
       healthCheck: usePlaceholder ? undefined : {
         command: [
           'CMD-SHELL',
-          'curl -f http://localhost:8000/health || exit 1',
+          'wget -q --spider http://127.0.0.1:8000/health || exit 1',
         ],
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(30),
         retries: 5,
-        startPeriod: cdk.Duration.seconds(120),
+        startPeriod: cdk.Duration.seconds(180),
       },
     });
 

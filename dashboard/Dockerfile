@@ -39,9 +39,8 @@ RUN npm run build
 FROM public.ecr.aws/docker/library/node:20-alpine AS runner
 WORKDIR /app
 
-# Install curl for health checks and create non-root user
-RUN apk add --no-cache curl && \
-    addgroup --system --gid 1001 nodejs && \
+# Create non-root user (wget is available in alpine via busybox)
+RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # Set production environment
@@ -61,9 +60,9 @@ USER nextjs
 # Expose port
 EXPOSE 3000
 
-# Health check using curl
-HEALTHCHECK --interval=30s --timeout=30s --start-period=120s --retries=5 \
-    CMD curl -f http://localhost:3000/api/health || exit 1
+# Health check using wget (available by default in alpine)
+HEALTHCHECK --interval=30s --timeout=30s --start-period=180s --retries=5 \
+    CMD wget -q --spider http://127.0.0.1:3000/api/health || exit 1
 
 # Start the application
 CMD ["node", "server.js"]
