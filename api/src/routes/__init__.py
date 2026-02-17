@@ -7,6 +7,7 @@ from .generate import router as generate_router
 from .packs import router as packs_router
 from .billing import router as billing_router
 from .webhooks import router as webhooks_router
+from .scoring import router as scoring_router
 
 router = APIRouter()
 
@@ -16,6 +17,7 @@ router.include_router(discovery_router)
 router.include_router(packs_router)
 router.include_router(billing_router)
 router.include_router(webhooks_router)
+router.include_router(scoring_router)
 
 
 @router.get("/")
