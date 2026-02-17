@@ -12,7 +12,7 @@ const nextConfig = {
 
   // Enable experimental features
   experimental: {
-    instrumentationHook: true,
+    // Note: instrumentationHook is now available by default in Next.js 16
     // Disabled until all routes are defined
     // typedRoutes: true,
   },
