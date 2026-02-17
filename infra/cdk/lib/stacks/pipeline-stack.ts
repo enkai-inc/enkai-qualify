@@ -118,6 +118,75 @@ export class PipelineStack extends cdk.Stack {
       }
     );
 
+    // E2E test project
+    const e2eBuild = new codebuild.PipelineProject(this, 'E2EBuild', {
+      projectName: `${projectName}-${environment}-e2e-test`,
+      role: buildRole,
+      environment: {
+        buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+        privileged: false,
+        computeType: codebuild.ComputeType.MEDIUM,
+        environmentVariables: {
+          CI: { value: 'true' },
+          PLAYWRIGHT_BASE_URL: { value: 'http://localhost:3000' },
+        },
+      },
+      buildSpec: codebuild.BuildSpec.fromObject({
+        version: '0.2',
+        phases: {
+          install: {
+            'runtime-versions': {
+              nodejs: 20,
+            },
+            commands: [
+              'echo Installing dependencies...',
+              'cd dashboard',
+              'npm ci',
+              'echo Installing Playwright browsers...',
+              'npx playwright install chromium --with-deps',
+            ],
+          },
+          pre_build: {
+            commands: [
+              'echo Building application...',
+              'npm run build',
+              'echo Starting application server...',
+              'npm run start &',
+              'sleep 10',
+              'echo Verifying server is up...',
+              'curl -s http://localhost:3000/api/health || exit 1',
+            ],
+          },
+          build: {
+            commands: [
+              'echo Running E2E tests...',
+              'npm run test:e2e -- --reporter=junit,html',
+            ],
+          },
+          post_build: {
+            commands: [
+              'echo E2E tests completed',
+              'pkill -f "next start" || true',
+            ],
+          },
+        },
+        reports: {
+          'e2e-test-reports': {
+            files: ['test-results/e2e-results.xml'],
+            'file-format': 'JUNITXML',
+            'base-directory': 'dashboard',
+          },
+        },
+        artifacts: {
+          files: [
+            'dashboard/playwright-report/**/*',
+            'dashboard/test-results/**/*',
+          ],
+        },
+      }),
+      timeout: cdk.Duration.minutes(30),
+    });
+
     // API build project
     const apiBuild = new codebuild.PipelineProject(this, 'ApiBuild', {
       projectName: `${projectName}-${environment}-api-build`,
@@ -237,6 +306,21 @@ export class PipelineStack extends cdk.Stack {
           input: apiBuildOutput,
           deploymentTimeout: cdk.Duration.minutes(15),
           runOrder: 1, // Same runOrder for parallel deployment
+        }),
+      ],
+    });
+
+    // E2E Test stage - runs after deployment
+    const e2eTestOutput = new codepipeline.Artifact('E2ETestOutput');
+    this.pipeline.addStage({
+      stageName: 'E2E_Test',
+      actions: [
+        new codepipeline_actions.CodeBuildAction({
+          actionName: 'Run_E2E_Tests',
+          project: e2eBuild,
+          input: sourceOutput,
+          outputs: [e2eTestOutput],
+          runOrder: 1,
         }),
       ],
     });

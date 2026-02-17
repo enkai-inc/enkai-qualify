@@ -1,0 +1,54 @@
+version: 0.2
+
+env:
+  variables:
+    CI: "true"
+    PLAYWRIGHT_BASE_URL: "http://localhost:3000"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing dependencies..."
+      - npm ci
+      - echo "Installing Playwright browsers..."
+      - npx playwright install chromium --with-deps
+
+  pre_build:
+    commands:
+      - echo "Building application..."
+      - npm run build
+      - echo "Starting application server..."
+      - npm run start &
+      - sleep 10
+      - echo "Verifying server is up..."
+      - curl -s http://localhost:3000/api/health || exit 1
+
+  build:
+    commands:
+      - echo "Running E2E tests..."
+      - npm run test:e2e -- --reporter=junit,html
+
+  post_build:
+    commands:
+      - echo "E2E tests completed"
+      - pkill -f "next start" || true
+
+reports:
+  e2e-test-reports:
+    files:
+      - "test-results/e2e-results.xml"
+    file-format: JUNITXML
+    base-directory: dashboard
+
+artifacts:
+  files:
+    - dashboard/playwright-report/**/*
+    - dashboard/test-results/**/*
+  name: e2e-test-results
+
+cache:
+  paths:
+    - dashboard/node_modules/**/*
+    - /root/.cache/ms-playwright/**/*
