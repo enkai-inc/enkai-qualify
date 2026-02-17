@@ -247,7 +247,7 @@ export class EcsStack extends cdk.Stack {
       },
     });
 
-    // Dashboard target group
+    // Dashboard target group (do not use targets here - use attachToApplicationTargetGroup instead)
     const dashboardTargetGroup = new elbv2.ApplicationTargetGroup(
       this,
       'DashboardTG',
@@ -263,9 +263,11 @@ export class EcsStack extends cdk.Stack {
           healthyThresholdCount: 2,
           unhealthyThresholdCount: 3,
         },
-        targets: [this.dashboardService],
       }
     );
+
+    // Attach dashboard service to target group (ensures ECS service has correct load balancer binding)
+    this.dashboardService.attachToApplicationTargetGroup(dashboardTargetGroup);
 
     // API target group
     const apiTargetGroup = new elbv2.ApplicationTargetGroup(this, 'ApiTG', {
@@ -280,8 +282,10 @@ export class EcsStack extends cdk.Stack {
         healthyThresholdCount: 2,
         unhealthyThresholdCount: 3,
       },
-      targets: [this.apiService],
     });
+
+    // Attach API service to target group
+    this.apiService.attachToApplicationTargetGroup(apiTargetGroup);
 
     // Import existing Cognito user pool (enkai-dev) for authentication
     const cognitoUserPool = cognito.UserPool.fromUserPoolId(
