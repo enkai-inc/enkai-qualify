@@ -30,6 +30,9 @@ COPY . .
 # Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Generate Prisma client (required for TypeScript types)
+RUN npx prisma generate
+
 # Build the application
 RUN npm run build
 
