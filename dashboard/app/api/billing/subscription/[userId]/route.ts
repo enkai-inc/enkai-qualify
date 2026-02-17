@@ -35,7 +35,7 @@ export async function GET(
       });
     }
 
-    const limits = TIER_LIMITS[subscription.tier];
+    const limits = TIER_LIMITS[subscription.tier as keyof typeof TIER_LIMITS];
 
     return NextResponse.json({
       plan: subscription.tier.toLowerCase(),
