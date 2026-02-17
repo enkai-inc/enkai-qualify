@@ -42,8 +42,8 @@ RUN npm run build
 FROM public.ecr.aws/docker/library/node:20-alpine AS runner
 WORKDIR /app
 
-# Install curl for health checks and create non-root user
-RUN apk add --no-cache curl && \
+# Install curl for health checks, OpenSSL for Prisma, and create non-root user
+RUN apk add --no-cache curl libc6-compat openssl && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
