@@ -150,7 +150,7 @@ export class EcsStack extends cdk.Stack {
       healthCheck: usePlaceholder ? undefined : {
         command: [
           'CMD-SHELL',
-          'node -e "const http = require(\'http\'); http.get(\'http://127.0.0.1:3000/api/health\', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); }).on(\'error\', () => process.exit(1));"',
+          'wget -q --spider http://127.0.0.1:3000/api/health || exit 1',
         ],
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(30),
