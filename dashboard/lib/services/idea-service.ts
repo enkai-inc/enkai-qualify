@@ -1,0 +1,328 @@
+import { prisma } from '@/lib/db';
+import { IdeaStatus, Prisma } from '@prisma/client';
+
+export interface CreateIdeaInput {
+  userId: string;
+  title: string;
+  description: string;
+  industry: string;
+  targetMarket: string;
+  technologies: string[];
+  features: Array<{
+    id: string;
+    name: string;
+    description: string;
+    priority: 'high' | 'medium' | 'low';
+  }>;
+}
+
+export interface UpdateIdeaInput {
+  title?: string;
+  description?: string;
+  industry?: string;
+  targetMarket?: string;
+  technologies?: string[];
+  features?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    priority: 'high' | 'medium' | 'low';
+  }>;
+  status?: IdeaStatus;
+}
+
+export async function listIdeas(
+  userId: string,
+  options: {
+    status?: IdeaStatus;
+    search?: string;
+    page?: number;
+    pageSize?: number;
+    sortBy?: 'createdAt' | 'updatedAt' | 'title';
+    sortOrder?: 'asc' | 'desc';
+  } = {}
+) {
+  const {
+    status,
+    search,
+    page = 1,
+    pageSize = 10,
+    sortBy = 'updatedAt',
+    sortOrder = 'desc',
+  } = options;
+
+  const where = {
+    userId,
+    ...(status && { status }),
+    ...(search && {
+      OR: [
+        { title: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } },
+      ],
+    }),
+  };
+
+  const [ideas, total] = await Promise.all([
+    prisma.idea.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        validations: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    }),
+    prisma.idea.count({ where }),
+  ]);
+
+  return {
+    items: ideas.map((idea) => ({
+      ...idea,
+      latestValidation: idea.validations[0] ?? null,
+      validations: undefined,
+    })),
+    total,
+    page,
+    pageSize,
+    hasMore: page * pageSize < total,
+  };
+}
+
+export async function getIdea(id: string, userId: string) {
+  const idea = await prisma.idea.findFirst({
+    where: { id, userId },
+    include: {
+      versions: {
+        orderBy: { version: 'desc' },
+      },
+      validations: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
+    },
+  });
+
+  if (!idea) {
+    return null;
+  }
+
+  return {
+    idea: {
+      ...idea,
+      validations: undefined,
+    },
+    versions: idea.versions,
+    validation: idea.validations[0] ?? null,
+  };
+}
+
+export async function createIdea(input: CreateIdeaInput) {
+  const idea = await prisma.idea.create({
+    data: {
+      userId: input.userId,
+      title: input.title,
+      description: input.description,
+      industry: input.industry,
+      targetMarket: input.targetMarket,
+      technologies: input.technologies,
+      features: input.features,
+      currentVersion: 1,
+      versions: {
+        create: {
+          version: 1,
+          snapshot: {
+            title: input.title,
+            description: input.description,
+            industry: input.industry,
+            targetMarket: input.targetMarket,
+            technologies: input.technologies,
+            features: input.features,
+          },
+          summary: 'Initial version',
+        },
+      },
+    },
+  });
+
+  return idea;
+}
+
+export async function updateIdea(
+  id: string,
+  userId: string,
+  input: UpdateIdeaInput,
+  createVersion = true
+) {
+  // Verify ownership
+  const existing = await prisma.idea.findFirst({
+    where: { id, userId },
+  });
+
+  if (!existing) {
+    throw new Error('Idea not found');
+  }
+
+  const nextVersion = existing.currentVersion + 1;
+
+  const idea = await prisma.idea.update({
+    where: { id },
+    data: {
+      ...input,
+      ...(createVersion && {
+        currentVersion: nextVersion,
+        versions: {
+          create: {
+            version: nextVersion,
+            snapshot: {
+              title: input.title ?? existing.title,
+              description: input.description ?? existing.description,
+              industry: input.industry ?? existing.industry,
+              targetMarket: input.targetMarket ?? existing.targetMarket,
+              technologies: input.technologies ?? existing.technologies,
+              features: input.features ?? existing.features,
+            },
+            summary: 'Updated idea',
+            parentId: (
+              await prisma.ideaVersion.findFirst({
+                where: { ideaId: id, version: existing.currentVersion },
+              })
+            )?.id,
+          },
+        },
+      }),
+    },
+    include: {
+      versions: {
+        orderBy: { version: 'desc' },
+      },
+    },
+  });
+
+  return idea;
+}
+
+export async function deleteIdea(id: string, userId: string) {
+  // Verify ownership
+  const existing = await prisma.idea.findFirst({
+    where: { id, userId },
+  });
+
+  if (!existing) {
+    throw new Error('Idea not found');
+  }
+
+  // Soft delete by archiving
+  await prisma.idea.update({
+    where: { id },
+    data: { status: 'ARCHIVED' },
+  });
+}
+
+export async function restoreVersion(
+  ideaId: string,
+  versionId: string,
+  userId: string
+) {
+  // Verify ownership
+  const idea = await prisma.idea.findFirst({
+    where: { id: ideaId, userId },
+  });
+
+  if (!idea) {
+    throw new Error('Idea not found');
+  }
+
+  const version = await prisma.ideaVersion.findFirst({
+    where: { id: versionId, ideaId },
+  });
+
+  if (!version) {
+    throw new Error('Version not found');
+  }
+
+  const snapshot = version.snapshot as Record<string, unknown>;
+  const nextVersion = idea.currentVersion + 1;
+
+  const updatedIdea = await prisma.idea.update({
+    where: { id: ideaId },
+    data: {
+      title: snapshot.title as string,
+      description: snapshot.description as string,
+      industry: snapshot.industry as string,
+      targetMarket: snapshot.targetMarket as string,
+      technologies: snapshot.technologies as string[],
+      features: snapshot.features as object,
+      currentVersion: nextVersion,
+      versions: {
+        create: {
+          version: nextVersion,
+          snapshot: snapshot as Prisma.InputJsonValue,
+          summary: `Restored from v${version.version}`,
+          parentId: versionId,
+        },
+      },
+    },
+    include: {
+      versions: {
+        orderBy: { version: 'desc' },
+      },
+    },
+  });
+
+  return updatedIdea;
+}
+
+export async function branchFromVersion(
+  ideaId: string,
+  versionId: string,
+  userId: string
+) {
+  // Verify ownership
+  const idea = await prisma.idea.findFirst({
+    where: { id: ideaId, userId },
+  });
+
+  if (!idea) {
+    throw new Error('Idea not found');
+  }
+
+  const version = await prisma.ideaVersion.findFirst({
+    where: { id: versionId, ideaId },
+  });
+
+  if (!version) {
+    throw new Error('Version not found');
+  }
+
+  const snapshot = version.snapshot as Record<string, unknown>;
+
+  // Create a new idea as a branch
+  const newIdea = await prisma.idea.create({
+    data: {
+      userId,
+      title: `${snapshot.title} (Branch)`,
+      description: snapshot.description as string,
+      industry: snapshot.industry as string,
+      targetMarket: snapshot.targetMarket as string,
+      technologies: snapshot.technologies as string[],
+      features: snapshot.features as object,
+      currentVersion: 1,
+      versions: {
+        create: {
+          version: 1,
+          snapshot: snapshot as Prisma.InputJsonValue,
+          summary: `Branched from ${idea.title} v${version.version}`,
+          parentId: versionId,
+        },
+      },
+    },
+    include: {
+      versions: true,
+    },
+  });
+
+  return newIdea;
+}
