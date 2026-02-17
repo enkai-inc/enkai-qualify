@@ -150,12 +150,12 @@ export class EcsStack extends cdk.Stack {
       healthCheck: usePlaceholder ? undefined : {
         command: [
           'CMD-SHELL',
-          "node -e \"require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\"",
+          'curl -f http://localhost:3000/api/health || exit 1',
         ],
         interval: cdk.Duration.seconds(30),
-        timeout: cdk.Duration.seconds(10),
-        retries: 3,
-        startPeriod: cdk.Duration.seconds(60),
+        timeout: cdk.Duration.seconds(30),
+        retries: 5,
+        startPeriod: cdk.Duration.seconds(120),
       },
     });
 
@@ -209,12 +209,12 @@ export class EcsStack extends cdk.Stack {
       healthCheck: usePlaceholder ? undefined : {
         command: [
           'CMD-SHELL',
-          'python -c "import urllib.request; urllib.request.urlopen(\'http://localhost:8000/health\')" || exit 1',
+          'curl -f http://localhost:8000/health || exit 1',
         ],
         interval: cdk.Duration.seconds(30),
-        timeout: cdk.Duration.seconds(10),
-        retries: 3,
-        startPeriod: cdk.Duration.seconds(60),
+        timeout: cdk.Duration.seconds(30),
+        retries: 5,
+        startPeriod: cdk.Duration.seconds(120),
       },
     });
 

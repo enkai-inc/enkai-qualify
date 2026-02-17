@@ -28,8 +28,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 FROM public.ecr.aws/docker/library/python:3.12-slim AS runner
 WORKDIR /app
 
-# Create non-root user for security
-RUN groupadd --system --gid 1001 appgroup && \
+# Install curl for health checks and create non-root user
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd --system --gid 1001 appgroup && \
     useradd --system --uid 1001 --gid appgroup appuser
 
 # Copy virtual environment from builder
@@ -51,8 +53,8 @@ USER appuser
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+HEALTHCHECK --interval=30s --timeout=30s --start-period=120s --retries=5 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Start the application with uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
