@@ -12,7 +12,7 @@ from .config import Settings
 logger = structlog.get_logger()
 
 GITHUB_API = "https://api.github.com"
-IDEA_GENERATION_LABEL = "metis:idea-generation"
+IDEA_GENERATION_LABEL = "enkai:build"
 GENERATION_FAILED_LABEL = "metis:generation-failed"
 
 

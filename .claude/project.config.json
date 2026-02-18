@@ -36,7 +36,7 @@
       "build": "metis:build",
       "in_progress": "metis:in-progress",
       "needs_human": "metis:needs-human",
-      "idea_generation": "metis:idea-generation"
+      "idea_generation": "enkai:build"
     }
   },
   "aws": {

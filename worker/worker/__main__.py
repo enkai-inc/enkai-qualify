@@ -1,6 +1,6 @@
 """Metis idea generation worker entry point.
 
-Polls GitHub for open issues labeled metis:idea-generation,
+Polls GitHub for open issues labeled enkai:build,
 generates ideas via Claude, updates the database, and closes issues.
 
 Usage: python -m worker
