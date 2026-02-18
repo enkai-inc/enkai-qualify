@@ -30,6 +30,7 @@ model Idea {
   targetMarket   String
   technologies   String[]
   features       Json
+  metadata       Json?
   currentVersion Int            @default(1)
   versions       IdeaVersion[]
   validations    Validation[]
@@ -123,6 +124,7 @@ model Subscription {
 }
 
 enum IdeaStatus {
+  PENDING
   DRAFT
   VALIDATED
   PACK_GENERATED
