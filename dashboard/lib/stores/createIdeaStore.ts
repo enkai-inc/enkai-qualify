@@ -13,6 +13,14 @@ export interface GeneratedIdea {
   marketAnalysis: string;
 }
 
+interface PendingIdea {
+  id: string;
+  status: 'PENDING';
+  message: string;
+  githubIssue: number;
+  githubIssueUrl: string;
+}
+
 interface CreateIdeaState {
   step: number;
   // Step 1: Industry & Market
@@ -20,8 +28,9 @@ interface CreateIdeaState {
   targetMarket: string;
   // Step 2: Problem
   problemDescription: string;
-  // Step 3: Generated
+  // Step 3: Generated (or pending)
   generatedIdea: GeneratedIdea | null;
+  pendingIdea: PendingIdea | null;
   isGenerating: boolean;
   // Step 4: Review & Edit
   editedIdea: GeneratedIdea | null;
@@ -55,6 +64,7 @@ const initialState: CreateIdeaState = {
   targetMarket: '',
   problemDescription: '',
   generatedIdea: null,
+  pendingIdea: null,
   isGenerating: false,
   editedIdea: null,
   error: null,
@@ -80,7 +90,7 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
     generateIdea: async () => {
       const { industry, targetMarket, problemDescription } = get();
 
-      set({ isGenerating: true, error: null });
+      set({ isGenerating: true, error: null, pendingIdea: null });
 
       try {
         const response = await fetch('/api/ideas/generate', {
@@ -99,12 +109,24 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
         }
 
         const data = await response.json();
-        set({
-          generatedIdea: data.generated,
-          editedIdea: data.generated,
-          isGenerating: false,
-          step: 4,
-        });
+
+        // Check if this is a pending (async) response or immediate generation
+        if (data.idea?.status === 'PENDING') {
+          // Async flow: idea is queued for processing
+          set({
+            pendingIdea: data.idea,
+            isGenerating: false,
+            step: 4, // Go to "queued" review step
+          });
+        } else if (data.generated) {
+          // Immediate generation (legacy flow)
+          set({
+            generatedIdea: data.generated,
+            editedIdea: data.generated,
+            isGenerating: false,
+            step: 4,
+          });
+        }
       } catch (error) {
         set({
           error:
@@ -158,7 +180,13 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
     },
 
     saveIdea: async () => {
-      const { industry, targetMarket, editedIdea } = get();
+      const { industry, targetMarket, editedIdea, pendingIdea } = get();
+
+      // If we have a pending idea, just return its ID (it's already saved)
+      if (pendingIdea) {
+        return pendingIdea.id;
+      }
+
       if (!editedIdea) return null;
 
       set({ isSaving: true, error: null });

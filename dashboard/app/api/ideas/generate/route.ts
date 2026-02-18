@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canCreateIdea } from '@/lib/auth';
-import { generateIdea } from '@/lib/services/ai-service';
-import { createIdea } from '@/lib/services/idea-service';
+import { createIdeaGenerationIssue } from '@/lib/services/github-service';
+import { prisma } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,39 +26,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate idea with AI
-    const generated = await generateIdea({
+    // Create a pending idea record in the database
+    const ideaId = uuidv4();
+    const idea = await prisma.idea.create({
+      data: {
+        id: ideaId,
+        userId: user.id,
+        title: `Generating: ${body.industry} opportunity...`,
+        description: body.problemDescription,
+        industry: body.industry,
+        targetMarket: body.targetMarket,
+        status: 'PENDING',
+        technologies: [],
+        features: [],
+      },
+    });
+
+    // Create GitHub issue for processing by Frank container
+    const { issueNumber, issueUrl } = await createIdeaGenerationIssue({
+      ideaId: idea.id,
+      userId: user.id,
       industry: body.industry,
       targetMarket: body.targetMarket,
       problemDescription: body.problemDescription,
       preferences: body.preferences,
     });
 
-    // If saveImmediately is true, create the idea
-    if (body.saveImmediately) {
-      const idea = await createIdea({
-        userId: user.id,
-        title: generated.title,
-        description: generated.description,
-        industry: body.industry,
-        targetMarket: body.targetMarket,
-        technologies: generated.technologies,
-        features: generated.features,
-      });
-
-      return NextResponse.json({
-        idea,
-        generated,
-      }, { status: 201 });
-    }
-
-    // Just return the generated idea for review
-    return NextResponse.json({
-      generated,
+    // Update idea with issue reference
+    await prisma.idea.update({
+      where: { id: idea.id },
+      data: {
+        metadata: {
+          githubIssue: issueNumber,
+          githubIssueUrl: issueUrl,
+        },
+      },
     });
+
+    return NextResponse.json({
+      idea: {
+        id: idea.id,
+        status: 'PENDING',
+        message: 'Your idea is being generated. Check back in a few minutes.',
+        githubIssue: issueNumber,
+        githubIssueUrl: issueUrl,
+      },
+    }, { status: 202 });
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === 'GITHUB_TOKEN environment variable is not set') {
+      return NextResponse.json(
+        { error: 'GitHub integration not configured. Please contact support.' },
+        { status: 503 }
+      );
     }
     console.error('Error generating idea:', error);
     return NextResponse.json(

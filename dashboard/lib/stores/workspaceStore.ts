@@ -16,7 +16,7 @@ export interface IdeaData {
   technologies: string[];
   features: IdeaFeature[];
   currentVersion: number;
-  status: 'DRAFT' | 'VALIDATED' | 'PACK_GENERATED' | 'ARCHIVED';
+  status: 'PENDING' | 'DRAFT' | 'VALIDATED' | 'PACK_GENERATED' | 'ARCHIVED';
 }
 
 export interface IdeaVersion {
