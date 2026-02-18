@@ -125,6 +125,9 @@ export class EcsStack extends cdk.Stack {
       })
     );
 
+    // Grant dashboard access to database secret for Prisma migrations
+    databaseSecret.grantRead(dashboardTaskDef.taskRole);
+
     const dashboardLogGroup = new logs.LogGroup(this, 'DashboardLogs', {
       logGroupName: `/ecs/${projectName}/${environment}/dashboard`,
       retention: logs.RetentionDays.ONE_MONTH,
@@ -149,6 +152,9 @@ export class EcsStack extends cdk.Stack {
       environment: {
         NODE_ENV: 'production',
         NEXT_PUBLIC_API_URL: `http://api.${projectName}.internal:8000`,
+      },
+      secrets: usePlaceholder ? undefined : {
+        DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret, 'connectionString'),
       },
       // Health check: rely on ALB target group health check instead of container health check
       // Container health checks were failing despite ALB health checks passing
