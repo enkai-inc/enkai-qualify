@@ -6,7 +6,8 @@ echo "Starting Metis Dashboard..."
 # Run database migrations if DATABASE_URL is set
 if [ -n "$DATABASE_URL" ]; then
     echo "Running database migrations..."
-    npx prisma migrate deploy --schema=./prisma/schema.prisma
+    # Use node directly since npx may not find prisma in standalone builds
+    node ./node_modules/prisma/build/index.js migrate deploy --schema=./prisma/schema.prisma
     echo "Migrations complete."
 else
     echo "DATABASE_URL not set, skipping migrations."
