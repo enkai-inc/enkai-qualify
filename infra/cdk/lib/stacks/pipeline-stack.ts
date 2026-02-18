@@ -12,8 +12,10 @@ export interface PipelineStackProps extends cdk.StackProps {
   environment: string;
   dashboardRepository: ecr.Repository;
   apiRepository: ecr.Repository;
+  workerRepository: ecr.Repository;
   dashboardService: ecs.FargateService;
   apiService: ecs.FargateService;
+  workerService: ecs.FargateService;
   cluster: ecs.Cluster;
 }
 
@@ -38,8 +40,10 @@ export class PipelineStack extends cdk.Stack {
       environment,
       dashboardRepository,
       apiRepository,
+      workerRepository,
       dashboardService,
       apiService,
+      workerService,
       cluster,
     } = props;
 
@@ -47,6 +51,7 @@ export class PipelineStack extends cdk.Stack {
     const sourceOutput = new codepipeline.Artifact('SourceOutput');
     const dashboardBuildOutput = new codepipeline.Artifact('DashboardBuildOutput');
     const apiBuildOutput = new codepipeline.Artifact('ApiBuildOutput');
+    const workerBuildOutput = new codepipeline.Artifact('WorkerBuildOutput');
 
     // CodeBuild role with ECR permissions
     const buildRole = new iam.Role(this, 'BuildRole', {
@@ -56,6 +61,7 @@ export class PipelineStack extends cdk.Stack {
 
     dashboardRepository.grantPullPush(buildRole);
     apiRepository.grantPullPush(buildRole);
+    workerRepository.grantPullPush(buildRole);
 
     // Dashboard build project
     const dashboardBuild = new codebuild.PipelineProject(
@@ -244,6 +250,63 @@ export class PipelineStack extends cdk.Stack {
       cache: codebuild.Cache.local(codebuild.LocalCacheMode.DOCKER_LAYER),
     });
 
+    // Worker build project
+    const workerBuild = new codebuild.PipelineProject(this, 'WorkerBuild', {
+      projectName: `${projectName}-${environment}-worker-build`,
+      role: buildRole,
+      environment: {
+        buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+        privileged: true,
+        computeType: codebuild.ComputeType.MEDIUM,
+        environmentVariables: {
+          REPOSITORY_URI: {
+            value: workerRepository.repositoryUri,
+          },
+          CONTAINER_NAME: {
+            value: 'worker',
+          },
+          AWS_REGION: {
+            value: this.region,
+          },
+        },
+      },
+      buildSpec: codebuild.BuildSpec.fromObject({
+        version: '0.2',
+        phases: {
+          pre_build: {
+            commands: [
+              'echo Logging in to Amazon ECR...',
+              'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI',
+              'export COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)',
+              'export IMAGE_TAG=${COMMIT_HASH:=latest}',
+            ],
+          },
+          build: {
+            commands: [
+              'echo Building the Docker image...',
+              'cd worker',
+              'docker build -t $REPOSITORY_URI:latest -t $REPOSITORY_URI:$IMAGE_TAG .',
+            ],
+          },
+          post_build: {
+            commands: [
+              'echo Pushing the Docker image...',
+              'docker push $REPOSITORY_URI:latest',
+              'docker push $REPOSITORY_URI:$IMAGE_TAG',
+              'echo Writing image definitions file...',
+              'printf \'[{"name":"%s","imageUri":"%s"}]\' $CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json',
+              'cat imagedefinitions.json',
+            ],
+          },
+        },
+        artifacts: {
+          files: ['worker/imagedefinitions.json'],
+          'discard-paths': 'yes',
+        },
+      }),
+      cache: codebuild.Cache.local(codebuild.LocalCacheMode.DOCKER_LAYER),
+    });
+
     // Pipeline
     this.pipeline = new codepipeline.Pipeline(this, 'Pipeline', {
       pipelineName: `${projectName}-${environment}-pipeline`,
@@ -286,6 +349,13 @@ export class PipelineStack extends cdk.Stack {
           outputs: [apiBuildOutput],
           runOrder: 1, // Same runOrder for parallel execution
         }),
+        new codepipeline_actions.CodeBuildAction({
+          actionName: 'Build_Worker',
+          project: workerBuild,
+          input: sourceOutput,
+          outputs: [workerBuildOutput],
+          runOrder: 1, // Same runOrder for parallel execution
+        }),
       ],
     });
 
@@ -304,6 +374,13 @@ export class PipelineStack extends cdk.Stack {
           actionName: 'Deploy_API',
           service: apiService,
           input: apiBuildOutput,
+          deploymentTimeout: cdk.Duration.minutes(15),
+          runOrder: 1, // Same runOrder for parallel deployment
+        }),
+        new codepipeline_actions.EcsDeployAction({
+          actionName: 'Deploy_Worker',
+          service: workerService,
+          input: workerBuildOutput,
           deploymentTimeout: cdk.Duration.minutes(15),
           runOrder: 1, // Same runOrder for parallel deployment
         }),

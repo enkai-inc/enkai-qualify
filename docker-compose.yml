@@ -30,6 +30,20 @@ services:
     env_file:
       - .env
 
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://metis:metis_dev@postgres:5432/metis
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GITHUB_APP_ID=${GITHUB_APP_ID:-}
+      - GITHUB_APP_INSTALLATION_ID=${GITHUB_APP_INSTALLATION_ID:-}
+      - GITHUB_APP_PRIVATE_KEY=${GITHUB_APP_PRIVATE_KEY:-}
+      - POLL_INTERVAL_SECONDS=30
+    depends_on:
+      - postgres
+
   postgres:
     image: postgres:16-alpine
     ports:

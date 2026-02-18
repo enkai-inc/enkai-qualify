@@ -1,0 +1,1 @@
+"""Metis idea generation worker."""
