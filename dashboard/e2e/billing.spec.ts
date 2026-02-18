@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 
+// Skip billing tests when Clerk authentication is not configured
+// These tests require authentication which won't work without Clerk keys
+const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 test.describe('Billing Page', () => {
+  test.skip(!clerkConfigured, 'Skipping billing tests - Clerk not configured');
   test.beforeEach(async ({ page }) => {
     // Mock the subscription API to avoid network timeout
     await page.route('**/api/billing/subscription/**', async (route) => {
