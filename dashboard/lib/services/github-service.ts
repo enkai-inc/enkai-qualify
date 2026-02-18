@@ -3,7 +3,7 @@ import { createAppAuth } from '@octokit/auth-app';
 
 const REPO_OWNER = 'tegryan-ddo';
 const REPO_NAME = 'metis';
-const IDEA_GENERATION_LABEL = 'metis:idea-generation';
+const IDEA_GENERATION_LABEL = 'enkai:build';
 
 function getOctokit(): Octokit {
   // Prefer GitHub App auth (generates short-lived tokens automatically)
