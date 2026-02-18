@@ -163,7 +163,9 @@ export class EcsStack extends cdk.Stack {
       },
       secrets: usePlaceholder ? undefined : {
         DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret, 'connectionString'),
-        GITHUB_TOKEN: ecs.Secret.fromSecretsManager(apiKeysSecret, 'GITHUB_TOKEN'),
+        GITHUB_APP_ID: ecs.Secret.fromSecretsManager(apiKeysSecret, 'GITHUB_APP_ID'),
+        GITHUB_APP_INSTALLATION_ID: ecs.Secret.fromSecretsManager(apiKeysSecret, 'GITHUB_APP_INSTALLATION_ID'),
+        GITHUB_APP_PRIVATE_KEY: ecs.Secret.fromSecretsManager(apiKeysSecret, 'GITHUB_APP_PRIVATE_KEY'),
         STRIPE_SECRET_KEY: ecs.Secret.fromSecretsManager(apiKeysSecret, 'STRIPE_SECRET_KEY'),
         STRIPE_WEBHOOK_SECRET: ecs.Secret.fromSecretsManager(apiKeysSecret, 'STRIPE_WEBHOOK_SECRET'),
       },

@@ -1,13 +1,31 @@
 import { Octokit } from '@octokit/rest';
+import { createAppAuth } from '@octokit/auth-app';
 
 const REPO_OWNER = 'tegryan-ddo';
 const REPO_NAME = 'metis';
 const IDEA_GENERATION_LABEL = 'metis:idea-generation';
 
 function getOctokit(): Octokit {
+  // Prefer GitHub App auth (generates short-lived tokens automatically)
+  const appId = process.env.GITHUB_APP_ID;
+  const installationId = process.env.GITHUB_APP_INSTALLATION_ID;
+  const privateKey = process.env.GITHUB_APP_PRIVATE_KEY;
+
+  if (appId && installationId && privateKey) {
+    return new Octokit({
+      authStrategy: createAppAuth,
+      auth: {
+        appId,
+        privateKey,
+        installationId,
+      },
+    });
+  }
+
+  // Fallback to static token
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
-    throw new Error('GITHUB_TOKEN environment variable is not set');
+    throw new Error('GITHUB_TOKEN or GITHUB_APP_* environment variables are not set');
   }
   return new Octokit({ auth: token });
 }
