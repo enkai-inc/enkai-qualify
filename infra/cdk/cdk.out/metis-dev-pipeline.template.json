@@ -130,6 +130,61 @@
           [
            "arn:aws:logs:us-east-1:882384879235:log-group:/aws/codebuild/",
            {
+            "Ref": "E2EBuild964CDBCF"
+           }
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:logs:us-east-1:882384879235:log-group:/aws/codebuild/",
+           {
+            "Ref": "E2EBuild964CDBCF"
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "codebuild:CreateReportGroup",
+        "codebuild:CreateReport",
+        "codebuild:UpdateReport",
+        "codebuild:BatchPutTestCases",
+        "codebuild:BatchPutCodeCoverages"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:codebuild:us-east-1:882384879235:report-group/",
+          {
+           "Ref": "E2EBuild964CDBCF"
+          },
+          "-*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:logs:us-east-1:882384879235:log-group:/aws/codebuild/",
+           {
             "Ref": "ApiBuild197A2741"
            }
           ]
@@ -350,6 +405,57 @@
    },
    "Metadata": {
     "aws:cdk:path": "metis-dev-pipeline/DashboardBuild/Resource"
+   }
+  },
+  "E2EBuild964CDBCF": {
+   "Type": "AWS::CodeBuild::Project",
+   "Properties": {
+    "Artifacts": {
+     "Type": "CODEPIPELINE"
+    },
+    "Cache": {
+     "Type": "NO_CACHE"
+    },
+    "EncryptionKey": {
+     "Fn::GetAtt": [
+      "PipelineArtifactsBucketEncryptionKey01D58D69",
+      "Arn"
+     ]
+    },
+    "Environment": {
+     "ComputeType": "BUILD_GENERAL1_MEDIUM",
+     "EnvironmentVariables": [
+      {
+       "Name": "CI",
+       "Type": "PLAINTEXT",
+       "Value": "true"
+      },
+      {
+       "Name": "PLAYWRIGHT_BASE_URL",
+       "Type": "PLAINTEXT",
+       "Value": "http://localhost:3000"
+      }
+     ],
+     "Image": "aws/codebuild/standard:7.0",
+     "ImagePullCredentialsType": "CODEBUILD",
+     "PrivilegedMode": false,
+     "Type": "LINUX_CONTAINER"
+    },
+    "Name": "metis-dev-e2e-test",
+    "ServiceRole": {
+     "Fn::GetAtt": [
+      "BuildRole41B77417",
+      "Arn"
+     ]
+    },
+    "Source": {
+     "BuildSpec": "{\n  \"version\": \"0.2\",\n  \"phases\": {\n    \"install\": {\n      \"runtime-versions\": {\n        \"nodejs\": 20\n      },\n      \"commands\": [\n        \"echo Installing dependencies...\",\n        \"cd dashboard\",\n        \"npm ci\",\n        \"echo Installing Playwright browsers...\",\n        \"npx playwright install chromium --with-deps\"\n      ]\n    },\n    \"pre_build\": {\n      \"commands\": [\n        \"echo Building application...\",\n        \"npm run build\",\n        \"echo Starting application server...\",\n        \"npm run start &\",\n        \"sleep 10\",\n        \"echo Verifying server is up...\",\n        \"curl -s http://localhost:3000/api/health || exit 1\"\n      ]\n    },\n    \"build\": {\n      \"commands\": [\n        \"echo Running E2E tests...\",\n        \"npm run test:e2e -- --reporter=junit,html\"\n      ]\n    },\n    \"post_build\": {\n      \"commands\": [\n        \"echo E2E tests completed\",\n        \"pkill -f \\\"next start\\\" || true\"\n      ]\n    }\n  },\n  \"reports\": {\n    \"e2e-test-reports\": {\n      \"files\": [\n        \"test-results/e2e-results.xml\"\n      ],\n      \"file-format\": \"JUNITXML\",\n      \"base-directory\": \"dashboard\"\n    }\n  },\n  \"artifacts\": {\n    \"files\": [\n      \"dashboard/playwright-report/**/*\",\n      \"dashboard/test-results/**/*\"\n    ]\n  }\n}",
+     "Type": "CODEPIPELINE"
+    },
+    "TimeoutInMinutes": 30
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-pipeline/E2EBuild/Resource"
    }
   },
   "ApiBuild197A2741": {
@@ -699,6 +805,16 @@
          "Arn"
         ]
        }
+      },
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "PipelineE2ETestRunE2ETestsCodePipelineActionRole28BCF561",
+         "Arn"
+        ]
+       }
       }
      ],
      "Version": "2012-10-17"
@@ -905,6 +1021,42 @@
        }
       ],
       "Name": "Deploy"
+     },
+     {
+      "Actions": [
+       {
+        "ActionTypeId": {
+         "Category": "Build",
+         "Owner": "AWS",
+         "Provider": "CodeBuild",
+         "Version": "1"
+        },
+        "Configuration": {
+         "ProjectName": {
+          "Ref": "E2EBuild964CDBCF"
+         }
+        },
+        "InputArtifacts": [
+         {
+          "Name": "SourceOutput"
+         }
+        ],
+        "Name": "Run_E2E_Tests",
+        "OutputArtifacts": [
+         {
+          "Name": "E2ETestOutput"
+         }
+        ],
+        "RoleArn": {
+         "Fn::GetAtt": [
+          "PipelineE2ETestRunE2ETestsCodePipelineActionRole28BCF561",
+          "Arn"
+         ]
+        },
+        "RunOrder": 1
+       }
+      ],
+      "Name": "E2E_Test"
      }
     ]
    },
@@ -1379,6 +1531,64 @@
    },
    "Metadata": {
     "aws:cdk:path": "metis-dev-pipeline/Pipeline/Deploy/Deploy_API/CodePipelineActionRole/DefaultPolicy/Resource"
+   }
+  },
+  "PipelineE2ETestRunE2ETestsCodePipelineActionRole28BCF561": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "PipelineRoleD68726F7",
+          "Arn"
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-pipeline/Pipeline/E2E_Test/Run_E2E_Tests/CodePipelineActionRole/Resource"
+   }
+  },
+  "PipelineE2ETestRunE2ETestsCodePipelineActionRoleDefaultPolicyDDB09BB3": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "codebuild:BatchGetBuilds",
+        "codebuild:StartBuild",
+        "codebuild:StopBuild"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "E2EBuild964CDBCF",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "PipelineE2ETestRunE2ETestsCodePipelineActionRoleDefaultPolicyDDB09BB3",
+    "Roles": [
+     {
+      "Ref": "PipelineE2ETestRunE2ETestsCodePipelineActionRole28BCF561"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-pipeline/Pipeline/E2E_Test/Run_E2E_Tests/CodePipelineActionRole/DefaultPolicy/Resource"
    }
   },
   "CDKMetadata": {

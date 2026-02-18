@@ -89,10 +89,12 @@
    "Properties": {
     "DefaultActions": [
      {
-      "TargetGroupArn": {
-       "Ref": "DashboardTG962E3F6C"
+      "RedirectConfig": {
+       "Port": "443",
+       "Protocol": "HTTPS",
+       "StatusCode": "HTTP_301"
       },
-      "Type": "forward"
+      "Type": "redirect"
      }
     ],
     "LoadBalancerArn": {
@@ -105,7 +107,46 @@
     "aws:cdk:path": "metis-dev-ecs/ALB/HttpListener/Resource"
    }
   },
-  "ALBHttpListenerApiRouteRule8917C7E9": {
+  "ALBHttpsListenerF678A746": {
+   "Type": "AWS::ElasticLoadBalancingV2::Listener",
+   "Properties": {
+    "Certificates": [
+     {
+      "CertificateArn": "arn:aws:acm:us-east-1:882384879235:certificate/b846e9b3-2a34-4599-90c8-2ebf5e1bb2c2"
+     }
+    ],
+    "DefaultActions": [
+     {
+      "AuthenticateCognitoConfig": {
+       "OnUnauthenticatedRequest": "authenticate",
+       "Scope": "openid email profile",
+       "SessionTimeout": "604800",
+       "UserPoolArn": "arn:aws:cognito-idp:us-east-1:882384879235:userpool/us-east-1_zlw7qsJMJ",
+       "UserPoolClientId": "2qcaf479drm0tg372mnm8upjfr",
+       "UserPoolDomain": "enkai-dev"
+      },
+      "Order": 1,
+      "Type": "authenticate-cognito"
+     },
+     {
+      "Order": 2,
+      "TargetGroupArn": {
+       "Ref": "DashboardTG962E3F6C"
+      },
+      "Type": "forward"
+     }
+    ],
+    "LoadBalancerArn": {
+     "Ref": "ALBAEE750D2"
+    },
+    "Port": 443,
+    "Protocol": "HTTPS"
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ALB/HttpsListener/Resource"
+   }
+  },
+  "ALBHttpsListenerApiRouteRuleD43D332A": {
    "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
    "Properties": {
     "Actions": [
@@ -130,12 +171,12 @@
      }
     ],
     "ListenerArn": {
-     "Ref": "ALBHttpListener04CE8CD0"
+     "Ref": "ALBHttpsListenerF678A746"
     },
     "Priority": 10
    },
    "Metadata": {
-    "aws:cdk:path": "metis-dev-ecs/ALB/HttpListener/ApiRouteRule/Resource"
+    "aws:cdk:path": "metis-dev-ecs/ALB/HttpsListener/ApiRouteRule/Resource"
    }
   },
   "ServiceSG3DD30CA4": {
@@ -184,30 +225,6 @@
     "aws:cdk:path": "metis-dev-ecs/ServiceSG/Resource"
    }
   },
-  "ServiceSGfrommetisdevecsAlbSGBB7D648280002E57347C": {
-   "Type": "AWS::EC2::SecurityGroupIngress",
-   "Properties": {
-    "Description": "Load balancer to target",
-    "FromPort": 8000,
-    "GroupId": {
-     "Fn::GetAtt": [
-      "ServiceSG3DD30CA4",
-      "GroupId"
-     ]
-    },
-    "IpProtocol": "tcp",
-    "SourceSecurityGroupId": {
-     "Fn::GetAtt": [
-      "AlbSGE6D0E5D1",
-      "GroupId"
-     ]
-    },
-    "ToPort": 8000
-   },
-   "Metadata": {
-    "aws:cdk:path": "metis-dev-ecs/ServiceSG/from metisdevecsAlbSGBB7D6482:8000"
-   }
-  },
   "ServiceSGfrommetisdevecsAlbSGBB7D64823000801B0BD2": {
    "Type": "AWS::EC2::SecurityGroupIngress",
    "Properties": {
@@ -230,6 +247,30 @@
    },
    "Metadata": {
     "aws:cdk:path": "metis-dev-ecs/ServiceSG/from metisdevecsAlbSGBB7D6482:3000"
+   }
+  },
+  "ServiceSGfrommetisdevecsAlbSGBB7D648280002E57347C": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Load balancer to target",
+    "FromPort": 8000,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "ServiceSG3DD30CA4",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "AlbSGE6D0E5D1",
+      "GroupId"
+     ]
+    },
+    "ToPort": 8000
+   },
+   "Metadata": {
+    "aws:cdk:path": "metis-dev-ecs/ServiceSG/from metisdevecsAlbSGBB7D6482:8000"
    }
   },
   "DashboardTaskDefTaskRole9B8E3167": {
@@ -311,16 +352,6 @@
        }
       ],
       "Essential": true,
-      "HealthCheck": {
-       "Command": [
-        "CMD-SHELL",
-        "wget -q --spider http://127.0.0.1:3000/api/health || exit 1"
-       ],
-       "Interval": 30,
-       "Retries": 5,
-       "StartPeriod": 180,
-       "Timeout": 30
-      },
       "Image": {
        "Fn::Join": [
         "",
@@ -856,8 +887,8 @@
     }
    },
    "DependsOn": [
-    "ALBHttpListenerApiRouteRule8917C7E9",
-    "ALBHttpListener04CE8CD0",
+    "ALBHttpsListenerApiRouteRuleD43D332A",
+    "ALBHttpsListenerF678A746",
     "DashboardTaskDefTaskRoleDefaultPolicy57E2CFCC",
     "DashboardTaskDefTaskRole9B8E3167"
    ],
@@ -928,7 +959,7 @@
     }
    },
    "DependsOn": [
-    "ALBHttpListenerApiRouteRule8917C7E9",
+    "ALBHttpsListenerApiRouteRuleD43D332A",
     "ApiTaskDefTaskRoleDefaultPolicy66F6BAC0",
     "ApiTaskDefTaskRole76FB19FA"
    ],
@@ -989,7 +1020,7 @@
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/31PyWrDMBD9ltxl1aiXXtuUlkCgxc69TOSJmFiRjBaHIPTvxVtwS+lp3jab4OLxiZcbuPpCNm2h6chTHUC2DK7+K6H0PG119AEd257MAt/AKQh4AN++4okMBbJmCPxWrAlABt1Km3trdD1JHJpmmBlKwVONMjoKt3dnYzfZ/wk7oxx6nxlq8IGkttAcQYORZFQveHruOk0Sht17C83L6E3v/ODrHPmAZs4s+A+/ihrXmZGvcgdwCsP97hXNjODCU2WnAWP9tJrkbaATykxb5XnaW3UfseCcB/YRQxdDZsY2yM/+oRclFyUvN2dPVLhoAl2QV1P9BjbkpjTsAQAA"
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/31QS2vDMAz+Lb07Xsguu24dG4XCRtL7UB01qHHtYNkpxfi/j7xKNsZO+l6SLRWyeHyS+QaunKm6zTQdZaw8qFbAlb8iKpZxqwN7dGJ7Mgt8A9eAxwNw+4onMuTJmiHwW7HGAxl0K23urdD1pHBommESqAoZK1TBkb+9Oxu6yf5P2JnGIXMSqIE9KW2hPoIGo8g0fSHjc9dpUjC8vbdQv4zetM4Pvs4RezRzZsF/+GXQuM6MfJU7gGvQ3/+9okkQXGQs7TRgrJ9Wk7oNdEJJaNuwjHvb3EcsOCVRItvgpgt+BN8Fn4SxNcozP/RFLotc5pszE2UuGE8XlOVUvwHCoKGm9QEAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "metis-dev-ecs/CDKMetadata/Default"

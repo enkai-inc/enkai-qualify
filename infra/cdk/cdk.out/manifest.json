@@ -600,7 +600,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::882384879235:role/cdk-hnb659fds-deploy-role-882384879235-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::882384879235:role/cdk-hnb659fds-cfn-exec-role-882384879235-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-882384879235-us-east-1/63379017efa739c1aff96cfdf728560035e44af593092a9992272e178f069095.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-882384879235-us-east-1/e990da6613484880066d7ec003431c6ce25c9478d2158c45196ff2ac59873cec.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -644,6 +644,47 @@
             "data": "ClusterEB0386A7"
           }
         ],
+        "/metis-dev-ecs/AlbSG": [
+          {
+            "type": "aws:cdk:warning",
+            "data": "Ignoring Egress rule since 'allowAllOutbound' is set to true; To add customized rules, set allowAllOutbound=false on the SecurityGroup [ack: @aws-cdk/aws-ec2:ipv4IgnoreEgressRule]",
+            "trace": [
+              "Annotations.addMessage (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/core/lib/annotations.js:1:2066)",
+              "Annotations.addWarningV2 (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/core/lib/annotations.js:1:984)",
+              "WrappedClass.addEgressRule (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-ec2/lib/security-group.js:1:11164)",
+              "WrappedClass.<anonymous> (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/core/lib/metadata-resource.js:1:2015)",
+              "/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-ec2/lib/connections.js:1:2011",
+              "ReactiveList.forEachAndForever (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-ec2/lib/connections.js:1:6094)",
+              "/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-ec2/lib/connections.js:1:1972",
+              "ReactiveList.forEachAndForever (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-ec2/lib/connections.js:1:6094)",
+              "Connections.allowTo (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-ec2/lib/connections.js:1:1900)",
+              "Connections.allowToAnyIpv4 (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-ec2/lib/connections.js:1:3647)",
+              "AuthenticateCognitoAction.bind (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-elasticloadbalancingv2-actions/lib/cognito-action.js:1:2089)",
+              "WrappedClass.setDefaultAction (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-elasticloadbalancingv2/lib/alb/application-listener.js:1:16506)",
+              "WrappedClass.addAction (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/aws-elasticloadbalancingv2/lib/alb/application-listener.js:1:12782)",
+              "WrappedClass.<anonymous> (/workspace/repos/metis/work/infra/cdk/node_modules/aws-cdk-lib/core/lib/metadata-resource.js:1:2015)",
+              "new EcsStack (/workspace/repos/metis/work/infra/cdk/lib/stacks/ecs-stack.ts:320:19)",
+              "Object.<anonymous> (/workspace/repos/metis/work/infra/cdk/bin/app.ts:70:18)",
+              "Module._compile (node:internal/modules/cjs/loader:1521:14)",
+              "Module.m._compile (/root/.npm/_npx/1bf7c3c15bf47d04/node_modules/ts-node/src/index.ts:1618:23)",
+              "Module._extensions..js (node:internal/modules/cjs/loader:1623:10)",
+              "Object.require.extensions.<computed> [as .ts] (/root/.npm/_npx/1bf7c3c15bf47d04/node_modules/ts-node/src/index.ts:1621:12)",
+              "Module.load (node:internal/modules/cjs/loader:1266:32)",
+              "Function.Module._load (node:internal/modules/cjs/loader:1091:12)",
+              "Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)",
+              "phase4 (/root/.npm/_npx/1bf7c3c15bf47d04/node_modules/ts-node/src/bin.ts:649:14)",
+              "bootstrap (/root/.npm/_npx/1bf7c3c15bf47d04/node_modules/ts-node/src/bin.ts:95:10)",
+              "main (/root/.npm/_npx/1bf7c3c15bf47d04/node_modules/ts-node/src/bin.ts:55:10)",
+              "Object.<anonymous> (/root/.npm/_npx/1bf7c3c15bf47d04/node_modules/ts-node/src/bin.ts:800:3)",
+              "Module._compile (node:internal/modules/cjs/loader:1521:14)",
+              "Object.Module._extensions..js (node:internal/modules/cjs/loader:1623:10)",
+              "Module.load (node:internal/modules/cjs/loader:1266:32)",
+              "Function.Module._load (node:internal/modules/cjs/loader:1091:12)",
+              "Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)",
+              "node:internal/main/run_main_module:28:49"
+            ]
+          }
+        ],
         "/metis-dev-ecs/AlbSG/Resource": [
           {
             "type": "aws:cdk:logicalId",
@@ -662,10 +703,16 @@
             "data": "ALBHttpListener04CE8CD0"
           }
         ],
-        "/metis-dev-ecs/ALB/HttpListener/ApiRouteRule/Resource": [
+        "/metis-dev-ecs/ALB/HttpsListener/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "ALBHttpListenerApiRouteRule8917C7E9"
+            "data": "ALBHttpsListenerF678A746"
+          }
+        ],
+        "/metis-dev-ecs/ALB/HttpsListener/ApiRouteRule/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ALBHttpsListenerApiRouteRuleD43D332A"
           }
         ],
         "/metis-dev-ecs/ServiceSG/Resource": [
@@ -674,16 +721,16 @@
             "data": "ServiceSG3DD30CA4"
           }
         ],
-        "/metis-dev-ecs/ServiceSG/from metisdevecsAlbSGBB7D6482:8000": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ServiceSGfrommetisdevecsAlbSGBB7D648280002E57347C"
-          }
-        ],
         "/metis-dev-ecs/ServiceSG/from metisdevecsAlbSGBB7D6482:3000": [
           {
             "type": "aws:cdk:logicalId",
             "data": "ServiceSGfrommetisdevecsAlbSGBB7D64823000801B0BD2"
+          }
+        ],
+        "/metis-dev-ecs/ServiceSG/from metisdevecsAlbSGBB7D6482:8000": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ServiceSGfrommetisdevecsAlbSGBB7D648280002E57347C"
           }
         ],
         "/metis-dev-ecs/DashboardTaskDef/TaskRole/Resource": [
@@ -867,7 +914,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::882384879235:role/cdk-hnb659fds-deploy-role-882384879235-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::882384879235:role/cdk-hnb659fds-cfn-exec-role-882384879235-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-882384879235-us-east-1/4fd51e27ee9329dbf12c889acf3ed9f971121df955e080867425c1d51b02889a.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-882384879235-us-east-1/60704c9b98a7c0ae3a69eb2e51d82cc66b365edb03c6b09480fa9992c73202d2.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -920,6 +967,12 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "DashboardBuild6DFD5DF2"
+          }
+        ],
+        "/metis-dev-pipeline/E2EBuild/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "E2EBuild964CDBCF"
           }
         ],
         "/metis-dev-pipeline/ApiBuild/Resource": [
@@ -1028,6 +1081,18 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "PipelineDeployDeployAPICodePipelineActionRoleDefaultPolicy32755219"
+          }
+        ],
+        "/metis-dev-pipeline/Pipeline/E2E_Test/Run_E2E_Tests/CodePipelineActionRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "PipelineE2ETestRunE2ETestsCodePipelineActionRole28BCF561"
+          }
+        ],
+        "/metis-dev-pipeline/Pipeline/E2E_Test/Run_E2E_Tests/CodePipelineActionRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "PipelineE2ETestRunE2ETestsCodePipelineActionRoleDefaultPolicyDDB09BB3"
           }
         ],
         "/metis-dev-pipeline/PipelineArn": [
