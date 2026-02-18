@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserButton } from '@clerk/nextjs';
 
 const navigation = [
   { name: 'Home', href: '/', icon: HomeIcon },
@@ -10,8 +9,25 @@ const navigation = [
   { name: 'Billing', href: '/billing', icon: CreditCardIcon },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  user?: {
+    name?: string | null;
+    email: string;
+  } | null;
+}
+
+export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+
+  // Get user initials for avatar
+  const initials = user?.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : user?.email?.charAt(0).toUpperCase() || '?';
 
   return (
     <div className="flex h-screen w-64 flex-col bg-gray-900">
@@ -53,16 +69,17 @@ export function Sidebar() {
       {/* User section */}
       <div className="border-t border-gray-800 p-4">
         <div className="flex items-center gap-3">
-          <UserButton
-            appearance={{
-              elements: {
-                avatarBox: 'h-9 w-9',
-              },
-            }}
-          />
+          {/* User avatar */}
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-medium text-white">
+            {initials}
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="truncate text-sm font-medium text-white">Account</p>
-            <p className="truncate text-xs text-gray-400">Manage settings</p>
+            <p className="truncate text-sm font-medium text-white">
+              {user?.name || 'Account'}
+            </p>
+            <p className="truncate text-xs text-gray-400">
+              {user?.email || 'Not signed in'}
+            </p>
           </div>
         </div>
       </div>
