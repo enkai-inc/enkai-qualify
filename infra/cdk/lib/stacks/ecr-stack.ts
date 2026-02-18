@@ -19,6 +19,7 @@ export interface EcrStackProps extends cdk.StackProps {
 export class EcrStack extends cdk.Stack {
   public readonly dashboardRepository: ecr.Repository;
   public readonly apiRepository: ecr.Repository;
+  public readonly workerRepository: ecr.Repository;
 
   constructor(scope: Construct, id: string, props: EcrStackProps) {
     super(scope, id, props);
@@ -65,6 +66,26 @@ export class EcrStack extends cdk.Stack {
       ],
     });
 
+    // Worker repository
+    this.workerRepository = new ecr.Repository(this, 'WorkerRepo', {
+      repositoryName: `${projectName}-${environment}-worker`,
+      imageScanOnPush: true,
+      imageTagMutability: ecr.TagMutability.MUTABLE,
+      removalPolicy:
+        environment === 'prod'
+          ? cdk.RemovalPolicy.RETAIN
+          : cdk.RemovalPolicy.DESTROY,
+      emptyOnDelete: environment !== 'prod',
+      lifecycleRules: [
+        {
+          description: 'Keep last 10 images',
+          maxImageCount: 10,
+          rulePriority: 1,
+          tagStatus: ecr.TagStatus.ANY,
+        },
+      ],
+    });
+
     // Outputs
     new cdk.CfnOutput(this, 'DashboardRepoUri', {
       value: this.dashboardRepository.repositoryUri,
@@ -76,6 +97,12 @@ export class EcrStack extends cdk.Stack {
       value: this.apiRepository.repositoryUri,
       description: 'API ECR repository URI',
       exportName: `${projectName}-${environment}-api-repo-uri`,
+    });
+
+    new cdk.CfnOutput(this, 'WorkerRepoUri', {
+      value: this.workerRepository.repositoryUri,
+      description: 'Worker ECR repository URI',
+      exportName: `${projectName}-${environment}-worker-repo-uri`,
     });
   }
 }

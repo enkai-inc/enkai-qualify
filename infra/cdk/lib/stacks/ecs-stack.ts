@@ -18,6 +18,7 @@ export interface EcsStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
   dashboardRepository: ecr.Repository;
   apiRepository: ecr.Repository;
+  workerRepository: ecr.Repository;
   databaseSecret: secretsmanager.Secret;
   redisCluster: elasticache.CfnCacheCluster;
 }
@@ -36,6 +37,7 @@ export class EcsStack extends cdk.Stack {
   public readonly cluster: ecs.Cluster;
   public readonly dashboardService: ecs.FargateService;
   public readonly apiService: ecs.FargateService;
+  public readonly workerService: ecs.FargateService;
   public readonly alb: elbv2.ApplicationLoadBalancer;
 
   constructor(scope: Construct, id: string, props: EcsStackProps) {
@@ -47,6 +49,7 @@ export class EcsStack extends cdk.Stack {
       vpc,
       dashboardRepository,
       apiRepository,
+      workerRepository,
       databaseSecret,
       redisCluster,
     } = props;
@@ -306,6 +309,76 @@ export class EcsStack extends cdk.Stack {
     // Attach API service to target group
     this.apiService.attachToApplicationTargetGroup(apiTargetGroup);
 
+    // Worker Task Definition (no HTTP server, no port mappings)
+    const workerTaskDef = new ecs.FargateTaskDefinition(this, 'WorkerTaskDef', {
+      memoryLimitMiB: 512,
+      cpu: 256,
+      family: `${projectName}-${environment}-worker`,
+    });
+
+    // Grant ECR pull permissions
+    workerRepository.grantPull(workerTaskDef.obtainExecutionRole());
+    workerTaskDef.obtainExecutionRole().addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ['ecr:GetAuthorizationToken'],
+        resources: ['*'],
+      })
+    );
+
+    // Grant worker access to secrets
+    databaseSecret.grantRead(workerTaskDef.taskRole);
+    apiKeysSecret.grantRead(workerTaskDef.taskRole);
+
+    const workerLogGroup = new logs.LogGroup(this, 'WorkerLogs', {
+      logGroupName: `/ecs/${projectName}/${environment}/worker`,
+      retention: logs.RetentionDays.ONE_MONTH,
+      removalPolicy: isProd
+        ? cdk.RemovalPolicy.RETAIN
+        : cdk.RemovalPolicy.DESTROY,
+    });
+
+    workerTaskDef.addContainer('worker', {
+      containerName: 'worker',
+      image: usePlaceholder
+        ? ecs.ContainerImage.fromRegistry('public.ecr.aws/docker/library/python:3.12-slim')
+        : ecs.ContainerImage.fromEcrRepository(workerRepository, 'latest'),
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: workerLogGroup,
+        streamPrefix: 'worker',
+      }),
+      environment: {
+        ENVIRONMENT: environment,
+        POLL_INTERVAL_SECONDS: '60',
+      },
+      secrets: usePlaceholder ? undefined : {
+        DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret, 'connectionString'),
+        ANTHROPIC_API_KEY: ecs.Secret.fromSecretsManager(apiKeysSecret, 'ANTHROPIC_API_KEY'),
+        GITHUB_APP_ID: ecs.Secret.fromSecretsManager(apiKeysSecret, 'GITHUB_APP_ID'),
+        GITHUB_APP_INSTALLATION_ID: ecs.Secret.fromSecretsManager(apiKeysSecret, 'GITHUB_APP_INSTALLATION_ID'),
+        GITHUB_APP_PRIVATE_KEY: ecs.Secret.fromSecretsManager(apiKeysSecret, 'GITHUB_APP_PRIVATE_KEY'),
+      },
+      // No health check - worker has no HTTP server
+      // No port mappings - worker is not a web service
+      command: usePlaceholder ? ['sleep', 'infinity'] : undefined,
+    });
+
+    // Worker Service (single instance, no ALB)
+    this.workerService = new ecs.FargateService(this, 'WorkerService', {
+      cluster: this.cluster,
+      serviceName: `${projectName}-${environment}-worker`,
+      taskDefinition: workerTaskDef,
+      desiredCount: 1,
+      securityGroups: [serviceSG],
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      enableExecuteCommand: true,
+      circuitBreaker: { rollback: true },
+      minHealthyPercent: 0,
+      maxHealthyPercent: 100,
+      deploymentController: {
+        type: ecs.DeploymentControllerType.ECS,
+      },
+    });
+
     // Import existing Cognito user pool (enkai-dev) for authentication
     const cognitoUserPool = cognito.UserPool.fromUserPoolId(
       this,
@@ -410,6 +483,12 @@ export class EcsStack extends cdk.Stack {
       value: this.apiService.serviceArn,
       description: 'API service ARN',
       exportName: `${projectName}-${environment}-api-service-arn`,
+    });
+
+    new cdk.CfnOutput(this, 'WorkerServiceArn', {
+      value: this.workerService.serviceArn,
+      description: 'Worker service ARN',
+      exportName: `${projectName}-${environment}-worker-service-arn`,
     });
   }
 }

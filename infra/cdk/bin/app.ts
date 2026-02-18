@@ -74,6 +74,7 @@ const ecsStack = new EcsStack(app, `${stackPrefix}-ecs`, {
   vpc: networkStack.vpc,
   dashboardRepository: ecrStack.dashboardRepository,
   apiRepository: ecrStack.apiRepository,
+  workerRepository: ecrStack.workerRepository,
   databaseSecret: databaseStack.databaseSecret,
   redisCluster: databaseStack.redisCluster,
   tags: commonTags,
@@ -88,8 +89,10 @@ const pipelineStack = new PipelineStack(app, `${stackPrefix}-pipeline`, {
   environment,
   dashboardRepository: ecrStack.dashboardRepository,
   apiRepository: ecrStack.apiRepository,
+  workerRepository: ecrStack.workerRepository,
   dashboardService: ecsStack.dashboardService,
   apiService: ecsStack.apiService,
+  workerService: ecsStack.workerService,
   cluster: ecsStack.cluster,
   tags: commonTags,
 });
