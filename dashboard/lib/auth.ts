@@ -1,19 +1,64 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { headers } from 'next/headers';
 import { prisma } from './db';
 
 /**
- * Get the current authenticated user from Clerk and sync with database
+ * Cognito user info extracted from ALB headers
+ */
+export interface CognitoUser {
+  sub: string; // Cognito user ID
+  email: string;
+  name?: string;
+  emailVerified?: boolean;
+}
+
+/**
+ * Parse the x-amzn-oidc-data JWT payload (base64 encoded)
+ * ALB passes this header with user claims from Cognito
+ */
+function parseOidcData(oidcData: string): CognitoUser | null {
+  try {
+    // JWT format: header.payload.signature
+    const parts = oidcData.split('.');
+    if (parts.length !== 3) return null;
+
+    // Decode the payload (second part)
+    const payload = JSON.parse(
+      Buffer.from(parts[1], 'base64').toString('utf-8')
+    );
+
+    return {
+      sub: payload.sub,
+      email: payload.email,
+      name: payload.name || payload.given_name,
+      emailVerified: payload.email_verified,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get the current authenticated user from Cognito (via ALB headers) and sync with database
  */
 export async function getCurrentUser() {
-  const { userId } = await auth();
+  const headersList = await headers();
 
-  if (!userId) {
+  // ALB passes Cognito user info in these headers
+  const oidcData = headersList.get('x-amzn-oidc-data');
+  const cognitoId = headersList.get('x-amzn-oidc-identity');
+
+  if (!cognitoId || !oidcData) {
+    return null;
+  }
+
+  const cognitoUser = parseOidcData(oidcData);
+  if (!cognitoUser) {
     return null;
   }
 
   // Try to find existing user
   let user = await prisma.user.findUnique({
-    where: { clerkId: userId },
+    where: { cognitoId },
     include: {
       subscription: true,
     },
@@ -21,18 +66,11 @@ export async function getCurrentUser() {
 
   // If user doesn't exist, create them
   if (!user) {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
-      return null;
-    }
-
     user = await prisma.user.create({
       data: {
-        clerkId: userId,
-        email: clerkUser.emailAddresses[0]?.emailAddress ?? '',
-        name: clerkUser.firstName
-          ? `${clerkUser.firstName} ${clerkUser.lastName ?? ''}`.trim()
-          : null,
+        cognitoId,
+        email: cognitoUser.email,
+        name: cognitoUser.name || null,
         subscription: {
           create: {
             tier: 'FREE',
