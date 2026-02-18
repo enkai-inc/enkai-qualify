@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.75.0",
+    "@octokit/auth-app": "^8.2.0",
     "@octokit/rest": "^22.0.1",
     "@prisma/client": "^5.14.0",
     "@tanstack/react-query": "^5.32.0",
