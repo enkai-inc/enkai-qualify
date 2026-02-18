@@ -66,6 +66,7 @@ export function IdeaFilters({ filters, onFilterChange }: IdeaFiltersProps) {
         className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       >
         <option value="">All Status</option>
+        <option value="PENDING">Generating</option>
         <option value="DRAFT">Draft</option>
         <option value="VALIDATED">Validated</option>
         <option value="PACK_GENERATED">Pack Ready</option>
