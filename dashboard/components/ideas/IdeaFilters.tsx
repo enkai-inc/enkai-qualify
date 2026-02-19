@@ -59,6 +59,7 @@ export function IdeaFilters({ filters, onFilterChange }: IdeaFiltersProps) {
 
       {/* Status filter */}
       <select
+        aria-label="Filter by status"
         value={filters.status ?? ''}
         onChange={(e) =>
           onFilterChange({
