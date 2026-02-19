@@ -69,6 +69,7 @@ interface WorkspaceState {
 interface WorkspaceActions {
   loadIdea: (ideaId: string) => Promise<void>;
   refine: (prompt: string) => Promise<void>;
+  validate: () => Promise<void>;
   restoreVersion: (versionId: string) => Promise<void>;
   branchFromVersion: (versionId: string) => Promise<void>;
   updateFeature: (featureId: string, updates: Partial<IdeaFeature>) => void;
@@ -83,6 +84,7 @@ const initialState: WorkspaceState = {
   versions: [],
   validation: null,
   isRefining: false,
+  isValidating: false,
   isLoading: false,
   error: null,
   conversation: [],
@@ -195,6 +197,47 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
       set({
         error: error instanceof Error ? error.message : 'Failed to refine idea',
         isRefining: false,
+      });
+    }
+  },
+
+  validate: async () => {
+    const { idea } = get();
+    if (!idea) return;
+
+    set({ isValidating: true, error: null });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const response = await fetch(`/api/ideas/${idea.id}/validate`, {
+        method: 'POST',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error('Failed to validate idea');
+      }
+
+      const data = await response.json();
+      set({
+        validation: data,
+        isValidating: false,
+      });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        set({ error: 'Request timed out. Please try again.', isValidating: false });
+        return;
+      }
+      if (error instanceof TypeError) {
+        set({ error: 'Network error. Please check your connection.', isValidating: false });
+        return;
+      }
+      set({
+        error: error instanceof Error ? error.message : 'Failed to validate idea',
+        isValidating: false,
       });
     }
   },

@@ -35,7 +35,7 @@ function ScoreCard({ label, score, maxScore = 100, description }: ScoreCardProps
 }
 
 export function ValidationPanel() {
-  const { validation, idea, isLoading } = useWorkspaceStore();
+  const { validation, idea, isLoading, isValidating, validate } = useWorkspaceStore();
 
   if (isLoading || !idea) {
     return (
@@ -60,8 +60,12 @@ export function ValidationPanel() {
         <div className="text-center py-8">
           <div className="text-6xl mb-4">--</div>
           <p className="text-gray-500">No validation data yet</p>
-          <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Run Validation
+          <button
+            onClick={validate}
+            disabled={isValidating}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isValidating ? 'Validating...' : 'Run Validation'}
           </button>
         </div>
       </div>
