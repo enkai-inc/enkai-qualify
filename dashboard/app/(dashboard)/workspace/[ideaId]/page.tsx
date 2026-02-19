@@ -96,7 +96,7 @@ export default function WorkspacePage() {
             <span className="text-gray-900 font-medium">{idea.title}</span>
           </nav>
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Idea Workspace</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 line-clamp-1">Idea Workspace</h1>
             <div className="flex items-center gap-3">
               <span
                 className={`px-3 py-1 text-sm rounded-full ${

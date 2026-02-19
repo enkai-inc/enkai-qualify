@@ -47,7 +47,7 @@ export function IdeaDisplay() {
         <p className="text-gray-600">{idea.description}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">Industry</h3>
           <p className="text-gray-900">{idea.industry}</p>
