@@ -64,8 +64,10 @@ export async function getCurrentUser() {
     },
   });
 
-  // If user doesn't exist, create them
-  if (!user) {
+  if (user) return user;
+
+  // If user doesn't exist, create them (handle race condition)
+  try {
     user = await prisma.user.create({
       data: {
         cognitoId,
@@ -82,9 +84,21 @@ export async function getCurrentUser() {
         subscription: true,
       },
     });
+    return user;
+  } catch (error) {
+    // Handle race condition: another request created the user first
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as any).code === 'P2002'
+    ) {
+      return await prisma.user.findUnique({
+        where: { cognitoId },
+        include: { subscription: true },
+      });
+    }
+    throw error;
   }
-
-  return user;
 }
 
 /**
