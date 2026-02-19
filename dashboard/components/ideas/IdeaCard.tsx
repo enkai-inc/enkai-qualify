@@ -75,6 +75,10 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
         <span className="capitalize">{idea.targetMarket}</span>
         <span>•</span>
         <span>v{idea.currentVersion}</span>
+        <span>•</span>
+        <time dateTime={idea.updatedAt}>
+          {new Date(idea.updatedAt).toLocaleDateString()}
+        </time>
       </div>
 
       {/* Actions */}
@@ -154,13 +158,6 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
         </div>
       )}
 
-      {/* Updated time */}
-      <time
-        dateTime={idea.updatedAt}
-        className="absolute top-4 right-4 text-xs text-gray-400"
-      >
-        {new Date(idea.updatedAt).toLocaleDateString()}
-      </time>
     </div>
   );
 }
