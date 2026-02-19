@@ -185,7 +185,7 @@ function BillingContent() {
                 </span>
               </div>
               <p className="mt-1 text-sm text-gray-500">
-                Renews on {new Date(subscription.current_period_end).toLocaleDateString()}
+                Renews on <time dateTime={subscription.current_period_end}>{new Date(subscription.current_period_end).toLocaleDateString()}</time>
               </p>
             </div>
 
