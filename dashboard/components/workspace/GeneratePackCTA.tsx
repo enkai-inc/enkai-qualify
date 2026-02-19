@@ -59,17 +59,22 @@ export function GeneratePackCTA() {
 
           <div className="flex items-center gap-3">
             {!canGeneratePack && (
-              <div className="hidden sm:block">
-                <div className="w-32 bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full transition-all"
-                    style={{ width: `${Math.min((overallScore / MIN_SCORE_FOR_PACK) * 100, 100)}%` }}
-                  />
+              <>
+                <span className="sm:hidden text-xs font-medium text-gray-500">
+                  {Math.round((overallScore / MIN_SCORE_FOR_PACK) * 100)}%
+                </span>
+                <div className="hidden sm:block">
+                  <div className="w-32 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min((overallScore / MIN_SCORE_FOR_PACK) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 text-center">
+                    {Math.round((overallScore / MIN_SCORE_FOR_PACK) * 100)}% complete
+                  </p>
                 </div>
-                <p className="text-xs text-gray-400 mt-1 text-center">
-                  {Math.round((overallScore / MIN_SCORE_FOR_PACK) * 100)}% complete
-                </p>
-              </div>
+              </>
             )}
 
             {canGeneratePack ? (
