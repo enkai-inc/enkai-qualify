@@ -147,10 +147,11 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
 
       {/* Title */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="review-title" className="block text-sm font-medium text-gray-700 mb-2">
           Title
         </label>
         <input
+          id="review-title"
           type="text"
           value={editedIdea.title}
           onChange={(e) =>
@@ -163,10 +164,11 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
 
       {/* Description */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="review-description" className="block text-sm font-medium text-gray-700 mb-2">
           Description
         </label>
         <textarea
+          id="review-description"
           value={editedIdea.description}
           onChange={(e) =>
             setEditedIdea({ ...editedIdea, description: e.target.value })
