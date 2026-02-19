@@ -116,6 +116,7 @@ export function VersionHistory() {
                   <div className="flex gap-2">
                     {version.version !== idea.currentVersion && (
                       <button
+                        type="button"
                         onClick={() => handleRestore(version.id)}
                         disabled={isLoading}
                         className="flex-1 text-sm px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
@@ -124,6 +125,7 @@ export function VersionHistory() {
                       </button>
                     )}
                     <button
+                      type="button"
                       onClick={() => handleBranch(version.id)}
                       disabled={isLoading}
                       className="flex-1 text-sm px-3 py-1.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
