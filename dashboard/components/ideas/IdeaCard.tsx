@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { IdeaSummary } from '@/lib/stores/ideasStore';
 
@@ -9,6 +10,8 @@ interface IdeaCardProps {
 }
 
 export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const statusColors: Record<string, string> = {
     PENDING: 'bg-yellow-100 text-yellow-800',
     DRAFT: 'bg-gray-100 text-gray-800',
@@ -76,15 +79,37 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
         <button
           onClick={(e) => {
             e.preventDefault();
-            if (confirm('Are you sure you want to delete this idea?')) {
-              onDelete(idea.id);
-            }
+            setShowDeleteConfirm(true);
           }}
           className="text-sm text-gray-400 hover:text-red-600 transition-colors"
         >
           Delete
         </button>
       </div>
+
+      {/* Delete confirmation overlay */}
+      {showDeleteConfirm && (
+        <div className="absolute inset-0 bg-white/95 rounded-lg flex flex-col items-center justify-center gap-3 z-10">
+          <p className="text-sm font-medium text-gray-900">Delete this idea?</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                onDelete(idea.id);
+                setShowDeleteConfirm(false);
+              }}
+              className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Updated time */}
       <div className="absolute top-4 right-4 text-xs text-gray-400">
