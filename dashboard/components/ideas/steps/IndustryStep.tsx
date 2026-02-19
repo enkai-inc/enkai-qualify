@@ -56,7 +56,7 @@ export function IndustryStep() {
                 }
               `}
             >
-              <span className="text-2xl mb-2 block">{ind.icon}</span>
+              <span className="text-2xl mb-2 block" aria-hidden="true">{ind.icon}</span>
               <span className="text-sm font-medium text-gray-900">
                 {ind.label}
               </span>
