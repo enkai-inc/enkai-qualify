@@ -90,8 +90,13 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
 
       {/* Delete confirmation overlay */}
       {showDeleteConfirm && (
-        <div className="absolute inset-0 bg-white/95 rounded-lg flex flex-col items-center justify-center gap-3 z-10">
-          <p className="text-sm font-medium text-gray-900">Delete this idea?</p>
+        <div
+          role="alertdialog"
+          aria-labelledby="delete-confirm-title"
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowDeleteConfirm(false); }}
+          className="absolute inset-0 bg-white/95 rounded-lg flex flex-col items-center justify-center gap-3 z-10"
+        >
+          <p id="delete-confirm-title" className="text-sm font-medium text-gray-900">Delete this idea?</p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => {

@@ -484,4 +484,150 @@ describe('workspaceStore fetch timeouts', () => {
       expect(state.isLoading).toBe(false);
     });
   });
+
+  describe('validate', () => {
+    beforeEach(() => {
+      act(() => {
+        useWorkspaceStore.setState({
+          idea: {
+            id: 'test-id',
+            title: 'Test Idea',
+            description: 'Test Description',
+            industry: 'tech',
+            targetMarket: 'developers',
+            technologies: [],
+            features: [],
+            currentVersion: 1,
+            status: 'DRAFT',
+          },
+        });
+      });
+    });
+
+    it('should call POST /api/ideas/:id/validate', async () => {
+      const mockValidation = {
+        id: 'val-1',
+        ideaId: 'test-id',
+        version: 1,
+        keywordScore: 75,
+        painPointScore: 80,
+        competitionScore: 60,
+        revenueEstimate: 70,
+        overallScore: 72,
+        details: {},
+        createdAt: '2026-01-01T00:00:00Z',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockValidation,
+      });
+
+      await act(async () => {
+        await useWorkspaceStore.getState().validate();
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/ideas/test-id/validate',
+        expect.objectContaining({
+          method: 'POST',
+          signal: expect.any(AbortSignal),
+        })
+      );
+
+      const state = useWorkspaceStore.getState();
+      expect(state.validation).toEqual(mockValidation);
+      expect(state.isValidating).toBe(false);
+    });
+
+    it('should set isValidating to true during the call', async () => {
+      let capturedIsValidating = false;
+
+      mockFetch.mockImplementation(async () => {
+        capturedIsValidating = useWorkspaceStore.getState().isValidating;
+        return {
+          ok: true,
+          json: async () => ({
+            id: 'val-1',
+            ideaId: 'test-id',
+            version: 1,
+            keywordScore: 75,
+            painPointScore: 80,
+            competitionScore: 60,
+            revenueEstimate: 70,
+            overallScore: 72,
+            details: {},
+            createdAt: '2026-01-01T00:00:00Z',
+          }),
+        };
+      });
+
+      await act(async () => {
+        await useWorkspaceStore.getState().validate();
+      });
+
+      expect(capturedIsValidating).toBe(true);
+      expect(useWorkspaceStore.getState().isValidating).toBe(false);
+    });
+
+    it('should set error on failed response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
+
+      await act(async () => {
+        await useWorkspaceStore.getState().validate();
+      });
+
+      const state = useWorkspaceStore.getState();
+      expect(state.error).toBe('Failed to validate idea');
+      expect(state.isValidating).toBe(false);
+    });
+
+    it('should handle network errors', async () => {
+      mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+      await act(async () => {
+        await useWorkspaceStore.getState().validate();
+      });
+
+      const state = useWorkspaceStore.getState();
+      expect(state.error).toBe('Network error. Please check your connection.');
+      expect(state.isValidating).toBe(false);
+    });
+
+    it('should abort fetch after 30s timeout', async () => {
+      mockFetch.mockImplementation(
+        (_url: string, options?: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            options?.signal?.addEventListener('abort', () => {
+              reject(new DOMException('The operation was aborted.', 'AbortError'));
+            });
+          })
+      );
+
+      const promise = useWorkspaceStore.getState().validate();
+
+      jest.advanceTimersByTime(30000);
+
+      await promise;
+
+      const state = useWorkspaceStore.getState();
+      expect(state.error).toBe('Request timed out. Please try again.');
+      expect(state.isValidating).toBe(false);
+    });
+
+    it('should do nothing when no idea is loaded', async () => {
+      act(() => {
+        useWorkspaceStore.setState({ idea: null });
+      });
+
+      await act(async () => {
+        await useWorkspaceStore.getState().validate();
+      });
+
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+  });
 });

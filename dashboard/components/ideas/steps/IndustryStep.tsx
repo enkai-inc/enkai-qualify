@@ -45,6 +45,8 @@ export function IndustryStep() {
             <button
               key={ind.value}
               onClick={() => setIndustry(ind.value)}
+              aria-label={`Select ${ind.label} industry`}
+              aria-pressed={industry === ind.value}
               className={`
                 p-4 rounded-lg border-2 text-left transition-all
                 ${
@@ -73,6 +75,8 @@ export function IndustryStep() {
             <button
               key={market.value}
               onClick={() => setTargetMarket(market.value)}
+              aria-label={`Select ${market.label} market`}
+              aria-pressed={targetMarket === market.value}
               className={`
                 p-4 rounded-lg border-2 text-left transition-all
                 ${
