@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { getIdea, updateIdea, deleteIdea } from '@/lib/services/idea-service';
+
+const updateIdeaSchema = z.object({
+  title: z.string().max(200).optional(),
+  description: z.string().max(2000).optional(),
+  industry: z.string().max(100).optional(),
+  targetMarket: z.string().max(100).optional(),
+  technologies: z.array(z.string().max(100)).max(20).optional(),
+  features: z.array(z.object({
+    id: z.string(),
+    name: z.string().max(100),
+    description: z.string().max(500),
+    priority: z.enum(['high', 'medium', 'low']),
+  })).max(50).optional(),
+  status: z.enum(['PENDING', 'DRAFT', 'VALIDATED', 'PACK_GENERATED', 'ARCHIVED']).optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -35,15 +51,15 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const idea = await updateIdea(id, user.id, {
-      title: body.title,
-      description: body.description,
-      industry: body.industry,
-      targetMarket: body.targetMarket,
-      technologies: body.technologies,
-      features: body.features,
-      status: body.status,
-    });
+    const parsed = updateIdeaSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const idea = await updateIdea(id, user.id, parsed.data);
 
     return NextResponse.json(idea);
   } catch (error) {
