@@ -93,7 +93,7 @@ export function RefinementInput() {
       </div>
 
       {conversation.length > 0 && (
-        <div className="max-h-64 overflow-y-auto p-4 space-y-4">
+        <div aria-live="polite" aria-label="Conversation" className="max-h-64 overflow-y-auto p-4 space-y-4">
           {conversation.map((message) => (
             <div
               key={message.id}
