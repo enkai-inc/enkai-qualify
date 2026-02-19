@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
-import { getIdea, updateIdea } from '@/lib/services/idea-service';
-import { refineIdea } from '@/lib/services/ai-service';
+import { getIdea } from '@/lib/services/idea-service';
+import { createRefinementIssue } from '@/lib/services/github-service';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 const featuresSchema = z.array(z.object({
@@ -50,38 +50,34 @@ export async function POST(
 
     const { idea } = result;
 
-    // Refine with AI
-    const refined = await refineIdea({
-      idea: {
-        title: idea.title,
-        description: idea.description,
-        industry: idea.industry,
-        targetMarket: idea.targetMarket,
-        technologies: idea.technologies,
-        features: featuresSchema.parse(idea.features),
-      },
+    // Create GitHub issue for async processing
+    const { issueNumber, issueUrl } = await createRefinementIssue({
+      ideaId: id,
+      userId: user.id,
+      title: idea.title,
+      description: idea.description,
+      industry: idea.industry,
+      targetMarket: idea.targetMarket,
+      technologies: idea.technologies,
+      features: featuresSchema.parse(idea.features),
       prompt: body.prompt,
     });
 
-    // Update idea with refined version
-    const updated = await updateIdea(id, user.id, {
-      title: refined.title,
-      description: refined.description,
-      features: refined.features,
-      technologies: refined.technologies,
-    });
-
-    return NextResponse.json({
-      idea: updated,
-      summary: refined.summary,
-    });
+    return NextResponse.json(
+      {
+        status: 'pending',
+        githubIssue: issueNumber,
+        githubIssueUrl: issueUrl,
+      },
+      { status: 202 }
+    );
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error refining idea:', error);
+    console.error('Error creating refinement issue:', error);
     return NextResponse.json(
-      { error: 'Failed to refine idea' },
+      { error: 'Failed to submit refinement request' },
       { status: 500 }
     );
   }
