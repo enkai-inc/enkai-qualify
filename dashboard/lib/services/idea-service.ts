@@ -1,5 +1,20 @@
 import { prisma } from '@/lib/db';
 import { IdeaStatus, Prisma } from '@prisma/client';
+import { z } from 'zod';
+
+const snapshotSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  industry: z.string(),
+  targetMarket: z.string(),
+  technologies: z.array(z.string()),
+  features: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    priority: z.enum(['high', 'medium', 'low']),
+  })),
+});
 
 export interface CreateIdeaInput {
   userId: string;
@@ -243,23 +258,23 @@ export async function restoreVersion(
     throw new Error('Version not found');
   }
 
-  const snapshot = version.snapshot as Record<string, unknown>;
+  const snapshot = snapshotSchema.parse(version.snapshot);
   const nextVersion = idea.currentVersion + 1;
 
   const updatedIdea = await prisma.idea.update({
     where: { id: ideaId },
     data: {
-      title: snapshot.title as string,
-      description: snapshot.description as string,
-      industry: snapshot.industry as string,
-      targetMarket: snapshot.targetMarket as string,
-      technologies: snapshot.technologies as string[],
-      features: snapshot.features as object,
+      title: snapshot.title,
+      description: snapshot.description,
+      industry: snapshot.industry,
+      targetMarket: snapshot.targetMarket,
+      technologies: snapshot.technologies,
+      features: snapshot.features,
       currentVersion: nextVersion,
       versions: {
         create: {
           version: nextVersion,
-          snapshot: snapshot as Prisma.InputJsonValue,
+          snapshot: snapshot as unknown as Prisma.InputJsonValue,
           summary: `Restored from v${version.version}`,
           parentId: versionId,
         },
@@ -297,23 +312,23 @@ export async function branchFromVersion(
     throw new Error('Version not found');
   }
 
-  const snapshot = version.snapshot as Record<string, unknown>;
+  const snapshot = snapshotSchema.parse(version.snapshot);
 
   // Create a new idea as a branch
   const newIdea = await prisma.idea.create({
     data: {
       userId,
       title: `${snapshot.title} (Branch)`,
-      description: snapshot.description as string,
-      industry: snapshot.industry as string,
-      targetMarket: snapshot.targetMarket as string,
-      technologies: snapshot.technologies as string[],
-      features: snapshot.features as object,
+      description: snapshot.description,
+      industry: snapshot.industry,
+      targetMarket: snapshot.targetMarket,
+      technologies: snapshot.technologies,
+      features: snapshot.features,
       currentVersion: 1,
       versions: {
         create: {
           version: 1,
-          snapshot: snapshot as Prisma.InputJsonValue,
+          snapshot: snapshot as unknown as Prisma.InputJsonValue,
           summary: `Branched from ${idea.title} v${version.version}`,
           parentId: versionId,
         },
