@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { getIdea, updateIdea } from '@/lib/services/idea-service';
 import { refineIdea } from '@/lib/services/ai-service';
 import { checkRateLimit } from '@/lib/rate-limit';
+
+const featuresSchema = z.array(z.object({
+  name: z.string(),
+  description: z.string(),
+})).catch([]);
 
 export async function POST(
   request: NextRequest,
@@ -52,7 +58,7 @@ export async function POST(
         industry: idea.industry,
         targetMarket: idea.targetMarket,
         technologies: idea.technologies,
-        features: (idea.features as Array<{ name: string; description: string }>),
+        features: featuresSchema.parse(idea.features),
       },
       prompt: body.prompt,
     });
