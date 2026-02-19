@@ -22,32 +22,46 @@ export async function GET(
 
     if (!subscription) {
       // Return default free tier
-      return NextResponse.json({
-        plan: 'free',
-        status: 'active',
-        ideas_used: 0,
-        ideas_limit: TIER_LIMITS.FREE.ideas,
-        packs_used: 0,
-        packs_limit: TIER_LIMITS.FREE.packs,
-        current_period_end: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-      });
+      return NextResponse.json(
+        {
+          plan: 'free',
+          status: 'active',
+          ideas_used: 0,
+          ideas_limit: TIER_LIMITS.FREE.ideas,
+          packs_used: 0,
+          packs_limit: TIER_LIMITS.FREE.packs,
+          current_period_end: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+        },
+        {
+          headers: {
+            'Cache-Control': 'no-store, private',
+          },
+        }
+      );
     }
 
     const limits = TIER_LIMITS[subscription.tier as keyof typeof TIER_LIMITS];
 
-    return NextResponse.json({
-      plan: subscription.tier.toLowerCase(),
-      status: 'active',
-      ideas_used: subscription.ideasUsed,
-      ideas_limit: limits.ideas,
-      packs_used: subscription.packsUsed,
-      packs_limit: limits.packs,
-      current_period_end: subscription.periodEnd.toISOString(),
-      stripe_customer_id: subscription.stripeCustomerId,
-      stripe_subscription_id: subscription.stripeSubscriptionId,
-    });
+    return NextResponse.json(
+      {
+        plan: subscription.tier.toLowerCase(),
+        status: 'active',
+        ideas_used: subscription.ideasUsed,
+        ideas_limit: limits.ideas,
+        packs_used: subscription.packsUsed,
+        packs_limit: limits.packs,
+        current_period_end: subscription.periodEnd.toISOString(),
+        stripe_customer_id: subscription.stripeCustomerId,
+        stripe_subscription_id: subscription.stripeSubscriptionId,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, private',
+        },
+      }
+    );
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

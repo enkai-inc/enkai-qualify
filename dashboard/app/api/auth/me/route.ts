@@ -29,14 +29,21 @@ export async function GET() {
     if (!user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
-    return NextResponse.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      subscription: sanitizeSubscription(
-        user.subscription as Record<string, unknown> | null
-      ),
-    });
+    return NextResponse.json(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        subscription: sanitizeSubscription(
+          user.subscription as Record<string, unknown> | null
+        ),
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, private',
+        },
+      }
+    );
   } catch {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
