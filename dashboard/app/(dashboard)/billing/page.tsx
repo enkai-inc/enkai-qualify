@@ -21,6 +21,7 @@ function BillingContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [user, setUser] = useState<{id: string; subscription?: {stripeCustomerId?: string | null}} | null>(null);
 
   // Check for success/cancelled query params
   useEffect(() => {
@@ -34,9 +35,11 @@ function BillingContent() {
   useEffect(() => {
     async function fetchSubscription() {
       try {
-        // In production, get user_id from auth context
-        const userId = 'current-user';
-        const response = await fetch(`/api/billing/subscription/${userId}`);
+        const authRes = await fetch('/api/auth/me');
+        if (!authRes.ok) throw new Error('Not authenticated');
+        const userData = await authRes.json();
+        setUser(userData);
+        const response = await fetch(`/api/billing/subscription/${userData.id}`);
         if (!response.ok) throw new Error('Failed to fetch subscription');
         const data = await response.json();
         setSubscription(data);
@@ -50,13 +53,14 @@ function BillingContent() {
   }, []);
 
   const handleSelectPlan = async (priceId: string) => {
+    if (!user) return;
     try {
       const response = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           price_id: priceId,
-          user_id: 'current-user', // In production, get from auth
+          user_id: user.id,
         }),
       });
 
@@ -70,12 +74,13 @@ function BillingContent() {
   };
 
   const handleManageSubscription = async () => {
+    if (!user) return;
     try {
       const response = await fetch('/api/billing/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer_id: 'customer-id', // In production, get from subscription
+          customer_id: user.subscription?.stripeCustomerId,
         }),
       });
 
