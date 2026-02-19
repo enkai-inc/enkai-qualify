@@ -87,7 +87,7 @@ export function ValidationPanel() {
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Validation Score</h2>
 
-      <div className="text-center mb-6">
+      <div className="text-center mb-6" aria-live="polite" aria-atomic="true">
         <div className={`text-6xl font-bold ${getOverallScoreColor(validation.overallScore)}`}>
           {validation.overallScore}
         </div>
