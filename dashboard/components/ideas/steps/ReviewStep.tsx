@@ -238,6 +238,7 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
             <input
               type="text"
               placeholder="Feature name"
+              aria-label="Feature name"
               value={newFeatureName}
               onChange={(e) => setNewFeatureName(e.target.value)}
               onKeyDown={(e) => {
@@ -251,6 +252,7 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
             />
             <textarea
               placeholder="Feature description"
+              aria-label="Feature description"
               value={newFeatureDesc}
               onChange={(e) => setNewFeatureDesc(e.target.value)}
               maxLength={200}
@@ -286,6 +288,7 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
                     <h4 className="font-medium text-gray-900">{feature.name}</h4>
                     <select
                       value={feature.priority}
+                      aria-label={`Priority for ${feature.name}`}
                       onChange={(e) =>
                         updateEditedFeature(feature.id, {
                           priority: e.target.value as 'high' | 'medium' | 'low',
