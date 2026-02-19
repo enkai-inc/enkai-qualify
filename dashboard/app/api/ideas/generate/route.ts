@@ -3,10 +3,19 @@ import { requireAuth, canCreateIdea } from '@/lib/auth';
 import { createIdeaGenerationIssue } from '@/lib/services/github-service';
 import { prisma } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth();
+
+    const rateLimit = checkRateLimit(`generate:${user.id}`, { maxRequests: 5, windowMs: 3600000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } }
+      );
+    }
 
     // Check subscription limits
     const canCreate = await canCreateIdea(user.id);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getIdea, updateIdea } from '@/lib/services/idea-service';
 import { refineIdea } from '@/lib/services/ai-service';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(
   request: NextRequest,
@@ -9,6 +10,15 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+
+    const rateLimit = checkRateLimit(`refine:${user.id}`, { maxRequests: 20, windowMs: 3600000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } }
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
 
