@@ -101,7 +101,8 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
       {showDeleteConfirm && (
         <div
           role="alertdialog"
-          aria-labelledby="delete-confirm-title"
+          aria-modal="true"
+          aria-labelledby={`delete-confirm-${idea.id}`}
           onKeyDown={(e) => {
             if (e.key === 'Escape') setShowDeleteConfirm(false);
             if (e.key === 'Tab') {
@@ -119,7 +120,7 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
           }}
           className="absolute inset-0 bg-white/95 rounded-lg flex flex-col items-center justify-center gap-3 z-10"
         >
-          <p id="delete-confirm-title" className="text-sm font-medium text-gray-900">Delete this idea?</p>
+          <p id={`delete-confirm-${idea.id}`} className="text-sm font-medium text-gray-900">Delete this idea?</p>
           <div className="flex items-center gap-2">
             <button
               onClick={async () => {
