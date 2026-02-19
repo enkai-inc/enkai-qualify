@@ -92,7 +92,7 @@ export function RefinementInput() {
         <p className="text-sm text-gray-500">Chat with AI to improve and iterate on your idea</p>
       </div>
 
-      <div aria-live="polite" aria-label="Conversation" className={`max-h-64 overflow-y-auto p-4 space-y-4 ${conversation.length === 0 ? 'hidden' : ''}`}>
+      <div aria-live="polite" aria-label="Conversation" tabIndex={0} className={`max-h-64 overflow-y-auto p-4 space-y-4 ${conversation.length === 0 ? 'hidden' : ''}`}>
           {conversation.map((message) => (
             <div
               key={message.id}

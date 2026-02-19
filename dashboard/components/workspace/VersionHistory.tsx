@@ -59,7 +59,7 @@ export function VersionHistory() {
           <p className="text-xs text-gray-400 mt-1">Versions are created when you refine your idea</p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-80 overflow-y-auto">
+        <div className="space-y-2 max-h-80 overflow-y-auto" tabIndex={0}>
           {versions.map((version) => (
             <div
               key={version.id}
