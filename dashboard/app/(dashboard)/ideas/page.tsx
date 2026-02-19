@@ -65,14 +65,14 @@ export default function IdeasPage() {
 
       {/* Error state */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">{error}</p>
         </div>
       )}
 
       {/* Loading state */}
       {isLoading && ideas.length === 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div role="status" aria-label="Loading ideas" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
@@ -138,7 +138,7 @@ export default function IdeasPage() {
         <>
           <div className="relative">
             {isLoading && (
-              <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+              <div role="status" aria-label="Loading ideas" className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
               </div>
             )}
