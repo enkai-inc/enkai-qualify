@@ -171,6 +171,7 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
             setEditedIdea({ ...editedIdea, description: e.target.value })
           }
           rows={4}
+          maxLength={500}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
@@ -244,12 +245,14 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
                   handleAddFeature();
                 }
               }}
+              maxLength={100}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm"
             />
             <textarea
               placeholder="Feature description"
               value={newFeatureDesc}
               onChange={(e) => setNewFeatureDesc(e.target.value)}
+              maxLength={200}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm resize-none"
               rows={2}
             />

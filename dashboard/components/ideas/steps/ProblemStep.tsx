@@ -56,6 +56,7 @@ export function ProblemStep() {
           onChange={(e) => setProblemDescription(e.target.value)}
           placeholder={placeholders[industry] || placeholders.other}
           rows={6}
+          maxLength={500}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <div className="flex justify-between mt-2">
@@ -70,7 +71,7 @@ export function ProblemStep() {
             }`}
             aria-live="polite"
           >
-            {problemDescription.length} characters
+            {problemDescription.length}/500
           </p>
         </div>
       </div>

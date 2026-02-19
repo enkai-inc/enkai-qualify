@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, canCreateIdea } from '@/lib/auth';
 import { branchFromVersion } from '@/lib/services/idea-service';
 
 export async function POST(
@@ -8,6 +8,16 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+
+    // Check subscription limits
+    const canCreate = await canCreateIdea(user.id);
+    if (!canCreate) {
+      return NextResponse.json(
+        { error: 'Idea limit reached. Please upgrade your subscription.' },
+        { status: 403 }
+      );
+    }
+
     const { id, versionId } = await params;
 
     const newIdea = await branchFromVersion(id, versionId, user.id);
