@@ -90,8 +90,11 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
 
   loadIdea: async (ideaId: string) => {
     set({ isLoading: true, error: null });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     try {
-      const response = await fetch(`/api/ideas/${ideaId}`);
+      const response = await fetch(`/api/ideas/${ideaId}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!response.ok) {
         throw new Error('Failed to load idea');
       }
@@ -103,6 +106,15 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
         isLoading: false,
       });
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        set({ error: 'Request timed out. Please try again.', isLoading: false });
+        return;
+      }
+      if (error instanceof TypeError) {
+        set({ error: 'Network error. Please check your connection.', isLoading: false });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : 'Failed to load idea',
         isLoading: false,
@@ -126,12 +138,16 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
       conversation: [...conversation, userMessage],
     });
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
     try {
       const response = await fetch(`/api/ideas/${idea.id}/refine`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Failed to refine idea');
@@ -154,6 +170,15 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
         conversation: [...get().conversation, assistantMessage],
       });
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        set({ error: 'Request timed out. Please try again.', isRefining: false });
+        return;
+      }
+      if (error instanceof TypeError) {
+        set({ error: 'Network error. Please check your connection.', isRefining: false });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : 'Failed to refine idea',
         isRefining: false,
@@ -166,11 +191,15 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
     if (!idea) return;
 
     set({ isLoading: true, error: null });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch(`/api/ideas/${idea.id}/versions/${versionId}/restore`, {
         method: 'POST',
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Failed to restore version');
@@ -184,6 +213,15 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
         isLoading: false,
       });
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        set({ error: 'Request timed out. Please try again.', isLoading: false });
+        return;
+      }
+      if (error instanceof TypeError) {
+        set({ error: 'Network error. Please check your connection.', isLoading: false });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : 'Failed to restore version',
         isLoading: false,
@@ -196,11 +234,15 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
     if (!idea) return;
 
     set({ isLoading: true, error: null });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch(`/api/ideas/${idea.id}/versions/${versionId}/branch`, {
         method: 'POST',
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Failed to branch from version');
@@ -214,6 +256,15 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
         isLoading: false,
       });
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        set({ error: 'Request timed out. Please try again.', isLoading: false });
+        return;
+      }
+      if (error instanceof TypeError) {
+        set({ error: 'Network error. Please check your connection.', isLoading: false });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : 'Failed to branch from version',
         isLoading: false,
