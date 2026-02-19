@@ -197,6 +197,7 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
                     ),
                   })
                 }
+                aria-label={`Remove ${tech}`}
                 className="hover:text-blue-600"
               >
                 <svg
@@ -303,6 +304,7 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
                 </div>
                 <button
                   onClick={() => removeFeature(feature.id)}
+                  aria-label={`Remove ${feature.name}`}
                   className="ml-2 text-gray-400 hover:text-red-500"
                 >
                   <svg
