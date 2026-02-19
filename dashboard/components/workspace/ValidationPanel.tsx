@@ -40,7 +40,7 @@ function ScoreCard({ label, score, maxScore = 100, description }: ScoreCardProps
 }
 
 export function ValidationPanel() {
-  const { validation, idea, isLoading, isValidating, validate } = useWorkspaceStore();
+  const { validation, idea, isLoading, isValidating, validate, error } = useWorkspaceStore();
 
   if (isLoading || !idea) {
     return (
@@ -73,6 +73,9 @@ export function ValidationPanel() {
           >
             {isValidating ? 'Validating...' : 'Run Validation'}
           </button>
+          {error && (
+            <p className="mt-3 text-sm text-red-600" role="alert">{error}</p>
+          )}
         </div>
       </div>
     );
