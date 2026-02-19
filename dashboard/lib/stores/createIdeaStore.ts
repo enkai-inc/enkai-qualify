@@ -56,6 +56,7 @@ interface CreateIdeaActions {
   removeFeature: (featureId: string) => void;
   saveIdea: () => Promise<string | null>;
   reset: () => void;
+  clearError: () => void;
 }
 
 const initialState: CreateIdeaState = {
@@ -238,5 +239,7 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
     },
 
     reset: () => set(initialState),
+
+    clearError: () => set({ error: null }),
   })
 );
