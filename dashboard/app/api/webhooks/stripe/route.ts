@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
         // Could send notification email here
-        console.log('Payment failed for invoice:', invoice.id);
+        console.error('Payment failed for invoice:', invoice.id);
         break;
       }
     }
