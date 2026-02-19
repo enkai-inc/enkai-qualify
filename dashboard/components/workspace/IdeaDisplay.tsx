@@ -164,7 +164,7 @@ export function IdeaDisplay() {
                   onClick={() => removeFeature(feature.id)}
                   className="ml-2 text-gray-400 hover:text-red-500"
                   title="Remove feature"
-                  aria-label="Remove feature"
+                  aria-label={`Remove feature: ${feature.name}`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
