@@ -1,13 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useWorkspaceStore, IdeaVersion } from '@/lib/stores/workspaceStore';
+import { useWorkspaceStore } from '@/lib/stores/workspaceStore';
 
 export function VersionHistory() {
   const { versions, idea, restoreVersion, branchFromVersion, isLoading } = useWorkspaceStore();
   const [expandedVersion, setExpandedVersion] = useState<string | null>(null);
-  const [compareMode, setCompareMode] = useState(false);
-  const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -27,14 +25,6 @@ export function VersionHistory() {
     await branchFromVersion(versionId);
   };
 
-  const toggleVersionSelection = (versionId: string) => {
-    if (selectedVersions.includes(versionId)) {
-      setSelectedVersions(selectedVersions.filter((id) => id !== versionId));
-    } else if (selectedVersions.length < 2) {
-      setSelectedVersions([...selectedVersions, versionId]);
-    }
-  };
-
   const toggleExpand = (versionId: string) => {
     setExpandedVersion(expandedVersion === versionId ? null : versionId);
   };
@@ -47,31 +37,7 @@ export function VersionHistory() {
     <div className="bg-white rounded-lg shadow p-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Version History</h2>
-        <button
-          onClick={() => {
-            setCompareMode(!compareMode);
-            setSelectedVersions([]);
-          }}
-          className={`text-sm px-3 py-1 rounded-md transition-colors ${
-            compareMode
-              ? 'bg-blue-100 text-blue-700'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          {compareMode ? 'Cancel Compare' : 'Compare'}
-        </button>
       </div>
-
-      {compareMode && selectedVersions.length === 2 && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm text-blue-700">
-            Comparing versions {selectedVersions[0].slice(-4)} and {selectedVersions[1].slice(-4)}
-          </p>
-          <span className="mt-2 text-sm text-gray-400">
-            Diff view coming soon
-          </span>
-        </div>
-      )}
 
       {versions.length === 0 ? (
         <div className="text-center py-6">
@@ -100,27 +66,14 @@ export function VersionHistory() {
                 version.version === idea.currentVersion
                   ? 'border-blue-300 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
-              } ${
-                compareMode && selectedVersions.includes(version.id)
-                  ? 'ring-2 ring-blue-500'
-                  : ''
               }`}
             >
               <div
                 className="p-3 cursor-pointer"
-                onClick={() => compareMode ? toggleVersionSelection(version.id) : toggleExpand(version.id)}
+                onClick={() => toggleExpand(version.id)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {compareMode && (
-                      <input
-                        type="checkbox"
-                        checked={selectedVersions.includes(version.id)}
-                        onChange={() => toggleVersionSelection(version.id)}
-                        className="w-4 h-4 text-blue-600 rounded"
-                        disabled={selectedVersions.length >= 2 && !selectedVersions.includes(version.id)}
-                      />
-                    )}
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">v{version.version}</span>
@@ -133,23 +86,21 @@ export function VersionHistory() {
                       <p className="text-xs text-gray-500">{formatDate(version.createdAt)}</p>
                     </div>
                   </div>
-                  {!compareMode && (
-                    <svg
-                      className={`w-4 h-4 text-gray-400 transition-transform ${
-                        expandedVersion === version.id ? 'rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  )}
+                  <svg
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedVersion === version.id ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">{version.summary}</p>
               </div>
 
-              {expandedVersion === version.id && !compareMode && (
+              {expandedVersion === version.id && (
                 <div className="px-3 pb-3 border-t border-gray-100 mt-2 pt-2">
                   <div className="flex gap-2">
                     {version.version !== idea.currentVersion && (
