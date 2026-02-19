@@ -51,7 +51,7 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
 
       {/* Title and description */}
       <Link href={`/workspace/${idea.id}`}>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1" title={idea.title}>
           {idea.title}
         </h3>
       </Link>
