@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PricingTable } from '@/components/billing/PricingTable';
 
@@ -32,26 +32,29 @@ function BillingContent() {
     }
   }, [searchParams]);
 
+  const fetchSubscription = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const authRes = await fetch('/api/auth/me');
+      if (!authRes.ok) throw new Error('Not authenticated');
+      const userData = await authRes.json();
+      setUser(userData);
+      const response = await fetch(`/api/billing/subscription/${userData.id}`);
+      if (!response.ok) throw new Error('Failed to fetch subscription');
+      const data = await response.json();
+      setSubscription(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Fetch subscription data
   useEffect(() => {
-    async function fetchSubscription() {
-      try {
-        const authRes = await fetch('/api/auth/me');
-        if (!authRes.ok) throw new Error('Not authenticated');
-        const userData = await authRes.json();
-        setUser(userData);
-        const response = await fetch(`/api/billing/subscription/${userData.id}`);
-        if (!response.ok) throw new Error('Failed to fetch subscription');
-        const data = await response.json();
-        setSubscription(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchSubscription();
-  }, []);
+  }, [fetchSubscription]);
 
   const handleSelectPlan = async (priceId: string) => {
     if (!user) return;
@@ -134,13 +137,21 @@ function BillingContent() {
             <div className="ml-3">
               <p className="text-sm font-medium text-red-800">{error}</p>
             </div>
-            <button
-              onClick={() => setError(null)}
-              className="ml-auto pl-4 text-sm text-red-600 hover:text-red-800 font-medium"
-              aria-label="Dismiss error"
-            >
-              Dismiss
-            </button>
+            <div className="ml-auto flex items-center gap-3 pl-4">
+              <button
+                onClick={fetchSubscription}
+                className="text-sm text-red-800 underline hover:text-red-900 font-medium"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => setError(null)}
+                className="text-sm text-red-600 hover:text-red-800 font-medium"
+                aria-label="Dismiss error"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         </div>
       )}
