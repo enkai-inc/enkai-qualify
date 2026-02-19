@@ -161,15 +161,16 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
       clearTimeout(timeoutId);
       if (error instanceof DOMException && error.name === 'AbortError') {
         set({ error: 'Request timed out. Please try again.' });
-        return;
+        throw error;
       }
       if (error instanceof TypeError) {
         set({ error: 'Network error. Please check your connection.' });
-        return;
+        throw error;
       }
       set({
         error: error instanceof Error ? error.message : 'Failed to delete idea',
       });
+      throw error;
     }
   },
 
