@@ -43,23 +43,23 @@ export function IdeaDisplay() {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{idea.title}</h1>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{idea.title}</h2>
         <p className="text-gray-600">{idea.description}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
-          <h3 className="text-sm font-medium text-gray-500 mb-1">Industry</h3>
+          <p className="text-sm font-medium text-gray-500 mb-1">Industry</p>
           <p className="text-gray-900">{idea.industry}</p>
         </div>
         <div>
-          <h3 className="text-sm font-medium text-gray-500 mb-1">Target Market</h3>
+          <p className="text-sm font-medium text-gray-500 mb-1">Target Market</p>
           <p className="text-gray-900">{idea.targetMarket}</p>
         </div>
       </div>
 
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-gray-500 mb-2">Technology Stack</h3>
+        <p className="text-sm font-medium text-gray-500 mb-2">Technology Stack</p>
         <div className="flex flex-wrap gap-2">
           {idea.technologies.map((tech) => (
             <span
@@ -74,7 +74,7 @@ export function IdeaDisplay() {
 
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-gray-500">Features</h3>
+          <p className="text-sm font-medium text-gray-500">Features</p>
           <button
             type="button"
             onClick={() => setIsAddingFeature(true)}
