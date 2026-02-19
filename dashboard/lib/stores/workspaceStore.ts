@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+let loadAbortController: AbortController | null = null;
+
 export interface IdeaFeature {
   id: string;
   name: string;
@@ -89,9 +91,13 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
   ...initialState,
 
   loadIdea: async (ideaId: string) => {
+    loadAbortController?.abort();
+    loadAbortController = new AbortController();
+    const signal = loadAbortController.signal;
+
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`/api/ideas/${ideaId}`);
+      const response = await fetch(`/api/ideas/${ideaId}`, { signal });
       if (!response.ok) {
         throw new Error('Failed to load idea');
       }
@@ -103,6 +109,7 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
         isLoading: false,
       });
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       set({
         error: error instanceof Error ? error.message : 'Failed to load idea',
         isLoading: false,
