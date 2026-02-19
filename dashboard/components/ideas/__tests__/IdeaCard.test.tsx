@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { IdeaSummary } from '@/lib/stores/ideasStore';
 
@@ -24,10 +24,11 @@ const mockIdea: IdeaSummary = {
 };
 
 describe('IdeaCard', () => {
-  const mockOnDelete = jest.fn();
+  const mockOnDelete = jest.fn<Promise<void>, [string]>();
 
   beforeEach(() => {
     mockOnDelete.mockClear();
+    mockOnDelete.mockResolvedValue(undefined);
   });
 
   it('renders the idea title and description', () => {
@@ -61,7 +62,7 @@ describe('IdeaCard', () => {
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
 
-  it('calls onDelete when confirmation Delete button is clicked', () => {
+  it('calls onDelete when confirmation Delete button is clicked', async () => {
     render(<IdeaCard idea={mockIdea} onDelete={mockOnDelete} />);
     fireEvent.click(screen.getByText('Delete'));
     // Both the original Delete button and the confirmation Delete button are present.
@@ -72,7 +73,9 @@ describe('IdeaCard', () => {
       (btn) => btn.className.includes('bg-red-600')
     );
     expect(confirmDeleteButton).toBeDefined();
-    fireEvent.click(confirmDeleteButton!);
+    await act(async () => {
+      fireEvent.click(confirmDeleteButton!);
+    });
     expect(mockOnDelete).toHaveBeenCalledWith('test-idea-1');
   });
 
@@ -97,5 +100,109 @@ describe('IdeaCard', () => {
     fireEvent.click(screen.getByText('Delete'));
     expect(confirmSpy).not.toHaveBeenCalled();
     confirmSpy.mockRestore();
+  });
+
+  it('shows "Deleting..." text and disables button while delete is in progress', async () => {
+    let resolveDelete: () => void;
+    mockOnDelete.mockImplementation(
+      () => new Promise<void>((resolve) => { resolveDelete = resolve; })
+    );
+
+    render(<IdeaCard idea={mockIdea} onDelete={mockOnDelete} />);
+    fireEvent.click(screen.getByText('Delete'));
+
+    const confirmDeleteButton = screen.getAllByRole('button', { name: 'Delete' }).find(
+      (btn) => btn.className.includes('bg-red-600')
+    )!;
+
+    await act(async () => {
+      fireEvent.click(confirmDeleteButton);
+    });
+
+    // While the promise is pending, the button should show "Deleting..." and be disabled
+    expect(screen.getByText('Deleting...')).toBeInTheDocument();
+    const deletingButton = screen.getByText('Deleting...').closest('button');
+    expect(deletingButton).toBeDisabled();
+
+    // Resolve the promise
+    await act(async () => {
+      resolveDelete!();
+    });
+
+    // After resolution, the confirmation dialog should be closed
+    expect(screen.queryByText('Delete this idea?')).not.toBeInTheDocument();
+  });
+
+  it('shows error message when delete fails and keeps dialog open', async () => {
+    mockOnDelete.mockRejectedValue(new Error('Network error'));
+
+    render(<IdeaCard idea={mockIdea} onDelete={mockOnDelete} />);
+    fireEvent.click(screen.getByText('Delete'));
+
+    const confirmDeleteButton = screen.getAllByRole('button', { name: 'Delete' }).find(
+      (btn) => btn.className.includes('bg-red-600')
+    )!;
+
+    await act(async () => {
+      fireEvent.click(confirmDeleteButton);
+    });
+
+    // Error message should be displayed
+    expect(screen.getByText('Failed to delete. Please try again.')).toBeInTheDocument();
+    // Confirmation dialog should still be visible
+    expect(screen.getByText('Delete this idea?')).toBeInTheDocument();
+    // The button should be re-enabled (not in deleting state)
+    const deleteBtn = screen.getAllByRole('button').find(
+      (btn) => btn.className.includes('bg-red-600')
+    );
+    expect(deleteBtn).not.toBeDisabled();
+  });
+
+  it('closes confirmation dialog after successful delete', async () => {
+    mockOnDelete.mockResolvedValue(undefined);
+
+    render(<IdeaCard idea={mockIdea} onDelete={mockOnDelete} />);
+    fireEvent.click(screen.getByText('Delete'));
+    expect(screen.getByText('Delete this idea?')).toBeInTheDocument();
+
+    const confirmDeleteButton = screen.getAllByRole('button', { name: 'Delete' }).find(
+      (btn) => btn.className.includes('bg-red-600')
+    )!;
+
+    await act(async () => {
+      fireEvent.click(confirmDeleteButton);
+    });
+
+    // Dialog should close on success
+    expect(screen.queryByText('Delete this idea?')).not.toBeInTheDocument();
+  });
+
+  it('clears previous error when retrying delete', async () => {
+    // First attempt fails
+    mockOnDelete.mockRejectedValueOnce(new Error('Network error'));
+
+    render(<IdeaCard idea={mockIdea} onDelete={mockOnDelete} />);
+    fireEvent.click(screen.getByText('Delete'));
+
+    const getConfirmButton = () => screen.getAllByRole('button').find(
+      (btn) => btn.className.includes('bg-red-600')
+    )!;
+
+    await act(async () => {
+      fireEvent.click(getConfirmButton());
+    });
+
+    expect(screen.getByText('Failed to delete. Please try again.')).toBeInTheDocument();
+
+    // Second attempt succeeds
+    mockOnDelete.mockResolvedValueOnce(undefined);
+
+    await act(async () => {
+      fireEvent.click(getConfirmButton());
+    });
+
+    // Error should be cleared and dialog closed
+    expect(screen.queryByText('Failed to delete. Please try again.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Delete this idea?')).not.toBeInTheDocument();
   });
 });
