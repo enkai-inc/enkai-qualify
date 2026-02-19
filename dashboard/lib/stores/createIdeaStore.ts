@@ -93,6 +93,9 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
 
       set({ isGenerating: true, error: null, pendingIdea: null });
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
       try {
         const response = await fetch('/api/ideas/generate', {
           method: 'POST',
@@ -102,7 +105,9 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
             targetMarket,
             problemDescription,
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const data = await response.json();
@@ -129,6 +134,15 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
           });
         }
       } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          set({ error: 'Request timed out. Please try again.', isGenerating: false });
+          return;
+        }
+        if (error instanceof TypeError) {
+          set({ error: 'Network error. Please check your connection.', isGenerating: false });
+          return;
+        }
         set({
           error:
             error instanceof Error ? error.message : 'Failed to generate idea',
