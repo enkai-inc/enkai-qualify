@@ -171,6 +171,7 @@ export class EcsStack extends cdk.Stack {
         GITHUB_APP_PRIVATE_KEY: ecs.Secret.fromSecretsManager(apiKeysSecret, 'GITHUB_APP_PRIVATE_KEY'),
         STRIPE_SECRET_KEY: ecs.Secret.fromSecretsManager(apiKeysSecret, 'STRIPE_SECRET_KEY'),
         STRIPE_WEBHOOK_SECRET: ecs.Secret.fromSecretsManager(apiKeysSecret, 'STRIPE_WEBHOOK_SECRET'),
+        WORKER_API_KEY: ecs.Secret.fromSecretsManager(apiKeysSecret, 'WORKER_API_KEY'),
       },
       // Health check: rely on ALB target group health check instead of container health check
       // Container health checks were failing despite ALB health checks passing
@@ -421,10 +422,17 @@ export class EcsStack extends cdk.Stack {
       }),
     });
 
+    // Internal API routes bypass Cognito auth (worker callback endpoints)
+    httpsListener.addAction('InternalApiRoute', {
+      priority: 5,
+      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/internal/*'])],
+      action: elbv2.ListenerAction.forward([dashboardTargetGroup]),
+    });
+
     // Add API route rule (before Cognito auth, priority 10)
     httpsListener.addAction('ApiRoute', {
       priority: 10,
-      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/*', '/health', '/docs', '/redoc'])],
+      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/v1/*', '/health', '/docs', '/redoc'])],
       action: elbv2.ListenerAction.forward([apiTargetGroup]),
     });
 
