@@ -76,6 +76,7 @@ export function IdeaFilters({ filters, onFilterChange }: IdeaFiltersProps) {
 
       {/* Sort */}
       <select
+        aria-label="Sort ideas by"
         value={`${filters.sortBy}-${filters.sortOrder}`}
         onChange={(e) => {
           const [sortBy, sortOrder] = e.target.value.split('-') as [
