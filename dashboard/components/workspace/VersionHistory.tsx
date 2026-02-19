@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useWorkspaceStore } from '@/lib/stores/workspaceStore';
+import { useWorkspaceStore, IdeaVersion } from '@/lib/stores/workspaceStore';
+import { CompareVersionsModal } from './CompareVersionsModal';
 
 export function VersionHistory() {
   const { versions, idea, restoreVersion, branchFromVersion, isLoading } = useWorkspaceStore();
   const [expandedVersion, setExpandedVersion] = useState<string | null>(null);
+  const [compareVersion, setCompareVersion] = useState<IdeaVersion | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -23,6 +25,10 @@ export function VersionHistory() {
 
   const handleBranch = async (versionId: string) => {
     await branchFromVersion(versionId);
+  };
+
+  const handleCompare = (version: IdeaVersion) => {
+    setCompareVersion(version);
   };
 
   const toggleExpand = (versionId: string) => {
@@ -115,18 +121,37 @@ export function VersionHistory() {
                 <div className="px-3 pb-3 border-t border-gray-100 mt-2 pt-2">
                   <div className="flex gap-2">
                     {version.version !== idea.currentVersion && (
-                      <button
-                        type="button"
-                        onClick={() => handleRestore(version.id)}
-                        disabled={isLoading}
-                        className="flex-1 text-sm px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        Restore
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCompare(version);
+                          }}
+                          disabled={isLoading}
+                          className="flex-1 text-sm px-3 py-1.5 border border-blue-300 text-blue-700 rounded-md hover:bg-blue-50 disabled:opacity-50"
+                        >
+                          Compare
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRestore(version.id);
+                          }}
+                          disabled={isLoading}
+                          className="flex-1 text-sm px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          Restore
+                        </button>
+                      </>
                     )}
                     <button
                       type="button"
-                      onClick={() => handleBranch(version.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBranch(version.id);
+                      }}
                       disabled={isLoading}
                       className="flex-1 text-sm px-3 py-1.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
                     >
@@ -138,6 +163,17 @@ export function VersionHistory() {
             </div>
           ))}
         </div>
+      )}
+
+      {compareVersion && (
+        <CompareVersionsModal
+          isOpen={!!compareVersion}
+          onClose={() => setCompareVersion(null)}
+          currentIdea={idea}
+          compareVersion={compareVersion}
+          onRestore={handleRestore}
+          isLoading={isLoading}
+        />
       )}
     </div>
   );

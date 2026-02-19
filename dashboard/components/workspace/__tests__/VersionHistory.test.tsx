@@ -70,15 +70,24 @@ describe('VersionHistory', () => {
     expect(screen.getByText('Version History')).toBeInTheDocument();
   });
 
-  it('does not render a Compare button', () => {
+  it('shows Compare button when non-current version is expanded', () => {
     act(() => {
       useWorkspaceStore.setState({ idea: baseIdea, versions: mockVersions });
     });
 
     render(<VersionHistory />);
 
+    // Compare not visible before expanding
     expect(screen.queryByText('Compare')).not.toBeInTheDocument();
-    expect(screen.queryByText('Cancel Compare')).not.toBeInTheDocument();
+
+    // Click first version (not current)
+    const v1Summary = screen.getByText('Initial version');
+    act(() => {
+      fireEvent.click(v1Summary);
+    });
+
+    // Compare should now be visible
+    expect(screen.getByText('Compare')).toBeInTheDocument();
   });
 
   it('does not render "Diff view coming soon" text', () => {
@@ -114,19 +123,20 @@ describe('VersionHistory', () => {
     expect(svgs.length).toBe(mockVersions.length);
   });
 
-  it('expands a version card on click to show Restore and Branch buttons', () => {
+  it('expands a version card on click to show Compare, Restore and Branch buttons', () => {
     act(() => {
       useWorkspaceStore.setState({ idea: baseIdea, versions: mockVersions });
     });
 
     render(<VersionHistory />);
 
-    // Click first version (not current, so should show both Restore and Branch)
+    // Click first version (not current, so should show Compare, Restore and Branch)
     const v1Summary = screen.getByText('Initial version');
     act(() => {
       fireEvent.click(v1Summary);
     });
 
+    expect(screen.getByText('Compare')).toBeInTheDocument();
     expect(screen.getByText('Restore')).toBeInTheDocument();
     expect(screen.getByText('Branch')).toBeInTheDocument();
   });
