@@ -29,6 +29,13 @@ export async function POST(
       );
     }
 
+    if (typeof body.prompt !== 'string' || body.prompt.length > 2000) {
+      return NextResponse.json(
+        { error: 'Prompt must be a string of 2000 characters or less' },
+        { status: 400 }
+      );
+    }
+
     // Get current idea
     const result = await getIdea(id, user.id);
     if (!result) {

@@ -35,6 +35,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (typeof body.industry !== 'string' || body.industry.length > 100) {
+      return NextResponse.json(
+        { error: 'Industry must be a string of 100 characters or less' },
+        { status: 400 }
+      );
+    }
+    if (typeof body.targetMarket !== 'string' || body.targetMarket.length > 100) {
+      return NextResponse.json(
+        { error: 'Target market must be a string of 100 characters or less' },
+        { status: 400 }
+      );
+    }
+    if (typeof body.problemDescription !== 'string' || body.problemDescription.length > 2000) {
+      return NextResponse.json(
+        { error: 'Problem description must be 2000 characters or less' },
+        { status: 400 }
+      );
+    }
+
     // Create a pending idea record in the database
     const ideaId = uuidv4();
     const idea = await prisma.idea.create({
