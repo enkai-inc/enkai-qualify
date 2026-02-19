@@ -76,6 +76,7 @@ export function IdeaDisplay() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-gray-500">Features</h3>
           <button
+            type="button"
             onClick={() => setIsAddingFeature(true)}
             className="text-sm text-blue-600 hover:text-blue-700"
           >
@@ -111,12 +112,14 @@ export function IdeaDisplay() {
             />
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={handleAddFeature}
                 className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
               >
                 Add
               </button>
               <button
+                type="button"
                 onClick={() => setIsAddingFeature(false)}
                 className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200"
               >
@@ -161,6 +164,7 @@ export function IdeaDisplay() {
                   <p className="text-sm text-gray-600">{feature.description}</p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => removeFeature(feature.id)}
                   className="ml-2 text-gray-400 hover:text-red-500"
                   title="Remove feature"
