@@ -46,7 +46,8 @@ export function Sidebar({ user }: SidebarProps) {
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
           const isActive = pathname === item.href ||
-            (item.href !== '/' && pathname.startsWith(item.href));
+            (item.href !== '/' && pathname.startsWith(item.href)) ||
+            (item.href === '/ideas' && pathname.startsWith('/workspace'));
 
           return (
             <Link
