@@ -133,10 +133,17 @@ export default function IdeasPage() {
       {/* Ideas grid */}
       {ideas.length > 0 && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {ideas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} onDelete={deleteIdea} />
-            ))}
+          <div className="relative">
+            {isLoading && (
+              <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {ideas.map((idea) => (
+                <IdeaCard key={idea.id} idea={idea} onDelete={deleteIdea} />
+              ))}
+            </div>
           </div>
 
           {/* Pagination */}
@@ -149,14 +156,14 @@ export default function IdeasPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
+                  disabled={page === 1 || isLoading}
                   className="px-3 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage(page + 1)}
-                  disabled={!hasMore}
+                  disabled={!hasMore || isLoading}
                   className="px-3 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                 >
                   Next
