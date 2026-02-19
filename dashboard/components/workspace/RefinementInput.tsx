@@ -4,8 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useWorkspaceStore } from '@/lib/stores/workspaceStore';
 
 export function RefinementInput() {
-  const { refine, isRefining, conversation } = useWorkspaceStore();
+  const { refine, isRefining, conversation, error, clearError } = useWorkspaceStore();
   const [input, setInput] = useState('');
+  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
+  const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -16,6 +18,29 @@ export function RefinementInput() {
   useEffect(() => {
     scrollToBottom();
   }, [conversation]);
+
+  useEffect(() => {
+    if (error?.startsWith('RATE_LIMITED:')) {
+      const seconds = parseInt(error.split(':')[1], 10) || 60;
+      setRateLimitMessage(`Rate limited. Try again in ${seconds} seconds.`);
+      clearError();
+      if (rateLimitTimerRef.current) {
+        clearTimeout(rateLimitTimerRef.current);
+      }
+      rateLimitTimerRef.current = setTimeout(() => {
+        setRateLimitMessage(null);
+        rateLimitTimerRef.current = null;
+      }, seconds * 1000);
+    }
+  }, [error, clearError]);
+
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimerRef.current) {
+        clearTimeout(rateLimitTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +166,9 @@ export function RefinementInput() {
           </button>
         </div>
         <p className="text-xs text-gray-400 mt-2">Press Enter to send, Shift+Enter for new line</p>
+        {rateLimitMessage && (
+          <p className="text-sm text-amber-600 mt-2">{rateLimitMessage}</p>
+        )}
       </form>
     </div>
   );
