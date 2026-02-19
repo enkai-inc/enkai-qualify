@@ -27,6 +27,11 @@ function ScoreCard({ label, score, maxScore = 100, description }: ScoreCardProps
         <div
           className={`h-2 rounded-full ${getColorClass(percentage)}`}
           style={{ width: `${percentage}%` }}
+          role="progressbar"
+          aria-valuenow={score}
+          aria-valuemin={0}
+          aria-valuemax={maxScore}
+          aria-label={label}
         />
       </div>
       {description && <p className="text-xs text-gray-500">{description}</p>}

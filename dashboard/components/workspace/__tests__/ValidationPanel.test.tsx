@@ -169,3 +169,57 @@ describe('ValidationPanel - Run Validation button', () => {
     expect(state.isValidating).toBe(false);
   });
 });
+
+describe('ValidationPanel - ScoreCard ARIA progressbar attributes', () => {
+  const mockValidation = {
+    id: 'val-1',
+    ideaId: 'idea-1',
+    version: 1,
+    keywordScore: 75,
+    painPointScore: 80,
+    competitionScore: 60,
+    revenueEstimate: 70,
+    overallScore: 72,
+    details: {},
+    createdAt: new Date().toISOString(),
+  };
+
+  it('renders progress bars with role="progressbar" and correct ARIA attributes', () => {
+    act(() => {
+      useWorkspaceStore.setState({
+        idea: mockIdea,
+        validation: mockValidation,
+        isLoading: false,
+      });
+    });
+
+    render(<ValidationPanel />);
+
+    const progressBars = screen.getAllByRole('progressbar');
+    expect(progressBars).toHaveLength(4);
+
+    // Keyword Strength
+    const keywordBar = screen.getByRole('progressbar', { name: 'Keyword Strength' });
+    expect(keywordBar).toHaveAttribute('aria-valuenow', '75');
+    expect(keywordBar).toHaveAttribute('aria-valuemin', '0');
+    expect(keywordBar).toHaveAttribute('aria-valuemax', '100');
+
+    // Pain Point Match
+    const painPointBar = screen.getByRole('progressbar', { name: 'Pain Point Match' });
+    expect(painPointBar).toHaveAttribute('aria-valuenow', '80');
+    expect(painPointBar).toHaveAttribute('aria-valuemin', '0');
+    expect(painPointBar).toHaveAttribute('aria-valuemax', '100');
+
+    // Competition Level
+    const competitionBar = screen.getByRole('progressbar', { name: 'Competition Level' });
+    expect(competitionBar).toHaveAttribute('aria-valuenow', '60');
+    expect(competitionBar).toHaveAttribute('aria-valuemin', '0');
+    expect(competitionBar).toHaveAttribute('aria-valuemax', '100');
+
+    // Revenue Potential
+    const revenueBar = screen.getByRole('progressbar', { name: 'Revenue Potential' });
+    expect(revenueBar).toHaveAttribute('aria-valuenow', '70');
+    expect(revenueBar).toHaveAttribute('aria-valuemin', '0');
+    expect(revenueBar).toHaveAttribute('aria-valuemax', '100');
+  });
+});

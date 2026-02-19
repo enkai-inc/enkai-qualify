@@ -277,6 +277,11 @@ function UsageCard({ label, used, limit }: UsageCardProps) {
             isNearLimit ? 'bg-yellow-500' : 'bg-blue-600'
           }`}
           style={{ width: isUnlimited ? '0%' : `${percentage}%` }}
+          role="progressbar"
+          aria-valuenow={isUnlimited ? 0 : used}
+          aria-valuemin={0}
+          aria-valuemax={isUnlimited ? 0 : limit}
+          aria-label={label}
         />
       </div>
       {isNearLimit && (
