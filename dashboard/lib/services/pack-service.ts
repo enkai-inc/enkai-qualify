@@ -110,13 +110,13 @@ async function generatePackAsync(packId: string) {
   }
 }
 
-export async function getPackProgress(id: string): Promise<{
+export async function getPackProgress(id: string, userId: string): Promise<{
   status: PackStatus;
   progress: number;
   message: string;
 }> {
-  const pack = await prisma.pack.findUnique({
-    where: { id },
+  const pack = await prisma.pack.findFirst({
+    where: { id, userId },
     select: { status: true },
   });
 

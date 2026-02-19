@@ -16,8 +16,8 @@ export async function GET(
       return NextResponse.json({ error: 'Pack not found' }, { status: 404 });
     }
 
-    // Get progress info
-    const progress = await getPackProgress(id);
+    // Get progress info (userId enforces ownership at the data layer)
+    const progress = await getPackProgress(id, user.id);
 
     return NextResponse.json({
       ...pack,
