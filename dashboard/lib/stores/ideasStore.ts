@@ -63,6 +63,7 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
     fetchAbortController?.abort();
     fetchAbortController = new AbortController();
     const signal = fetchAbortController.signal;
+    const timeoutId = setTimeout(() => fetchAbortController?.abort(), 30000);
 
     const { page, pageSize, filters } = get();
     set({ isLoading: true, error: null });
@@ -83,6 +84,7 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
       }
 
       const response = await fetch(`/api/ideas?${params}`, { signal });
+      clearTimeout(timeoutId);
       if (!response.ok) {
         throw new Error('Failed to fetch ideas');
       }
@@ -95,7 +97,18 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
+      clearTimeout(timeoutId);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        // If the signal is still the current one, it was a timeout (not superseded by a new call)
+        if (fetchAbortController?.signal === signal) {
+          set({ error: 'Request timed out. Please try again.', isLoading: false });
+        }
+        return;
+      }
+      if (error instanceof TypeError) {
+        set({ error: 'Network error. Please check your connection.', isLoading: false });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : 'Failed to fetch ideas',
         isLoading: false,
@@ -117,10 +130,14 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
   },
 
   deleteIdea: async (id: string) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     try {
       const response = await fetch(`/api/ideas/${id}`, {
         method: 'DELETE',
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Failed to delete idea');
@@ -132,6 +149,15 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
         total: state.total - 1,
       }));
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        set({ error: 'Request timed out. Please try again.' });
+        return;
+      }
+      if (error instanceof TypeError) {
+        set({ error: 'Network error. Please check your connection.' });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : 'Failed to delete idea',
       });
