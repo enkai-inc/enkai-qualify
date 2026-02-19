@@ -10,7 +10,7 @@ import { ReviewStep } from '@/components/ideas/steps/ReviewStep';
 
 export default function NewIdeaPage() {
   const router = useRouter();
-  const { step, reset, saveIdea, isSaving, error } = useCreateIdeaStore();
+  const { step, reset, saveIdea, isSaving, error, clearError } = useCreateIdeaStore();
 
   // Reset state on mount
   useEffect(() => {
@@ -103,8 +103,15 @@ export default function NewIdeaPage() {
 
       {/* Error display */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
           <p className="text-sm text-red-600">{error}</p>
+          <button
+            onClick={clearError}
+            className="text-sm text-red-400 hover:text-red-600 ml-4"
+            aria-label="Dismiss error"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 

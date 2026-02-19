@@ -123,4 +123,34 @@ describe('createIdeaStore', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('clearError', () => {
+    it('should clear the error state', () => {
+      // Set an error
+      act(() => {
+        useCreateIdeaStore.setState({ error: 'Something went wrong' });
+      });
+
+      expect(useCreateIdeaStore.getState().error).toBe('Something went wrong');
+
+      // Clear it
+      act(() => {
+        useCreateIdeaStore.getState().clearError();
+      });
+
+      expect(useCreateIdeaStore.getState().error).toBeNull();
+    });
+
+    it('should be a no-op when error is already null', () => {
+      // Ensure error starts as null
+      expect(useCreateIdeaStore.getState().error).toBeNull();
+
+      // Clear it (should not throw)
+      act(() => {
+        useCreateIdeaStore.getState().clearError();
+      });
+
+      expect(useCreateIdeaStore.getState().error).toBeNull();
+    });
+  });
 });
