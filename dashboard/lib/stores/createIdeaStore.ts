@@ -207,6 +207,9 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
 
       set({ isSaving: true, error: null });
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       try {
         const response = await fetch('/api/ideas', {
           method: 'POST',
@@ -219,7 +222,9 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
             technologies: editedIdea.technologies,
             features: editedIdea.features,
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const data = await response.json();
@@ -230,6 +235,11 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
         set({ isSaving: false });
         return idea.id;
       } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          set({ error: 'Request timed out. Please try again.', isSaving: false });
+          return null;
+        }
         set({
           error: error instanceof Error ? error.message : 'Failed to save idea',
           isSaving: false,
