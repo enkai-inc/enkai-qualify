@@ -77,7 +77,9 @@ export function QuickActions() {
             key={action.id}
             onClick={() => handleAction(action)}
             disabled={isRefining}
-            className="flex items-center gap-2 p-3 text-left text-sm rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            aria-disabled={isRefining}
+            aria-busy={isRefining}
+            className="flex items-center gap-2 p-3 text-left text-sm rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:bg-white transition-colors"
           >
             <svg
               className="w-5 h-5 text-gray-500 flex-shrink-0"
