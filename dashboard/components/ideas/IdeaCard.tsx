@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { IdeaSummary } from '@/lib/stores/ideasStore';
 
@@ -11,6 +11,13 @@ interface IdeaCardProps {
 
 export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (showDeleteConfirm) {
+      cancelButtonRef.current?.focus();
+    }
+  }, [showDeleteConfirm]);
 
   const statusColors: Record<string, string> = {
     PENDING: 'bg-yellow-100 text-yellow-800',
@@ -93,7 +100,21 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
         <div
           role="alertdialog"
           aria-labelledby="delete-confirm-title"
-          onKeyDown={(e) => { if (e.key === 'Escape') setShowDeleteConfirm(false); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setShowDeleteConfirm(false);
+            if (e.key === 'Tab') {
+              const focusable = e.currentTarget.querySelectorAll('button');
+              const first = focusable[0];
+              const last = focusable[focusable.length - 1];
+              if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+              } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+              }
+            }
+          }}
           className="absolute inset-0 bg-white/95 rounded-lg flex flex-col items-center justify-center gap-3 z-10"
         >
           <p id="delete-confirm-title" className="text-sm font-medium text-gray-900">Delete this idea?</p>
@@ -108,6 +129,7 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
               Delete
             </button>
             <button
+              ref={cancelButtonRef}
               onClick={() => setShowDeleteConfirm(false)}
               className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
             >
