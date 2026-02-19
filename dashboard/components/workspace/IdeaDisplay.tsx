@@ -88,6 +88,7 @@ export function IdeaDisplay() {
             <input
               type="text"
               placeholder="Feature name"
+              aria-label="Feature name"
               value={newFeatureName}
               onChange={(e) => setNewFeatureName(e.target.value)}
               onKeyDown={(e) => {
@@ -101,6 +102,7 @@ export function IdeaDisplay() {
             />
             <textarea
               placeholder="Feature description"
+              aria-label="Feature description"
               value={newFeatureDesc}
               onChange={(e) => setNewFeatureDesc(e.target.value)}
               maxLength={200}
@@ -142,6 +144,7 @@ export function IdeaDisplay() {
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="font-medium text-gray-900">{feature.name}</h4>
                     <select
+                      aria-label={`Priority for ${feature.name}`}
                       value={feature.priority}
                       onChange={(e) =>
                         updateFeature(feature.id, {
