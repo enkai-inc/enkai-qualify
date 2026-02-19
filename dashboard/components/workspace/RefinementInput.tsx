@@ -10,6 +10,8 @@ export function RefinementInput() {
   const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -35,9 +37,26 @@ export function RefinementInput() {
   }, [error, clearError]);
 
   useEffect(() => {
+    if (error && !error.startsWith('RATE_LIMITED:')) {
+      setErrorMessage(error);
+      clearError();
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+      }
+      errorTimerRef.current = setTimeout(() => {
+        setErrorMessage(null);
+        errorTimerRef.current = null;
+      }, 10000);
+    }
+  }, [error, clearError]);
+
+  useEffect(() => {
     return () => {
       if (rateLimitTimerRef.current) {
         clearTimeout(rateLimitTimerRef.current);
+      }
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
       }
     };
   }, []);
@@ -169,6 +188,18 @@ export function RefinementInput() {
         <p className="text-xs text-gray-400 mt-2">Press Enter to send, Shift+Enter for new line</p>
         {rateLimitMessage && (
           <p className="text-sm text-amber-600 mt-2">{rateLimitMessage}</p>
+        )}
+        {errorMessage && (
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-sm text-red-600">{errorMessage}</p>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="text-xs text-gray-400 hover:text-gray-600 ml-2"
+              aria-label="Dismiss error"
+            >
+              Dismiss
+            </button>
+          </div>
         )}
       </form>
     </div>
