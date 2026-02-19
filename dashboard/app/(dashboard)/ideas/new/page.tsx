@@ -66,6 +66,7 @@ export default function NewIdeaPage() {
                   >
                     {s.number < step ? (
                       <svg
+                        aria-hidden="true"
                         className="h-5 w-5"
                         fill="currentColor"
                         viewBox="0 0 20 20"
