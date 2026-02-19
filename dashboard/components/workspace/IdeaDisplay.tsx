@@ -90,6 +90,12 @@ export function IdeaDisplay() {
               placeholder="Feature name"
               value={newFeatureName}
               onChange={(e) => setNewFeatureName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAddFeature();
+                }
+              }}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm"
             />
             <textarea
