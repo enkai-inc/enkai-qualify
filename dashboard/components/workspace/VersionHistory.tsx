@@ -46,6 +46,7 @@ export function VersionHistory() {
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -70,7 +71,16 @@ export function VersionHistory() {
             >
               <div
                 className="p-3 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                aria-expanded={expandedVersion === version.id}
                 onClick={() => toggleExpand(version.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleExpand(version.id);
+                  }
+                }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -93,6 +103,7 @@ export function VersionHistory() {
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
