@@ -25,6 +25,8 @@ export function GeneratePackCTA() {
               className={`w-12 h-12 rounded-full flex items-center justify-center ${
                 canGeneratePack ? 'bg-green-100' : 'bg-gray-100'
               }`}
+              aria-label={`Validation score: ${overallScore} out of 100`}
+              role="img"
             >
               <span
                 className={`text-lg font-bold ${
@@ -68,6 +70,11 @@ export function GeneratePackCTA() {
                     <div
                       className="bg-blue-600 h-2 rounded-full transition-all"
                       style={{ width: `${Math.min((overallScore / MIN_SCORE_FOR_PACK) * 100, 100)}%` }}
+                      role="progressbar"
+                      aria-valuenow={overallScore}
+                      aria-valuemin={0}
+                      aria-valuemax={MIN_SCORE_FOR_PACK}
+                      aria-label="Validation score progress"
                     />
                   </div>
                   <p className="text-xs text-gray-400 mt-1 text-center">
