@@ -60,14 +60,13 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
   ...initialState,
 
   fetchIdeas: async () => {
-    // Cancel any in-flight request
-    if (fetchAbortController) {
-      fetchAbortController.abort();
-    }
-    fetchAbortController = new AbortController();
-    const currentController = fetchAbortController;
-    const signal = currentController.signal;
-    const timeoutId = setTimeout(() => currentController.abort(), 30000);
+    // Assign new controller BEFORE aborting old one to close race window
+    const previousController = fetchAbortController;
+    const controller = new AbortController();
+    fetchAbortController = controller;
+    previousController?.abort();
+    const signal = controller.signal;
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     const { page, pageSize, filters } = get();
     set({ isLoading: true, error: null });
@@ -96,7 +95,7 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
       const data = await response.json();
 
       // Only apply if this is still the current request
-      if (currentController === fetchAbortController) {
+      if (controller === fetchAbortController) {
         set({
           ideas: data.items,
           total: data.total,
@@ -108,12 +107,12 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
       clearTimeout(timeoutId);
       if (error instanceof DOMException && error.name === 'AbortError') {
         // If the signal is still the current one, it was a timeout (not superseded by a new call)
-        if (currentController === fetchAbortController) {
+        if (controller === fetchAbortController) {
           set({ error: 'Request timed out. Please try again.', isLoading: false });
         }
         return;
       }
-      if (currentController === fetchAbortController) {
+      if (controller === fetchAbortController) {
         if (error instanceof TypeError) {
           set({ error: 'Network error. Please check your connection.', isLoading: false });
           return;
