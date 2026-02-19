@@ -67,15 +67,9 @@ export function VersionHistory() {
           <p className="text-sm text-blue-700">
             Comparing versions {selectedVersions[0].slice(-4)} and {selectedVersions[1].slice(-4)}
           </p>
-          <button
-            className="mt-2 text-sm text-blue-600 hover:text-blue-700 underline"
-            onClick={() => {
-              // TODO: Navigate to diff view
-              console.log('Show diff for:', selectedVersions);
-            }}
-          >
-            View Differences
-          </button>
+          <span className="mt-2 text-sm text-gray-400">
+            Diff view coming soon
+          </span>
         </div>
       )}
 
