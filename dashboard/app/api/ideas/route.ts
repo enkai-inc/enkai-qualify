@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canCreateIdea } from '@/lib/auth';
 import { listIdeas, createIdea } from '@/lib/services/idea-service';
 import { IdeaStatus } from '@prisma/client';
+import { createIdeaSchema } from '@/lib/validations/idea-validation';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +12,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') as IdeaStatus | null;
     const search = searchParams.get('search') ?? undefined;
-    const page = parseInt(searchParams.get('page') ?? '1');
-    const pageSize = parseInt(searchParams.get('pageSize') ?? '10');
+    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1') || 1);
+    const pageSize = Math.max(1, Math.min(parseInt(searchParams.get('pageSize') ?? '10') || 10, 50));
     const sortBy = (searchParams.get('sortBy') ?? 'updatedAt') as
       | 'createdAt'
       | 'updatedAt'
@@ -56,15 +58,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const parsed = createIdeaSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
 
     const idea = await createIdea({
       userId: user.id,
-      title: body.title,
-      description: body.description,
-      industry: body.industry,
-      targetMarket: body.targetMarket,
-      technologies: body.technologies ?? [],
-      features: body.features ?? [],
+      title: parsed.data.title,
+      description: parsed.data.description,
+      industry: parsed.data.industry,
+      targetMarket: parsed.data.targetMarket,
+      technologies: parsed.data.technologies ?? [],
+      features: (parsed.data.features ?? []).map((f) => ({
+        id: uuidv4(),
+        name: f.name,
+        description: f.description ?? '',
+        priority: f.priority ?? 'medium',
+      })),
     });
 
     return NextResponse.json(idea, { status: 201 });
