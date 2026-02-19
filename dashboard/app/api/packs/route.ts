@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canGeneratePack } from '@/lib/auth';
 import { createPack, listPacks } from '@/lib/services/pack-service';
+import { createPackSchema } from '@/lib/validations/pack-validation';
 
 export async function GET() {
   try {
@@ -34,19 +35,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-
-    if (!body.ideaId || !body.modules || !body.complexity) {
+    const parsed = createPackSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields: ideaId, modules, complexity' },
+        { error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
     const pack = await createPack({
-      ideaId: body.ideaId,
+      ideaId: parsed.data.ideaId,
       userId: user.id,
-      modules: body.modules,
-      complexity: body.complexity,
+      modules: parsed.data.modules,
+      complexity: parsed.data.complexity,
     });
 
     return NextResponse.json(pack, { status: 201 });
