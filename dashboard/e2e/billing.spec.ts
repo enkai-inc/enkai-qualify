@@ -2,6 +2,22 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Billing Page', () => {
   test.beforeEach(async ({ page }) => {
+    // Mock the auth API to provide user context
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'test-user-id',
+          email: 'test@example.com',
+          name: 'Test User',
+          subscription: {
+            stripeCustomerId: 'cus_test123',
+          },
+        }),
+      });
+    });
+
     // Mock the subscription API to avoid network timeout
     await page.route('**/api/billing/subscription/**', async (route) => {
       await route.fulfill({
