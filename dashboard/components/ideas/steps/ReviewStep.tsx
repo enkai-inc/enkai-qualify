@@ -349,7 +349,9 @@ export function ReviewStep({ onSave, isSaving }: ReviewStepProps) {
         <button
           onClick={onSave}
           disabled={isSaving}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 flex items-center gap-2"
+          aria-disabled={isSaving}
+          aria-busy={isSaving}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
         >
           {isSaving && (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
