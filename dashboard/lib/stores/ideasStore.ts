@@ -60,10 +60,14 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
   ...initialState,
 
   fetchIdeas: async () => {
-    fetchAbortController?.abort();
+    // Cancel any in-flight request
+    if (fetchAbortController) {
+      fetchAbortController.abort();
+    }
     fetchAbortController = new AbortController();
-    const signal = fetchAbortController.signal;
-    const timeoutId = setTimeout(() => fetchAbortController?.abort(), 30000);
+    const currentController = fetchAbortController;
+    const signal = currentController.signal;
+    const timeoutId = setTimeout(() => currentController.abort(), 30000);
 
     const { page, pageSize, filters } = get();
     set({ isLoading: true, error: null });
@@ -90,29 +94,35 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
       }
 
       const data = await response.json();
-      set({
-        ideas: data.items,
-        total: data.total,
-        hasMore: data.hasMore,
-        isLoading: false,
-      });
+
+      // Only apply if this is still the current request
+      if (currentController === fetchAbortController) {
+        set({
+          ideas: data.items,
+          total: data.total,
+          hasMore: data.hasMore,
+          isLoading: false,
+        });
+      }
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof DOMException && error.name === 'AbortError') {
         // If the signal is still the current one, it was a timeout (not superseded by a new call)
-        if (fetchAbortController?.signal === signal) {
+        if (currentController === fetchAbortController) {
           set({ error: 'Request timed out. Please try again.', isLoading: false });
         }
         return;
       }
-      if (error instanceof TypeError) {
-        set({ error: 'Network error. Please check your connection.', isLoading: false });
-        return;
+      if (currentController === fetchAbortController) {
+        if (error instanceof TypeError) {
+          set({ error: 'Network error. Please check your connection.', isLoading: false });
+          return;
+        }
+        set({
+          error: error instanceof Error ? error.message : 'Failed to fetch ideas',
+          isLoading: false,
+        });
       }
-      set({
-        error: error instanceof Error ? error.message : 'Failed to fetch ideas',
-        isLoading: false,
-      });
     }
   },
 
