@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, canCreateIdea } from '@/lib/auth';
 
 // Mock next/headers
 jest.mock('next/headers', () => ({
@@ -12,6 +12,17 @@ jest.mock('@/lib/db', () => ({
       findUnique: jest.fn(),
       create: jest.fn(),
     },
+  },
+}));
+
+// Mock @prisma/client for IdeaStatus enum
+jest.mock('@prisma/client', () => ({
+  IdeaStatus: {
+    PENDING: 'PENDING',
+    DRAFT: 'DRAFT',
+    VALIDATED: 'VALIDATED',
+    PACK_GENERATED: 'PACK_GENERATED',
+    ARCHIVED: 'ARCHIVED',
   },
 }));
 
@@ -131,5 +142,80 @@ describe('getCurrentUser', () => {
     mockCreate.mockRejectedValue(new Error('Database connection failed'));
 
     await expect(getCurrentUser()).rejects.toThrow('Database connection failed');
+  });
+});
+
+describe('canCreateIdea', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return false when user has no subscription', async () => {
+    mockFindUnique.mockResolvedValue({
+      id: 'user-1',
+      subscription: null,
+      _count: { ideas: 0 },
+    });
+
+    const result = await canCreateIdea('user-1');
+    expect(result).toBe(false);
+  });
+
+  it('should return true when user is under the idea limit', async () => {
+    mockFindUnique.mockResolvedValue({
+      id: 'user-1',
+      subscription: { tier: 'FREE' },
+      _count: { ideas: 2 },
+    });
+
+    const result = await canCreateIdea('user-1');
+    expect(result).toBe(true);
+  });
+
+  it('should return false when user is at the idea limit', async () => {
+    mockFindUnique.mockResolvedValue({
+      id: 'user-1',
+      subscription: { tier: 'FREE' },
+      _count: { ideas: 3 },
+    });
+
+    const result = await canCreateIdea('user-1');
+    expect(result).toBe(false);
+  });
+
+  it('should return true for AGENCY tier (unlimited)', async () => {
+    mockFindUnique.mockResolvedValue({
+      id: 'user-1',
+      subscription: { tier: 'AGENCY' },
+      _count: { ideas: 999 },
+    });
+
+    const result = await canCreateIdea('user-1');
+    expect(result).toBe(true);
+  });
+
+  it('should exclude ARCHIVED ideas from the count query', async () => {
+    mockFindUnique.mockResolvedValue({
+      id: 'user-1',
+      subscription: { tier: 'FREE' },
+      _count: { ideas: 2 },
+    });
+
+    await canCreateIdea('user-1');
+
+    // Verify the Prisma query filters out ARCHIVED ideas
+    expect(mockFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          _count: {
+            select: {
+              ideas: {
+                where: { status: { not: 'ARCHIVED' } },
+              },
+            },
+          },
+        }),
+      })
+    );
   });
 });

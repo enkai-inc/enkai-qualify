@@ -48,6 +48,7 @@ export default function NewIdeaPage() {
             {steps.map((s, index) => (
               <li
                 key={s.name}
+                aria-current={s.number === step ? 'step' : undefined}
                 className={`flex-1 ${index !== steps.length - 1 ? 'pr-4' : ''}`}
               >
                 <div className="flex items-center">

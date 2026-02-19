@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { IdeaStatus } from '@prisma/client';
 import { prisma } from './db';
 
 /**
@@ -137,7 +138,11 @@ export async function canCreateIdea(userId: string): Promise<boolean> {
     include: {
       subscription: true,
       _count: {
-        select: { ideas: true },
+        select: {
+          ideas: {
+            where: { status: { not: IdeaStatus.ARCHIVED } },
+          },
+        },
       },
     },
   });
