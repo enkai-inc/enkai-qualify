@@ -68,6 +68,7 @@ export function ProblemStep() {
                 ? 'text-green-600'
                 : 'text-gray-500'
             }`}
+            aria-live="polite"
           >
             {problemDescription.length} characters
           </p>
