@@ -6,11 +6,13 @@ import { IdeaSummary } from '@/lib/stores/ideasStore';
 
 interface IdeaCardProps {
   idea: IdeaSummary;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
 export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -120,13 +122,22 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
           <p id="delete-confirm-title" className="text-sm font-medium text-gray-900">Delete this idea?</p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                onDelete(idea.id);
-                setShowDeleteConfirm(false);
+              onClick={async () => {
+                setIsDeleting(true);
+                setDeleteError(null);
+                try {
+                  await onDelete(idea.id);
+                  setShowDeleteConfirm(false);
+                } catch {
+                  setDeleteError('Failed to delete. Please try again.');
+                } finally {
+                  setIsDeleting(false);
+                }
               }}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+              disabled={isDeleting}
+              className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors disabled:opacity-50"
             >
-              Delete
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </button>
             <button
               ref={cancelButtonRef}
@@ -136,6 +147,9 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
               Cancel
             </button>
           </div>
+          {deleteError && (
+            <p className="text-xs text-red-600 mt-2">{deleteError}</p>
+          )}
         </div>
       )}
 
