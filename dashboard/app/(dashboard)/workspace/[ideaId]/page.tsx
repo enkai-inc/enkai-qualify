@@ -109,7 +109,13 @@ export default function WorkspacePage() {
                     : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                {idea.status.replace('_', ' ')}
+                {({
+                  PENDING: 'Generating...',
+                  DRAFT: 'Draft',
+                  VALIDATED: 'Validated',
+                  PACK_GENERATED: 'Pack Ready',
+                  ARCHIVED: 'Archived',
+                }[idea.status]) ?? idea.status}
               </span>
               <span className="text-sm text-gray-500">v{idea.currentVersion}</span>
             </div>
