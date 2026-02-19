@@ -80,6 +80,7 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
               onDelete(idea.id);
             }
           }}
+          aria-label="Delete idea"
           className="text-sm text-gray-400 hover:text-red-600 transition-colors"
         >
           Delete
