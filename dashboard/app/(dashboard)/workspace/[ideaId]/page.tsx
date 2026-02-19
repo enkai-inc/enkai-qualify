@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useWorkspaceStore } from '@/lib/stores/workspaceStore';
 import {
   IdeaDisplay,
@@ -87,10 +88,10 @@ export default function WorkspacePage() {
     <div className="min-h-screen bg-gray-50 pb-24">
       <header className="bg-white border-b border-gray-200">
         <div className="container mx-auto max-w-7xl px-4 lg:px-8 py-4">
-          <nav className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <a href="/ideas" className="hover:text-gray-700">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <Link href="/ideas" className="hover:text-gray-700">
               Ideas
-            </a>
+            </Link>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
