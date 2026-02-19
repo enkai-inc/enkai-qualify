@@ -83,6 +83,7 @@ export function GeneratePackCTA() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
               >
                 <svg
+                  aria-hidden="true"
                   className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
@@ -103,6 +104,7 @@ export function GeneratePackCTA() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-500 font-semibold rounded-lg cursor-not-allowed"
               >
                 <svg
+                  aria-hidden="true"
                   className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
@@ -123,7 +125,7 @@ export function GeneratePackCTA() {
 
         {isRefining && (
           <div className="mt-3 flex items-center gap-2 text-sm text-blue-600">
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle
                 className="opacity-25"
                 cx="12"
