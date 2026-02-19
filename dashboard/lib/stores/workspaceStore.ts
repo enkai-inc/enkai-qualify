@@ -60,6 +60,7 @@ interface WorkspaceState {
   versions: IdeaVersion[];
   validation: ValidationData | null;
   isRefining: boolean;
+  isValidating: boolean;
   isLoading: boolean;
   error: string | null;
   conversation: ConversationMessage[];
