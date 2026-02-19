@@ -92,6 +92,11 @@ export function RiceBreakdown({ score, className = "" }: RiceBreakdownProps) {
               </div>
               <div className="h-2 w-full rounded-full bg-muted">
                 <div
+                  role="progressbar"
+                  aria-valuenow={factor.value}
+                  aria-valuemin={0}
+                  aria-valuemax={factor.max}
+                  aria-label={factor.label}
                   className={`h-full rounded-full transition-all ${factor.color}`}
                   style={{ width: `${displayPercentage}%` }}
                 />
