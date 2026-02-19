@@ -140,6 +140,7 @@ export function RefinementInput() {
           <textarea
             ref={textareaRef}
             value={input}
+            aria-label="Refine your idea"
             onChange={(e) => {
               setInput(e.target.value);
               adjustTextareaHeight();
