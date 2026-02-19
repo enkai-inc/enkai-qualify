@@ -53,7 +53,7 @@ export async function listIdeas(
 
   const where = {
     userId,
-    ...(status && { status }),
+    ...(status ? { status } : { status: { not: IdeaStatus.ARCHIVED } }),
     ...(search && {
       OR: [
         { title: { contains: search, mode: 'insensitive' as const } },
