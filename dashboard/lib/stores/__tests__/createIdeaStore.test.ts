@@ -123,4 +123,111 @@ describe('createIdeaStore', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('generateIdea - AbortController cleanup', () => {
+    it('should pass an AbortSignal to fetch', async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockResponse({
+          generated: {
+            title: 'Test Idea',
+            description: 'A test idea',
+            features: [],
+            technologies: ['TypeScript'],
+            marketAnalysis: 'Good market',
+          },
+        })
+      );
+
+      act(() => {
+        useCreateIdeaStore.setState({
+          industry: 'tech',
+          targetMarket: 'developers',
+          problemDescription: 'testing problem',
+          isGenerating: false,
+        });
+      });
+
+      await act(async () => {
+        await useCreateIdeaStore.getState().generateIdea();
+      });
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const fetchCall = mockFetch.mock.calls[0];
+      // Second argument should contain a signal property
+      expect(fetchCall[1]).toHaveProperty('signal');
+      expect(fetchCall[1].signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('should not set error state when request is aborted (non-timeout)', async () => {
+      // This tests that AbortError from a superseded request doesn't pollute state
+      const abortError = new DOMException(
+        'The operation was aborted.',
+        'AbortError'
+      );
+
+      mockFetch.mockRejectedValueOnce(abortError);
+
+      act(() => {
+        useCreateIdeaStore.setState({
+          industry: 'tech',
+          targetMarket: 'developers',
+          problemDescription: 'test problem',
+          isGenerating: false,
+        });
+      });
+
+      await act(async () => {
+        await useCreateIdeaStore.getState().generateIdea();
+      });
+
+      // AbortError from a superseded request should NOT set error state
+      const state = useCreateIdeaStore.getState();
+      expect(state.error).toBeNull();
+      expect(state.isGenerating).toBe(false);
+    });
+
+    it('should set error when request times out', async () => {
+      jest.useFakeTimers();
+
+      // Create a fetch that hangs until aborted
+      mockFetch.mockImplementationOnce(
+        (_url: string, options: { signal: AbortSignal }) => {
+          return new Promise((_, reject) => {
+            options.signal.addEventListener('abort', () => {
+              reject(
+                new DOMException('The operation was aborted.', 'AbortError')
+              );
+            });
+          });
+        }
+      );
+
+      act(() => {
+        useCreateIdeaStore.setState({
+          industry: 'tech',
+          targetMarket: 'developers',
+          problemDescription: 'test problem',
+          isGenerating: false,
+        });
+      });
+
+      // Start the request
+      let generatePromise: Promise<void>;
+      act(() => {
+        generatePromise = useCreateIdeaStore.getState().generateIdea();
+      });
+
+      // Fast-forward past the 60s timeout
+      await act(async () => {
+        jest.advanceTimersByTime(61000);
+        await generatePromise!;
+      });
+
+      const state = useCreateIdeaStore.getState();
+      expect(state.error).toBe('Request timed out');
+      expect(state.isGenerating).toBe(false);
+
+      jest.useRealTimers();
+    });
+  });
 });

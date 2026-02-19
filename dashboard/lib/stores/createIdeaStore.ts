@@ -71,6 +71,8 @@ const initialState: CreateIdeaState = {
   isSaving: false,
 };
 
+let generateAbortController: AbortController | null = null;
+
 export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
   (set, get) => ({
     ...initialState,
@@ -91,6 +93,18 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
       if (get().isGenerating) return;
       const { industry, targetMarket, problemDescription } = get();
 
+      // Abort any previous in-flight request
+      if (generateAbortController) {
+        generateAbortController.abort();
+      }
+
+      // Create new AbortController with 60s timeout
+      const controller = new AbortController();
+      generateAbortController = controller;
+      const timeoutId = setTimeout(() => {
+        controller.abort('timeout');
+      }, 60_000);
+
       set({ isGenerating: true, error: null, pendingIdea: null });
 
       try {
@@ -102,7 +116,10 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
             targetMarket,
             problemDescription,
           }),
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const data = await response.json();
@@ -129,11 +146,28 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
           });
         }
       } catch (error) {
+        clearTimeout(timeoutId);
+
+        // Handle AbortError: only set error for timeouts, not superseded requests
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          const isTimeout = controller.signal.reason === 'timeout';
+          set({
+            error: isTimeout ? 'Request timed out' : null,
+            isGenerating: false,
+          });
+          return;
+        }
+
         set({
           error:
             error instanceof Error ? error.message : 'Failed to generate idea',
           isGenerating: false,
         });
+      } finally {
+        // Clean up reference if this is still the active controller
+        if (generateAbortController === controller) {
+          generateAbortController = null;
+        }
       }
     },
 
