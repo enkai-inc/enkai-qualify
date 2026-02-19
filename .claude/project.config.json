@@ -33,10 +33,9 @@
   ],
   "github": {
     "labels": {
-      "build": "metis:build",
-      "in_progress": "metis:in-progress",
-      "needs_human": "metis:needs-human",
-      "idea_generation": "enkai:build"
+      "build": "enkai:build",
+      "in_progress": "enkai:in-progress",
+      "needs_human": "enkai:needs-human"
     }
   },
   "aws": {
