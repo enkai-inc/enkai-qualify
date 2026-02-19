@@ -28,6 +28,11 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    // Trim whitespace from string inputs
+    if (typeof body.industry === 'string') body.industry = body.industry.trim();
+    if (typeof body.targetMarket === 'string') body.targetMarket = body.targetMarket.trim();
+    if (typeof body.problemDescription === 'string') body.problemDescription = body.problemDescription.trim();
+
     if (!body.industry || !body.targetMarket || !body.problemDescription) {
       return NextResponse.json(
         { error: 'Industry, target market, and problem description are required' },
