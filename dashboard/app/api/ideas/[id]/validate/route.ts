@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { getIdea } from '@/lib/services/idea-service';
 import { validateIdea } from '@/lib/services/ai-service';
 import { prisma } from '@/lib/db';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(
   request: NextRequest,
@@ -10,6 +11,15 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+
+    const rateLimit = checkRateLimit(`validate:${user.id}`, { maxRequests: 20, windowMs: 3600000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } }
+      );
+    }
+
     const { id } = await params;
 
     // Get current idea
