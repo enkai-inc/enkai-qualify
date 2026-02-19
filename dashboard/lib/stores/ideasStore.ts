@@ -54,10 +54,19 @@ const initialState: IdeasState = {
   },
 };
 
+let fetchAbortController: AbortController | null = null;
+
 export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
   ...initialState,
 
   fetchIdeas: async () => {
+    // Cancel any in-flight request
+    if (fetchAbortController) {
+      fetchAbortController.abort();
+    }
+    fetchAbortController = new AbortController();
+    const currentController = fetchAbortController;
+
     const { page, pageSize, filters } = get();
     set({ isLoading: true, error: null });
 
@@ -76,23 +85,35 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
         params.set('search', filters.search);
       }
 
-      const response = await fetch(`/api/ideas?${params}`);
+      const response = await fetch(`/api/ideas?${params}`, {
+        signal: currentController.signal,
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch ideas');
       }
 
       const data = await response.json();
-      set({
-        ideas: data.items,
-        total: data.total,
-        hasMore: data.hasMore,
-        isLoading: false,
-      });
+
+      // Only apply if this is still the current request
+      if (currentController === fetchAbortController) {
+        set({
+          ideas: data.items,
+          total: data.total,
+          hasMore: data.hasMore,
+          isLoading: false,
+        });
+      }
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Failed to fetch ideas',
-        isLoading: false,
-      });
+      // Ignore aborted requests
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+      if (currentController === fetchAbortController) {
+        set({
+          error: error instanceof Error ? error.message : 'Failed to fetch ideas',
+          isLoading: false,
+        });
+      }
     }
   },
 
