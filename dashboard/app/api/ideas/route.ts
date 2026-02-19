@@ -13,14 +13,13 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') as IdeaStatus | null;
     const search = searchParams.get('search') ?? undefined;
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1') || 1);
-    const pageSize = Math.max(1, Math.min(parseInt(searchParams.get('pageSize') ?? '10') || 10, 50));
-    const sortBy = (searchParams.get('sortBy') ?? 'updatedAt') as
-      | 'createdAt'
-      | 'updatedAt'
-      | 'title';
-    const sortOrder = (searchParams.get('sortOrder') ?? 'desc') as
-      | 'asc'
-      | 'desc';
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') ?? '10') || 10));
+    const validSortBy = ['createdAt', 'updatedAt', 'title'] as const;
+    const sortByParam = searchParams.get('sortBy') ?? '';
+    const sortBy = validSortBy.includes(sortByParam as typeof validSortBy[number])
+      ? (sortByParam as typeof validSortBy[number])
+      : 'updatedAt';
+    const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
 
     const result = await listIdeas(user.id, {
       status: status ?? undefined,
