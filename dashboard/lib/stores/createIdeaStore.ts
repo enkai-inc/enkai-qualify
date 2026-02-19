@@ -88,6 +88,7 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
     setProblemDescription: (problemDescription) => set({ problemDescription }),
 
     generateIdea: async () => {
+      if (get().isGenerating) return;
       const { industry, targetMarket, problemDescription } = get();
 
       set({ isGenerating: true, error: null, pendingIdea: null });
