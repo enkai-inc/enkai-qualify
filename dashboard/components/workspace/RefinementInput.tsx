@@ -92,8 +92,7 @@ export function RefinementInput() {
         <p className="text-sm text-gray-500">Chat with AI to improve and iterate on your idea</p>
       </div>
 
-      {conversation.length > 0 && (
-        <div aria-live="polite" aria-label="Conversation" className="max-h-64 overflow-y-auto p-4 space-y-4">
+      <div aria-live="polite" aria-label="Conversation" className={`max-h-64 overflow-y-auto p-4 space-y-4 ${conversation.length === 0 ? 'hidden' : ''}`}>
           {conversation.map((message) => (
             <div
               key={message.id}
@@ -133,7 +132,6 @@ export function RefinementInput() {
           )}
           <div ref={messagesEndRef} />
         </div>
-      )}
 
       <form onSubmit={handleSubmit} className="p-4">
         <div className="flex gap-2">
