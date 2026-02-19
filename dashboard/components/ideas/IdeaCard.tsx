@@ -154,9 +154,12 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
       )}
 
       {/* Updated time */}
-      <div className="absolute top-4 right-4 text-xs text-gray-400">
+      <time
+        dateTime={idea.updatedAt}
+        className="absolute top-4 right-4 text-xs text-gray-400"
+      >
         {new Date(idea.updatedAt).toLocaleDateString()}
-      </div>
+      </time>
     </div>
   );
 }
