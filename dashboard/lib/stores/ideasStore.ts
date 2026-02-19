@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { IdeaStatus } from '@prisma/client';
 
+let fetchAbortController: AbortController | null = null;
+
 export interface IdeaSummary {
   id: string;
   title: string;
@@ -58,6 +60,10 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
   ...initialState,
 
   fetchIdeas: async () => {
+    fetchAbortController?.abort();
+    fetchAbortController = new AbortController();
+    const signal = fetchAbortController.signal;
+
     const { page, pageSize, filters } = get();
     set({ isLoading: true, error: null });
 
@@ -76,7 +82,7 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
         params.set('search', filters.search);
       }
 
-      const response = await fetch(`/api/ideas?${params}`);
+      const response = await fetch(`/api/ideas?${params}`, { signal });
       if (!response.ok) {
         throw new Error('Failed to fetch ideas');
       }
@@ -89,6 +95,7 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       set({
         error: error instanceof Error ? error.message : 'Failed to fetch ideas',
         isLoading: false,
