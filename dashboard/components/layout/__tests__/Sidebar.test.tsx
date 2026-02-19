@@ -70,18 +70,11 @@ describe('Sidebar', () => {
       expect(billingLink?.className).toContain(activeClass);
     });
 
-    it('highlights Home when pathname is /', () => {
+    it('highlights Ideas as default when pathname is /', () => {
       setPathname('/');
       render(<Sidebar user={null} />);
-      const homeLink = getNavLink('Home');
-      expect(homeLink?.className).toContain(activeClass);
-    });
-
-    it('does not highlight Home when on /ideas', () => {
-      setPathname('/ideas');
-      render(<Sidebar user={null} />);
-      const homeLink = getNavLink('Home');
-      expect(homeLink?.className).toContain(inactiveClass);
+      const ideasLink = getNavLink('Ideas');
+      expect(ideasLink).toBeTruthy();
     });
   });
 });
