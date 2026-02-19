@@ -129,13 +129,6 @@ export function ValidationPanel() {
           )}
         </div>
       )}
-
-      <a
-        href={`/ideas/${idea.id}/analysis`}
-        className="block mt-4 text-center text-sm text-blue-600 hover:text-blue-700"
-      >
-        View Full Analysis
-      </a>
     </div>
   );
 }
