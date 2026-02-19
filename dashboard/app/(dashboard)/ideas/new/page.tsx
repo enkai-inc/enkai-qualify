@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCreateIdeaStore } from '@/lib/stores/createIdeaStore';
 import { IndustryStep } from '@/components/ideas/steps/IndustryStep';
 import { ProblemStep } from '@/components/ideas/steps/ProblemStep';
@@ -10,12 +10,25 @@ import { ReviewStep } from '@/components/ideas/steps/ReviewStep';
 
 export default function NewIdeaPage() {
   const router = useRouter();
-  const { step, reset, saveIdea, isSaving, error, clearError } = useCreateIdeaStore();
+  const searchParams = useSearchParams();
+  const { step, reset, saveIdea, isSaving, error, clearError, setIndustry, setTargetMarket, setProblemDescription, setStep } = useCreateIdeaStore();
 
-  // Reset state on mount
+  // Reset state on mount and pre-fill from query params (market scan)
   useEffect(() => {
     reset();
-  }, [reset]);
+
+    const industry = searchParams.get('industry');
+    const targetMarket = searchParams.get('targetMarket');
+    const problemDescription = searchParams.get('problemDescription');
+
+    if (industry) setIndustry(industry);
+    if (targetMarket) setTargetMarket(targetMarket);
+    if (problemDescription) {
+      setProblemDescription(problemDescription);
+      // Skip to Problem step when pre-filled from market scan
+      setStep(2);
+    }
+  }, [reset, searchParams, setIndustry, setTargetMarket, setProblemDescription, setStep]);
 
   const handleSave = async () => {
     const ideaId = await saveIdea();

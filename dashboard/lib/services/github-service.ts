@@ -257,6 +257,105 @@ ${request.prompt}
   };
 }
 
+export interface MarketScanIssueRequest {
+  scanId: string;
+  userId: string;
+  industry: string;
+  niche?: string;
+}
+
+export async function createMarketScanIssue(
+  request: MarketScanIssueRequest
+): Promise<{ issueNumber: number; issueUrl: string }> {
+  const octokit = getOctokit();
+
+  // Ensure the label exists
+  try {
+    await octokit.issues.getLabel({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      name: IDEA_GENERATION_LABEL,
+    });
+  } catch {
+    await octokit.issues.createLabel({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      name: IDEA_GENERATION_LABEL,
+      color: '7057ff',
+      description: 'Idea generation request from Metis dashboard',
+    });
+  }
+
+  const nicheSection = request.niche
+    ? `| Niche/Focus | ${request.niche} |`
+    : '';
+
+  const issueBody = `## Market Scan Request
+
+**Scan ID:** \`${request.scanId}\`
+**User ID:** \`${request.userId}\`
+
+### Parameters
+
+| Field | Value |
+|-------|-------|
+| Industry | ${request.industry} |
+${nicheSection}
+
+---
+
+## Instructions for Processing Agent
+
+1. Use DataForSEO keyword API to find high-volume search terms in the **${request.industry}** industry${request.niche ? ` with focus on **${request.niche}**` : ''}
+2. Use Perplexity real-time web search to identify emerging pain points and market gaps
+3. Use Claude to synthesize findings into scored market opportunities
+4. Each opportunity should include: title, description, problem statement, demand signals, score (0-100), keywords, monthly search volume, competition level, trend direction, estimated revenue, and sources
+5. Return 5-10 ranked opportunities
+
+**Callback URL:** \`POST /api/internal/market-scans/${request.scanId}/result\`
+
+**Callback payload shape:**
+\`\`\`json
+{
+  "opportunities": [
+    {
+      "rank": 1,
+      "title": "string",
+      "description": "string",
+      "problemStatement": "string",
+      "demandSignals": ["string"],
+      "score": 85,
+      "keywords": ["string"],
+      "monthlySearchVolume": 12000,
+      "competition": "low|medium|high",
+      "trendDirection": "rising|stable|declining",
+      "estimatedRevenue": "$50K-200K ARR",
+      "sources": ["DataForSEO", "Perplexity"]
+    }
+  ],
+  "metadata": {}
+}
+\`\`\`
+`;
+
+  const titleSuffix = request.niche
+    ? `${request.industry} - ${request.niche}`
+    : request.industry;
+
+  const issue = await octokit.issues.create({
+    owner: REPO_OWNER,
+    repo: REPO_NAME,
+    title: `[Market Scan] ${titleSuffix}`,
+    body: issueBody,
+    labels: [IDEA_GENERATION_LABEL],
+  });
+
+  return {
+    issueNumber: issue.data.number,
+    issueUrl: issue.data.html_url,
+  };
+}
+
 export async function closeIdeaGenerationIssue(
   issueNumber: number,
   comment?: string
