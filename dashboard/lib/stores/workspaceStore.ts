@@ -141,6 +141,10 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
       });
 
       if (!response.ok) {
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          throw new Error(`RATE_LIMITED:${retryAfter || '60'}`);
+        }
         throw new Error('Failed to refine idea');
       }
 
