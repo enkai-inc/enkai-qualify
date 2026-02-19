@@ -25,9 +25,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const origin = request.headers.get('origin') ?? 'http://localhost:3000';
-    const successUrl = `${origin}/billing?success=true`;
-    const cancelUrl = `${origin}/billing?cancelled=true`;
+    const ALLOWED_ORIGINS = [
+      process.env.NEXT_PUBLIC_APP_URL,
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ].filter(Boolean);
+
+    const origin = request.headers.get('origin');
+    const validOrigin = ALLOWED_ORIGINS.includes(origin ?? '') ? origin! : ALLOWED_ORIGINS[0] || 'http://localhost:3000';
+    const successUrl = `${validOrigin}/billing?success=true`;
+    const cancelUrl = `${validOrigin}/billing?cancelled=true`;
 
     const session = await createCheckoutSession(
       user.id,

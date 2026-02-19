@@ -18,8 +18,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const origin = request.headers.get('origin') ?? 'http://localhost:3000';
-    const returnUrl = `${origin}/billing`;
+    const origin = request.headers.get('origin');
+    const ALLOWED_ORIGINS = [
+      process.env.NEXT_PUBLIC_APP_URL,
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ].filter(Boolean);
+    const validOrigin = ALLOWED_ORIGINS.includes(origin ?? '') ? origin! : ALLOWED_ORIGINS[0] || 'http://localhost:3000';
+    const returnUrl = `${validOrigin}/billing`;
 
     const session = await createCustomerPortalSession(
       subscription.stripeCustomerId,
