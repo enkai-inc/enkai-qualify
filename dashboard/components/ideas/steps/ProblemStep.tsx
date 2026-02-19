@@ -48,10 +48,11 @@ export function ProblemStep() {
 
       {/* Problem description */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="problem-description" className="block text-sm font-medium text-gray-700 mb-2">
           Problem or Opportunity
         </label>
         <textarea
+          id="problem-description"
           value={problemDescription}
           onChange={(e) => setProblemDescription(e.target.value)}
           placeholder={placeholders[industry] || placeholders.other}
