@@ -28,8 +28,7 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Prisma
-prisma/migrations/
+# Prisma (migrations tracked for deploy)
 
 # Coverage
 coverage/
