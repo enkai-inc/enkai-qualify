@@ -55,6 +55,8 @@ export interface ConversationMessage {
   timestamp: string;
 }
 
+const POLL_INTERVAL_MS = 10_000;
+
 interface WorkspaceState {
   idea: IdeaData | null;
   versions: IdeaVersion[];
@@ -64,6 +66,9 @@ interface WorkspaceState {
   isLoading: boolean;
   error: string | null;
   conversation: ConversationMessage[];
+  isValidationPending: boolean;
+  isRefinementPending: boolean;
+  pollIntervalId: ReturnType<typeof setInterval> | null;
 }
 
 interface WorkspaceActions {
@@ -77,6 +82,8 @@ interface WorkspaceActions {
   removeFeature: (featureId: string) => void;
   clearError: () => void;
   reset: () => void;
+  startPolling: (ideaId: string) => void;
+  stopPolling: () => void;
 }
 
 const initialState: WorkspaceState = {
@@ -88,10 +95,82 @@ const initialState: WorkspaceState = {
   isLoading: false,
   error: null,
   conversation: [],
+  isValidationPending: false,
+  isRefinementPending: false,
+  pollIntervalId: null,
 };
 
 export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set, get) => ({
   ...initialState,
+
+  startPolling: (ideaId: string) => {
+    const { pollIntervalId } = get();
+    if (pollIntervalId) return; // Already polling
+
+    const id = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/ideas/${ideaId}`);
+        if (!response.ok) return;
+        const data = await response.json();
+
+        const state = get();
+        const newValidation = data.validation || null;
+        const newIdea = data.idea;
+
+        // Detect validation completion: new validation record appeared
+        if (state.isValidationPending && newValidation && !state.validation) {
+          set({
+            validation: newValidation,
+            idea: newIdea,
+            versions: data.versions || state.versions,
+            isValidationPending: false,
+            isValidating: false,
+          });
+          // Stop polling if refinement is also not pending
+          if (!state.isRefinementPending) {
+            get().stopPolling();
+          }
+          return;
+        }
+
+        // Detect refinement completion: version number increased
+        if (state.isRefinementPending && newIdea && state.idea && newIdea.currentVersion > state.idea.currentVersion) {
+          const assistantMessage: ConversationMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: 'Idea refined successfully. The changes have been applied.',
+            timestamp: new Date().toISOString(),
+          };
+
+          set({
+            idea: newIdea,
+            versions: data.versions || state.versions,
+            validation: newValidation,
+            isRefinementPending: false,
+            isRefining: false,
+            conversation: [...state.conversation, assistantMessage],
+          });
+          // Stop polling if validation is also not pending
+          if (!state.isValidationPending) {
+            get().stopPolling();
+          }
+          return;
+        }
+      } catch {
+        // Silently ignore poll errors
+      }
+    }, POLL_INTERVAL_MS);
+
+    set({ pollIntervalId: id });
+  },
+
+  stopPolling: () => {
+    const { pollIntervalId } = get();
+    if (pollIntervalId) {
+      clearInterval(pollIntervalId);
+      set({ pollIntervalId: null });
+    }
+  },
 
   loadIdea: async (ideaId: string) => {
     loadAbortController?.abort();
@@ -170,6 +249,23 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
 
       const data = await response.json();
 
+      if (data.status === 'pending') {
+        // Async mode: add pending message, start polling
+        const pendingMessage: ConversationMessage = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: 'Refinement submitted. Processing in the background...',
+          timestamp: new Date().toISOString(),
+        };
+        set({
+          isRefinementPending: true,
+          conversation: [...get().conversation, pendingMessage],
+        });
+        get().startPolling(idea.id);
+        return;
+      }
+
+      // Synchronous fallback (should not happen with new routes, but kept for safety)
       const assistantMessage: ConversationMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -221,6 +317,15 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
       }
 
       const data = await response.json();
+
+      if (data.status === 'pending') {
+        // Async mode: start polling
+        set({ isValidationPending: true });
+        get().startPolling(idea.id);
+        return;
+      }
+
+      // Synchronous fallback
       set({
         validation: data,
         isValidating: false,
@@ -369,5 +474,8 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
 
   clearError: () => set({ error: null }),
 
-  reset: () => set(initialState),
+  reset: () => {
+    get().stopPolling();
+    set(initialState);
+  },
 }));

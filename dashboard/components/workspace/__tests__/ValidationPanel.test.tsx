@@ -98,27 +98,20 @@ describe('ValidationPanel - Run Validation button', () => {
 
     render(<ValidationPanel />);
 
-    const button = screen.getByRole('button', { name: /validating/i });
+    const button = screen.getByRole('button', { name: /submitting/i });
     expect(button).toBeDisabled();
   });
 
-  it('updates validation state on successful validate call', async () => {
-    const mockValidationResponse = {
-      id: 'val-1',
-      ideaId: 'idea-1',
-      version: 1,
-      keywordScore: 75,
-      painPointScore: 80,
-      competitionScore: 60,
-      revenueEstimate: 70,
-      overallScore: 72,
-      details: { marketSize: '$1B' },
-      createdAt: new Date().toISOString(),
+  it('sets pending state on successful validate call (async flow)', async () => {
+    const mockPendingResponse = {
+      status: 'pending',
+      githubIssue: 42,
+      githubIssueUrl: 'https://github.com/tegryan-ddo/metis/issues/42',
     };
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve(mockValidationResponse),
+      json: () => Promise.resolve(mockPendingResponse),
     });
 
     act(() => {
@@ -138,8 +131,7 @@ describe('ValidationPanel - Run Validation button', () => {
     });
 
     const state = useWorkspaceStore.getState();
-    expect(state.validation).toEqual(mockValidationResponse);
-    expect(state.isValidating).toBe(false);
+    expect(state.isValidationPending).toBe(true);
   });
 
   it('sets error state when validate call fails', async () => {

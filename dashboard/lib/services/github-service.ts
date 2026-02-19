@@ -119,6 +119,144 @@ WHERE id = '${request.ideaId}';
   };
 }
 
+export interface ValidationIssueRequest {
+  ideaId: string;
+  userId: string;
+  title: string;
+  description: string;
+  industry: string;
+  targetMarket: string;
+  features: Array<{ name: string; description: string }>;
+}
+
+export async function createValidationIssue(
+  request: ValidationIssueRequest
+): Promise<{ issueNumber: number; issueUrl: string }> {
+  const octokit = getOctokit();
+
+  const featuresText = request.features
+    .map((f) => `- ${f.name}: ${f.description}`)
+    .join('\n');
+
+  const issueBody = `## Validation Request
+
+**Idea ID:** \`${request.ideaId}\`
+**User ID:** \`${request.userId}\`
+
+### Parameters
+
+| Field | Value |
+|-------|-------|
+| Title | ${request.title} |
+| Industry | ${request.industry} |
+| Target Market | ${request.targetMarket} |
+
+### Description
+
+${request.description}
+
+### Features
+
+${featuresText}
+
+---
+
+## Instructions for Processing Agent
+
+1. Evaluate the SaaS idea using market analysis
+2. Provide scores for keyword strength, pain point match, competition, revenue
+3. Store the validation result in the database
+4. Close this issue when complete
+`;
+
+  const issue = await octokit.issues.create({
+    owner: REPO_OWNER,
+    repo: REPO_NAME,
+    title: `[Validation] ${request.title}`,
+    body: issueBody,
+    labels: [IDEA_GENERATION_LABEL],
+  });
+
+  return {
+    issueNumber: issue.data.number,
+    issueUrl: issue.data.html_url,
+  };
+}
+
+export interface RefinementIssueRequest {
+  ideaId: string;
+  userId: string;
+  title: string;
+  description: string;
+  industry: string;
+  targetMarket: string;
+  technologies: string[];
+  features: Array<{ name: string; description: string }>;
+  prompt: string;
+}
+
+export async function createRefinementIssue(
+  request: RefinementIssueRequest
+): Promise<{ issueNumber: number; issueUrl: string }> {
+  const octokit = getOctokit();
+
+  const featuresText = request.features
+    .map((f) => `- ${f.name}: ${f.description}`)
+    .join('\n');
+
+  const issueBody = `## Refinement Request
+
+**Idea ID:** \`${request.ideaId}\`
+**User ID:** \`${request.userId}\`
+
+### Parameters
+
+| Field | Value |
+|-------|-------|
+| Title | ${request.title} |
+| Industry | ${request.industry} |
+| Target Market | ${request.targetMarket} |
+
+### Description
+
+${request.description}
+
+### Technologies
+
+${request.technologies.join(', ')}
+
+### Features
+
+${featuresText}
+
+### Refinement Prompt
+
+${request.prompt}
+
+---
+
+## Instructions for Processing Agent
+
+1. Refine the idea based on the user's feedback
+2. Update title, description, features, and technologies as needed
+3. Store the refined version in the database
+4. Close this issue when complete
+`;
+
+  const issue = await octokit.issues.create({
+    owner: REPO_OWNER,
+    repo: REPO_NAME,
+    title: `[Refinement] ${request.title}`,
+    body: issueBody,
+    labels: [IDEA_GENERATION_LABEL],
+  });
+
+  return {
+    issueNumber: issue.data.number,
+    issueUrl: issue.data.html_url,
+  };
+}
+
 export async function closeIdeaGenerationIssue(
   issueNumber: number,
   comment?: string

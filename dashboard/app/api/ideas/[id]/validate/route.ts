@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { getIdea } from '@/lib/services/idea-service';
-import { validateIdea } from '@/lib/services/ai-service';
-import { prisma } from '@/lib/db';
+import { createValidationIssue } from '@/lib/services/github-service';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 const featuresSchema = z.array(z.object({
@@ -36,47 +35,32 @@ export async function POST(
 
     const { idea } = result;
 
-    // Validate with AI
-    const validation = await validateIdea({
-      idea: {
-        title: idea.title,
-        description: idea.description,
-        industry: idea.industry,
-        targetMarket: idea.targetMarket,
-        features: featuresSchema.parse(idea.features),
-      },
+    // Create GitHub issue for async processing
+    const { issueNumber, issueUrl } = await createValidationIssue({
+      ideaId: id,
+      userId: user.id,
+      title: idea.title,
+      description: idea.description,
+      industry: idea.industry,
+      targetMarket: idea.targetMarket,
+      features: featuresSchema.parse(idea.features),
     });
 
-    // Store validation result
-    const storedValidation = await prisma.validation.create({
-      data: {
-        ideaId: id,
-        version: idea.currentVersion,
-        keywordScore: validation.keywordScore,
-        painPointScore: validation.painPointScore,
-        competitionScore: validation.competitionScore,
-        revenueEstimate: validation.revenueEstimate,
-        overallScore: validation.overallScore,
-        details: validation.details,
+    return NextResponse.json(
+      {
+        status: 'pending',
+        githubIssue: issueNumber,
+        githubIssueUrl: issueUrl,
       },
-    });
-
-    // Update idea status if score is high enough
-    if (validation.overallScore >= 60) {
-      await prisma.idea.update({
-        where: { id },
-        data: { status: 'VALIDATED' },
-      });
-    }
-
-    return NextResponse.json(storedValidation);
+      { status: 202 }
+    );
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error validating idea:', error);
+    console.error('Error creating validation issue:', error);
     return NextResponse.json(
-      { error: 'Failed to validate idea' },
+      { error: 'Failed to submit validation request' },
       { status: 500 }
     );
   }

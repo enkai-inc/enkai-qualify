@@ -28,21 +28,13 @@ jest.mock('@/lib/services/idea-service', () => ({
       features: [{ name: 'Feature 1', description: 'Desc' }],
     },
   }),
-  updateIdea: jest.fn().mockResolvedValue({
-    id: 'idea-1',
-    title: 'Refined Idea',
-    description: 'Refined description',
-  }),
 }));
 
-// Mock AI service
-jest.mock('@/lib/services/ai-service', () => ({
-  refineIdea: jest.fn().mockResolvedValue({
-    title: 'Refined Idea',
-    description: 'Refined description',
-    features: [],
-    technologies: [],
-    summary: 'Refinement summary',
+// Mock GitHub service
+jest.mock('@/lib/services/github-service', () => ({
+  createRefinementIssue: jest.fn().mockResolvedValue({
+    issueNumber: 42,
+    issueUrl: 'https://github.com/tegryan-ddo/metis/issues/42',
   }),
 }));
 
@@ -89,7 +81,7 @@ describe('POST /api/ideas/[id]/refine', () => {
         createPostRequest({ prompt: 'a'.repeat(2000) }),
         { params: mockParams }
       );
-      expect(response.status).not.toBe(400);
+      expect(response.status).toBe(202);
     });
 
     it('returns 400 when prompt is missing', async () => {
@@ -101,13 +93,51 @@ describe('POST /api/ideas/[id]/refine', () => {
       const data = await response.json();
       expect(data.error).toBe('Prompt is required');
     });
+  });
 
-    it('accepts valid prompt within limits', async () => {
+  describe('async flow', () => {
+    it('returns 202 with pending status and GitHub issue info', async () => {
       const response = await POST(
         createPostRequest({ prompt: 'Make it more focused on mobile users' }),
         { params: mockParams }
       );
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(202);
+      const data = await response.json();
+      expect(data.status).toBe('pending');
+      expect(data.githubIssue).toBe(42);
+      expect(data.githubIssueUrl).toBe('https://github.com/tegryan-ddo/metis/issues/42');
+    });
+
+    it('calls createRefinementIssue with correct parameters', async () => {
+      const { createRefinementIssue } = require('@/lib/services/github-service');
+
+      await POST(
+        createPostRequest({ prompt: 'Add mobile features' }),
+        { params: mockParams }
+      );
+
+      expect(createRefinementIssue).toHaveBeenCalledWith({
+        ideaId: 'idea-1',
+        userId: 'user-123',
+        title: 'Test Idea',
+        description: 'A description',
+        industry: 'tech',
+        targetMarket: 'enterprise',
+        technologies: ['React'],
+        features: [{ name: 'Feature 1', description: 'Desc' }],
+        prompt: 'Add mobile features',
+      });
+    });
+
+    it('returns 404 when idea not found', async () => {
+      const { getIdea } = require('@/lib/services/idea-service');
+      getIdea.mockResolvedValueOnce(null);
+
+      const response = await POST(
+        createPostRequest({ prompt: 'Test' }),
+        { params: mockParams }
+      );
+      expect(response.status).toBe(404);
     });
   });
 });
