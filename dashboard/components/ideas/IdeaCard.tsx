@@ -69,7 +69,7 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
       </p>
 
       {/* Metadata */}
-      <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 mb-4">
         <span className="capitalize">{idea.industry}</span>
         <span>•</span>
         <span className="capitalize">{idea.targetMarket}</span>
