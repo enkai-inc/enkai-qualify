@@ -40,7 +40,7 @@ export function IndustryStep() {
         <label className="block text-sm font-medium text-gray-700 mb-3">
           Industry
         </label>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {industries.map((ind) => (
             <button
               key={ind.value}
