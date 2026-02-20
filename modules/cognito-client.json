@@ -1,0 +1,40 @@
+{
+  "moduleId": "cognito-client",
+  "displayName": "Cognito Client",
+  "description": "# Client-side Cognito Auth (PKCE)",
+  "category": "auth",
+  "dependencies": [
+    "nextjs-base"
+  ],
+  "workUnits": [
+    {
+      "workItemId": "cognito-client-001",
+      "title": "Add app",
+      "files": [
+        "app"
+      ]
+    },
+    {
+      "workItemId": "cognito-client-002",
+      "title": "Add components",
+      "files": [
+        "components"
+      ]
+    },
+    {
+      "workItemId": "cognito-client-003",
+      "title": "Add lib",
+      "files": [
+        "lib"
+      ]
+    }
+  ],
+  "tags": [
+    "auth",
+    "cognito"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/auth/cognito-client"
+  }
+}

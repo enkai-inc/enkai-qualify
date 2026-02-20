@@ -1,0 +1,16 @@
+{
+  "moduleId": "next17",
+  "displayName": "Next17",
+  "description": "# Next.js 17 Template",
+  "category": "nextjs",
+  "dependencies": [],
+  "workUnits": [],
+  "tags": [
+    "nextjs",
+    "next17"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/nextjs/next17"
+  }
+}

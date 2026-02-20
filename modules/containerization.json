@@ -1,0 +1,24 @@
+{
+  "moduleId": "containerization",
+  "displayName": "Containerization",
+  "description": "containerization from template-factory",
+  "category": "ecs-saas",
+  "dependencies": [],
+  "workUnits": [
+    {
+      "workItemId": "containerization-001",
+      "title": "Add app",
+      "files": [
+        "app"
+      ]
+    }
+  ],
+  "tags": [
+    "ecs-saas",
+    "containerization"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/ecs-saas/containerization"
+  }
+}
