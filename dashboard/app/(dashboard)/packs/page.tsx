@@ -21,6 +21,7 @@ export default function PacksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('');
+  const [regenerating, setRegenerating] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPacks() {
@@ -37,6 +38,27 @@ export default function PacksPage() {
     }
     fetchPacks();
   }, []);
+
+  async function handleRegenerate(packId: string) {
+    setRegenerating(packId);
+    try {
+      const response = await fetch(`/api/packs/${packId}/regenerate`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to regenerate pack');
+      }
+      const updatedPack = await response.json();
+      setPacks((prev) =>
+        prev.map((p) => (p.id === packId ? { ...p, ...updatedPack, status: 'PENDING' } : p))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to regenerate');
+    } finally {
+      setRegenerating(null);
+    }
+  }
 
   const filteredPacks = filter
     ? packs.filter((p) => p.status === filter)
@@ -166,12 +188,20 @@ export default function PacksPage() {
                 </a>
               )}
 
-              {pack.status === 'EXPIRED' && (
+              {(pack.status === 'EXPIRED' || pack.status === 'FAILED') && (
                 <button
-                  onClick={() => {/* TODO: Regenerate pack */}}
-                  className="mt-4 flex w-full items-center justify-center rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                  onClick={() => handleRegenerate(pack.id)}
+                  disabled={regenerating === pack.id}
+                  className="mt-4 flex w-full items-center justify-center rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Regenerate
+                  {regenerating === pack.id ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                      Regenerating...
+                    </>
+                  ) : (
+                    'Regenerate'
+                  )}
                 </button>
               )}
 
