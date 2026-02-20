@@ -1,0 +1,16 @@
+{
+  "moduleId": "cicd",
+  "displayName": "Cicd",
+  "description": "# Static Site CI/CD Patch",
+  "category": "static-site",
+  "dependencies": [],
+  "workUnits": [],
+  "tags": [
+    "static-site",
+    "cicd"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/static-site/cicd"
+  }
+}

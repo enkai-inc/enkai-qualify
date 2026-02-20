@@ -1,0 +1,16 @@
+{
+  "moduleId": "base",
+  "displayName": "Base",
+  "description": "base from template-factory",
+  "category": "nextjs",
+  "dependencies": [],
+  "workUnits": [],
+  "tags": [
+    "nextjs",
+    "base"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/nextjs/base"
+  }
+}

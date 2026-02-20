@@ -1,0 +1,16 @@
+{
+  "moduleId": "next18",
+  "displayName": "Next18",
+  "description": "# {{PROJECT_NAME}}",
+  "category": "nextjs",
+  "dependencies": [],
+  "workUnits": [],
+  "tags": [
+    "nextjs",
+    "next18"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/nextjs/next18"
+  }
+}

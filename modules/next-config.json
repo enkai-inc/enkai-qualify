@@ -1,0 +1,16 @@
+{
+  "moduleId": "next-config",
+  "displayName": "Next Config",
+  "description": "# Static Site Template",
+  "category": "static-site",
+  "dependencies": [],
+  "workUnits": [],
+  "tags": [
+    "static-site",
+    "next"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/static-site/next-config"
+  }
+}
