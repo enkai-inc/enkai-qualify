@@ -18,10 +18,12 @@ export default function MarketScanDetailPage() {
   }, [params.id, loadScan, stopPolling]);
 
   // Start polling when scan is pending/processing
+  // Using optional chaining for id/status intentionally - we only want to react to these specific changes
   useEffect(() => {
     if (currentScan && (currentScan.status === 'PENDING' || currentScan.status === 'PROCESSING')) {
       startPolling(currentScan.id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentScan?.id, currentScan?.status, startPolling]);
 
   if (isLoading && !currentScan) {
