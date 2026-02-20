@@ -110,6 +110,47 @@ async function generatePackAsync(packId: string) {
   }
 }
 
+export async function regeneratePack(id: string, userId: string) {
+  // Find the existing pack
+  const pack = await prisma.pack.findFirst({
+    where: { id, userId },
+  });
+
+  if (!pack) {
+    throw new Error('Pack not found');
+  }
+
+  // Only allow regeneration for EXPIRED or FAILED packs
+  if (!['EXPIRED', 'FAILED'].includes(pack.status)) {
+    throw new Error('Can only regenerate expired or failed packs');
+  }
+
+  // Reset pack status and clear download info
+  await prisma.pack.update({
+    where: { id },
+    data: {
+      status: 'PENDING',
+      s3Key: null,
+      downloadUrl: null,
+      expiresAt: null,
+    },
+  });
+
+  // Trigger async generation
+  generatePackAsync(id).catch(console.error);
+
+  return prisma.pack.findUnique({
+    where: { id },
+    include: {
+      idea: {
+        select: {
+          title: true,
+        },
+      },
+    },
+  });
+}
+
 export async function getPackProgress(id: string, userId: string): Promise<{
   status: PackStatus;
   progress: number;
