@@ -1,0 +1,24 @@
+{
+  "moduleId": "prisma",
+  "displayName": "Prisma",
+  "description": "# Prisma + PostgreSQL Patch Pack",
+  "category": "database",
+  "dependencies": [],
+  "workUnits": [
+    {
+      "workItemId": "prisma-001",
+      "title": "Add lib",
+      "files": [
+        "lib"
+      ]
+    }
+  ],
+  "tags": [
+    "database",
+    "prisma"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/database/prisma"
+  }
+}
