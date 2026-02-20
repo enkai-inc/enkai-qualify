@@ -47,7 +47,7 @@ export function CompareVersionsModal({
     return (
       <div className="mb-4">
         <h4 className="text-sm font-medium text-gray-700 mb-2">{label}</h4>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className={`p-3 rounded-lg ${isDifferent ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
             <p className="text-xs text-gray-500 mb-1">Current (v{currentIdea.currentVersion})</p>
             <p className="text-sm text-gray-900">{current || '(empty)'}</p>
@@ -71,7 +71,7 @@ export function CompareVersionsModal({
     return (
       <div className="mb-4">
         <h4 className="text-sm font-medium text-gray-700 mb-2">{label}</h4>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-3 rounded-lg bg-gray-50">
             <p className="text-xs text-gray-500 mb-1">Current (v{currentIdea.currentVersion})</p>
             <div className="flex flex-wrap gap-1">
@@ -151,7 +151,7 @@ export function CompareVersionsModal({
 
           <div className="mb-4">
             <h4 className="text-sm font-medium text-gray-700 mb-2">Features</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-3 rounded-lg bg-gray-50">
                 <p className="text-xs text-gray-500 mb-2">Current (v{currentIdea.currentVersion}) - {currentIdea.features.length} features</p>
                 <ul className="space-y-1">
