@@ -1,3 +1,5 @@
+import { timingSafeEqual } from 'crypto';
+
 /**
  * Internal API authentication for service-to-service calls.
  *
@@ -18,7 +20,12 @@ export function requireInternalAuth(request: Request): void {
   }
 
   const token = authHeader.slice(7);
-  if (token !== apiKey) {
+
+  // Use timing-safe comparison to prevent timing attacks
+  const tokenBuffer = Buffer.from(token);
+  const apiKeyBuffer = Buffer.from(apiKey);
+
+  if (tokenBuffer.length !== apiKeyBuffer.length || !timingSafeEqual(tokenBuffer, apiKeyBuffer)) {
     throw new Error('Unauthorized');
   }
 }
