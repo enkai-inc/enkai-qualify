@@ -66,10 +66,10 @@ export function RiceBreakdown({ score, className = "" }: RiceBreakdownProps) {
   );
 
   return (
-    <div className={`rounded-lg border bg-card p-4 ${className}`}>
+    <div className={`rounded-lg border bg-white p-4 ${className}`}>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold">RICE Score</h3>
-        <span className="text-2xl font-bold text-primary">
+        <span className="text-2xl font-bold text-blue-600">
           {score.score.toFixed(1)}
         </span>
       </div>
@@ -85,12 +85,12 @@ export function RiceBreakdown({ score, className = "" }: RiceBreakdownProps) {
             <div key={factor.label}>
               <div className="mb-1 flex items-center justify-between text-sm">
                 <span className="font-medium">{factor.label}</span>
-                <span className="text-muted-foreground">
+                <span className="text-gray-500">
                   {factor.value.toFixed(factor.value < 10 ? 1 : 0)}
                   {factor.suffix || ""}
                 </span>
               </div>
-              <div className="h-2 w-full rounded-full bg-muted">
+              <div className="h-2 w-full rounded-full bg-gray-200">
                 <div
                   role="progressbar"
                   aria-valuenow={factor.value}
@@ -101,7 +101,7 @@ export function RiceBreakdown({ score, className = "" }: RiceBreakdownProps) {
                   style={{ width: `${displayPercentage}%` }}
                 />
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-gray-500">
                 {factor.reasoning}
               </p>
             </div>
@@ -110,7 +110,7 @@ export function RiceBreakdown({ score, className = "" }: RiceBreakdownProps) {
       </div>
 
       <div className="mt-4 border-t pt-3">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-gray-500">
           Score = (Reach × Impact × Confidence) ÷ Effort
         </p>
       </div>
