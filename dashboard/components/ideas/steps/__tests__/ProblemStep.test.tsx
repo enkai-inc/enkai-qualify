@@ -23,7 +23,7 @@ describe('ProblemStep', () => {
 
   it('renders the character counter with aria-live="polite"', () => {
     render(<ProblemStep />);
-    const counter = screen.getByText(/^\d+ characters$/);
+    const counter = screen.getByText(/\d+\/2000/);
     expect(counter).toHaveAttribute('aria-live', 'polite');
   });
 });
