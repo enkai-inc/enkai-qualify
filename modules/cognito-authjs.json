@@ -1,0 +1,47 @@
+{
+  "moduleId": "cognito-authjs",
+  "displayName": "Cognito Authjs",
+  "description": "# Auth.js + Cognito Patch Pack",
+  "category": "auth",
+  "dependencies": [
+    "nextjs-base"
+  ],
+  "workUnits": [
+    {
+      "workItemId": "cognito-authjs-001",
+      "title": "Add app",
+      "files": [
+        "app"
+      ]
+    },
+    {
+      "workItemId": "cognito-authjs-002",
+      "title": "Add auth.ts",
+      "files": [
+        "auth.ts"
+      ]
+    },
+    {
+      "workItemId": "cognito-authjs-003",
+      "title": "Add lib",
+      "files": [
+        "lib"
+      ]
+    },
+    {
+      "workItemId": "cognito-authjs-004",
+      "title": "Add middleware.ts",
+      "files": [
+        "middleware.ts"
+      ]
+    }
+  ],
+  "tags": [
+    "auth",
+    "cognito"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/auth/cognito-authjs"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "moduleId": "cognito-cdk",
+  "displayName": "Cognito Cdk",
+  "description": "cognito-cdk from template-factory",
+  "category": "static-site",
+  "dependencies": [],
+  "workUnits": [],
+  "tags": [
+    "static-site",
+    "cognito"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/static-site/cognito-cdk"
+  }
+}
