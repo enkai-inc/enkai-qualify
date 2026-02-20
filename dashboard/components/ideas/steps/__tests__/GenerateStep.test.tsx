@@ -10,22 +10,22 @@ const mockUseCreateIdeaStore = useCreateIdeaStore as jest.MockedFunction<
 >;
 
 describe('GenerateStep', () => {
-  const baseStore = {
+  const createMockStore = (overrides: Partial<ReturnType<typeof useCreateIdeaStore>> = {}) => ({
     isGenerating: true,
     generateIdea: jest.fn(),
     prevStep: jest.fn(),
     error: null,
-  } as unknown as ReturnType<typeof useCreateIdeaStore>;
+    ...overrides,
+  } as unknown as ReturnType<typeof useCreateIdeaStore>);
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('adds aria-hidden to the error X icon SVG', () => {
-    mockUseCreateIdeaStore.mockReturnValue({
-      ...baseStore,
-      error: 'Something went wrong',
-    } as unknown as ReturnType<typeof useCreateIdeaStore>);
+    mockUseCreateIdeaStore.mockReturnValue(
+      createMockStore({ error: 'Something went wrong' })
+    );
 
     const { container } = render(<GenerateStep />);
     const svgs = container.querySelectorAll('svg');
@@ -34,10 +34,9 @@ describe('GenerateStep', () => {
   });
 
   it('adds aria-hidden to the loading lightbulb SVG', () => {
-    mockUseCreateIdeaStore.mockReturnValue({
-      ...baseStore,
-      isGenerating: true,
-    } as unknown as ReturnType<typeof useCreateIdeaStore>);
+    mockUseCreateIdeaStore.mockReturnValue(
+      createMockStore({ isGenerating: true })
+    );
 
     const { container } = render(<GenerateStep />);
     const svgs = container.querySelectorAll('svg');
@@ -50,10 +49,9 @@ describe('GenerateStep', () => {
   });
 
   it('adds aria-hidden to the green checkmark SVGs when not generating', () => {
-    mockUseCreateIdeaStore.mockReturnValue({
-      ...baseStore,
-      isGenerating: false,
-    } as unknown as ReturnType<typeof useCreateIdeaStore>);
+    mockUseCreateIdeaStore.mockReturnValue(
+      createMockStore({ isGenerating: false })
+    );
 
     const { container } = render(<GenerateStep />);
     const svgs = container.querySelectorAll('svg');
@@ -66,10 +64,9 @@ describe('GenerateStep', () => {
 
   it('all decorative SVGs have aria-hidden in both states', () => {
     // Test generating state
-    mockUseCreateIdeaStore.mockReturnValue({
-      ...baseStore,
-      isGenerating: true,
-    } as unknown as ReturnType<typeof useCreateIdeaStore>);
+    mockUseCreateIdeaStore.mockReturnValue(
+      createMockStore({ isGenerating: true })
+    );
 
     const { container: containerGenerating } = render(<GenerateStep />);
     const svgsGenerating = containerGenerating.querySelectorAll('svg');
@@ -78,10 +75,9 @@ describe('GenerateStep', () => {
     });
 
     // Test not-generating state
-    mockUseCreateIdeaStore.mockReturnValue({
-      ...baseStore,
-      isGenerating: false,
-    } as unknown as ReturnType<typeof useCreateIdeaStore>);
+    mockUseCreateIdeaStore.mockReturnValue(
+      createMockStore({ isGenerating: false })
+    );
 
     const { container: containerDone } = render(<GenerateStep />);
     const svgsDone = containerDone.querySelectorAll('svg');
@@ -90,10 +86,9 @@ describe('GenerateStep', () => {
     });
 
     // Error state
-    mockUseCreateIdeaStore.mockReturnValue({
-      ...baseStore,
-      error: 'Test error',
-    } as unknown as ReturnType<typeof useCreateIdeaStore>);
+    mockUseCreateIdeaStore.mockReturnValue(
+      createMockStore({ error: 'Test error' })
+    );
 
     const { container: containerError } = render(<GenerateStep />);
     const svgsError = containerError.querySelectorAll('svg');
