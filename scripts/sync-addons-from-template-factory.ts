@@ -46,7 +46,19 @@ async function fetchPatchesFromRepo(): Promise<TemplateFactoryPatch[]> {
   const patches: TemplateFactoryPatch[] = [];
 
   // Get all patch categories
-  const categories = ['auth', 'nextjs', 'ecs-saas', 'static-site'];
+  const categories = [
+    'ai',
+    'analytics',
+    'auth',
+    'database',
+    'ecs-saas',
+    'email',
+    'nextjs',
+    'payments',
+    'static-site',
+    'storage',
+    'ui',
+  ];
 
   for (const category of categories) {
     try {
