@@ -1,0 +1,31 @@
+{
+  "moduleId": "claude",
+  "displayName": "Claude",
+  "description": "# Claude AI Patch Pack",
+  "category": "ai",
+  "dependencies": [],
+  "workUnits": [
+    {
+      "workItemId": "claude-001",
+      "title": "Add app",
+      "files": [
+        "app"
+      ]
+    },
+    {
+      "workItemId": "claude-002",
+      "title": "Add lib",
+      "files": [
+        "lib"
+      ]
+    }
+  ],
+  "tags": [
+    "ai",
+    "claude"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/ai/claude"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "moduleId": "shadcn",
+  "displayName": "Shadcn",
+  "description": "# shadcn/ui Patch Pack",
+  "category": "ui",
+  "dependencies": [],
+  "workUnits": [
+    {
+      "workItemId": "shadcn-001",
+      "title": "Add components",
+      "files": [
+        "components"
+      ]
+    },
+    {
+      "workItemId": "shadcn-002",
+      "title": "Add lib",
+      "files": [
+        "lib"
+      ]
+    }
+  ],
+  "tags": [
+    "ui",
+    "shadcn"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/ui/shadcn"
+  }
+}

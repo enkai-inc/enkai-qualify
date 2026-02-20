@@ -1,0 +1,31 @@
+{
+  "moduleId": "resend",
+  "displayName": "Resend",
+  "description": "# Resend Email Patch Pack",
+  "category": "email",
+  "dependencies": [],
+  "workUnits": [
+    {
+      "workItemId": "resend-001",
+      "title": "Add app",
+      "files": [
+        "app"
+      ]
+    },
+    {
+      "workItemId": "resend-002",
+      "title": "Add lib",
+      "files": [
+        "lib"
+      ]
+    }
+  ],
+  "tags": [
+    "email",
+    "resend"
+  ],
+  "source": {
+    "repo": "tegryan-ddo/template-factory",
+    "path": "patches/email/resend"
+  }
+}
