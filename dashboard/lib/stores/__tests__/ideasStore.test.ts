@@ -211,7 +211,8 @@ describe('ideasStore fetch timeouts', () => {
 
       jest.advanceTimersByTime(30000);
 
-      await deletePromise;
+      // The store re-throws the error after setting state
+      await expect(deletePromise).rejects.toThrow();
 
       const state = useIdeasStore.getState();
       expect(state.error).toBe('Request timed out. Please try again.');
@@ -237,11 +238,13 @@ describe('ideasStore fetch timeouts', () => {
     });
 
     it('should handle network errors with specific message', async () => {
-      mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+      const networkError = new TypeError('Failed to fetch');
+      mockFetch.mockRejectedValue(networkError);
 
-      await act(async () => {
-        await useIdeasStore.getState().deleteIdea('test-id');
-      });
+      // The store re-throws the error after setting state
+      await expect(
+        useIdeasStore.getState().deleteIdea('test-id')
+      ).rejects.toThrow('Failed to fetch');
 
       const state = useIdeasStore.getState();
       expect(state.error).toBe('Network error. Please check your connection.');
