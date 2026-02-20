@@ -5,9 +5,11 @@ import { IdeaSummary } from '@/lib/stores/ideasStore';
 
 // Mock next/link since we're in a test environment
 jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
+  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
   );
+  MockLink.displayName = 'MockLink';
+  return MockLink;
 });
 
 const mockIdea: IdeaSummary = {
