@@ -53,8 +53,6 @@ export async function GET(
         packs_used: subscription.packsUsed,
         packs_limit: limits.packs,
         current_period_end: subscription.periodEnd.toISOString(),
-        stripe_customer_id: subscription.stripeCustomerId,
-        stripe_subscription_id: subscription.stripeSubscriptionId,
       },
       {
         headers: {
