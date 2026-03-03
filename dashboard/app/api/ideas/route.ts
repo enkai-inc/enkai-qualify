@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       : 'updatedAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
 
-    const result = await listIdeas(user.id, {
+    const result = await listIdeas({
       status: status ?? undefined,
       search,
       page,

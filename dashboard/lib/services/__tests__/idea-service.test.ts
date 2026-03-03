@@ -24,10 +24,9 @@ describe('idea-service', () => {
       (mockPrisma.idea.findMany as jest.Mock).mockResolvedValue([]);
       (mockPrisma.idea.count as jest.Mock).mockResolvedValue(0);
 
-      await listIdeas('user-123');
+      await listIdeas();
 
       const expectedWhere = {
-        userId: 'user-123',
         status: { not: 'ARCHIVED' },
       };
 
@@ -43,10 +42,9 @@ describe('idea-service', () => {
       (mockPrisma.idea.findMany as jest.Mock).mockResolvedValue([]);
       (mockPrisma.idea.count as jest.Mock).mockResolvedValue(0);
 
-      await listIdeas('user-123', { status: 'DRAFT' as any });
+      await listIdeas({ status: 'DRAFT' as any });
 
       const expectedWhere = {
-        userId: 'user-123',
         status: 'DRAFT',
       };
 
@@ -62,10 +60,9 @@ describe('idea-service', () => {
       (mockPrisma.idea.findMany as jest.Mock).mockResolvedValue([]);
       (mockPrisma.idea.count as jest.Mock).mockResolvedValue(0);
 
-      await listIdeas('user-123', { status: 'ARCHIVED' as any });
+      await listIdeas({ status: 'ARCHIVED' as any });
 
       const expectedWhere = {
-        userId: 'user-123',
         status: 'ARCHIVED',
       };
 
