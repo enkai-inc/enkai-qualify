@@ -43,7 +43,7 @@ export async function POST(
     }
 
     // Get current idea
-    const result = await getIdea(id, user.id);
+    const result = await getIdea(id);
     if (!result) {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
     }

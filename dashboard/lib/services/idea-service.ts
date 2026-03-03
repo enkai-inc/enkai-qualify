@@ -47,7 +47,6 @@ export interface UpdateIdeaInput {
 }
 
 export async function listIdeas(
-  userId: string,
   options: {
     status?: IdeaStatus;
     search?: string;
@@ -67,7 +66,6 @@ export async function listIdeas(
   } = options;
 
   const where = {
-    userId,
     ...(status ? { status } : { status: { not: IdeaStatus.ARCHIVED } }),
     ...(search && {
       OR: [
@@ -106,9 +104,9 @@ export async function listIdeas(
   };
 }
 
-export async function getIdea(id: string, userId: string) {
+export async function getIdea(id: string) {
   const idea = await prisma.idea.findFirst({
-    where: { id, userId },
+    where: { id },
     include: {
       versions: {
         orderBy: { version: 'desc' },
