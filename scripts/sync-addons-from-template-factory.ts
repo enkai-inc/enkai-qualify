@@ -227,7 +227,7 @@ async function main() {
   if (missingInTemplateFactory.length > 0) {
     console.log('\n⚠️  Modules in metis not found in template-factory:');
     missingInTemplateFactory.forEach(m => console.log(`  - ${m}`));
-    console.log('\nConsider requesting these from template-factory via pnyx.');
+    console.log('\nConsider requesting these from template-factory via enkai-relay.');
   }
 
   return { newModules, updatedModules, missingInTemplateFactory };
