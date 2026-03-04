@@ -77,6 +77,8 @@ const ecsStack = new EcsStack(app, `${stackPrefix}-ecs`, {
   workerRepository: ecrStack.workerRepository,
   databaseSecret: databaseStack.databaseSecret,
   redisCluster: databaseStack.redisCluster,
+  databaseSecurityGroup: databaseStack.databaseSecurityGroup,
+  redisSecurityGroup: databaseStack.redisSecurityGroup,
   tags: commonTags,
 });
 ecsStack.addDependency(databaseStack);
