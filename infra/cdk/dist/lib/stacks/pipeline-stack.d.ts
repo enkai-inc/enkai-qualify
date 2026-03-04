@@ -9,10 +9,12 @@ export interface PipelineStackProps extends cdk.StackProps {
     dashboardRepository: ecr.Repository;
     apiRepository: ecr.Repository;
     workerRepository: ecr.Repository;
-    dashboardService: ecs.FargateService;
-    apiService: ecs.FargateService;
-    workerService: ecs.FargateService;
-    cluster: ecs.Cluster;
+    /** Service ARN or IBaseService for dashboard deployment. Use ARN string for external clusters. */
+    dashboardService: ecs.IBaseService | string;
+    /** Service ARN or IBaseService for API deployment. */
+    apiService: ecs.IBaseService | string;
+    /** Service ARN or IBaseService for worker deployment. */
+    workerService: ecs.IBaseService | string;
 }
 /**
  * Pipeline Stack - CodePipeline + CodeBuild for CI/CD

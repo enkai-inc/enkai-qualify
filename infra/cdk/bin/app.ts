@@ -85,6 +85,10 @@ ecsStack.addDependency(databaseStack);
 ecsStack.addDependency(ecrStack);
 
 // 5. Pipeline Stack - CodePipeline + CodeBuild
+//
+// Deploy dashboard and API to the shared enkai-dev cluster where production
+// traffic is routed (metis.digitaldevops.io → enkai-shared-dev ALB → enkai-dev cluster).
+// Worker stays in metis-dev-cluster since it has no HTTP traffic and no shared equivalent.
 const pipelineStack = new PipelineStack(app, `${stackPrefix}-pipeline`, {
   env,
   projectName,
@@ -92,10 +96,9 @@ const pipelineStack = new PipelineStack(app, `${stackPrefix}-pipeline`, {
   dashboardRepository: ecrStack.dashboardRepository,
   apiRepository: ecrStack.apiRepository,
   workerRepository: ecrStack.workerRepository,
-  dashboardService: ecsStack.dashboardService,
-  apiService: ecsStack.apiService,
+  dashboardService: 'arn:aws:ecs:us-east-1:882384879235:service/enkai-dev/metis-dashboard-v2',
+  apiService: 'arn:aws:ecs:us-east-1:882384879235:service/enkai-dev/metis-api-v2',
   workerService: ecsStack.workerService,
-  cluster: ecsStack.cluster,
   tags: commonTags,
 });
 pipelineStack.addDependency(ecsStack);
