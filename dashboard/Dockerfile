@@ -23,6 +23,9 @@ RUN npm ci && npm cache clean --force
 FROM public.ecr.aws/docker/library/node:20-alpine AS builder
 WORKDIR /app
 
+# Install OpenSSL and libc6-compat for Prisma client during build
+RUN apk add --no-cache libc6-compat openssl
+
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
