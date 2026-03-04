@@ -21,6 +21,8 @@ export interface EcsStackProps extends cdk.StackProps {
   workerRepository: ecr.Repository;
   databaseSecret: secretsmanager.Secret;
   redisCluster: elasticache.CfnCacheCluster;
+  databaseSecurityGroup: ec2.SecurityGroup;
+  redisSecurityGroup: ec2.SecurityGroup;
 }
 
 /**
@@ -52,6 +54,8 @@ export class EcsStack extends cdk.Stack {
       workerRepository,
       databaseSecret,
       redisCluster,
+      databaseSecurityGroup,
+      redisSecurityGroup,
     } = props;
     const isProd = environment === 'prod';
 
@@ -104,6 +108,27 @@ export class EcsStack extends cdk.Stack {
       ec2.Port.tcp(8000),
       'Allow ALB to API'
     );
+
+    // Allow ECS services to reach database (PostgreSQL 5432)
+    // Using L1 construct to avoid cross-stack cyclic dependency
+    new ec2.CfnSecurityGroupIngress(this, 'DbIngress', {
+      groupId: databaseSecurityGroup.securityGroupId,
+      ipProtocol: 'tcp',
+      fromPort: 5432,
+      toPort: 5432,
+      sourceSecurityGroupId: serviceSG.securityGroupId,
+      description: 'Allow ECS services to access PostgreSQL',
+    });
+
+    // Allow ECS services to reach Redis (6379)
+    new ec2.CfnSecurityGroupIngress(this, 'RedisIngress', {
+      groupId: redisSecurityGroup.securityGroupId,
+      ipProtocol: 'tcp',
+      fromPort: 6379,
+      toPort: 6379,
+      sourceSecurityGroupId: serviceSG.securityGroupId,
+      description: 'Allow ECS services to access Redis',
+    });
 
     // Dashboard Task Definition
     const dashboardTaskDef = new ecs.FargateTaskDefinition(
