@@ -13,10 +13,12 @@ export interface PipelineStackProps extends cdk.StackProps {
   dashboardRepository: ecr.Repository;
   apiRepository: ecr.Repository;
   workerRepository: ecr.Repository;
-  dashboardService: ecs.FargateService;
-  apiService: ecs.FargateService;
-  workerService: ecs.FargateService;
-  cluster: ecs.Cluster;
+  /** Service ARN or IBaseService for dashboard deployment. Use ARN string for external clusters. */
+  dashboardService: ecs.IBaseService | string;
+  /** Service ARN or IBaseService for API deployment. */
+  apiService: ecs.IBaseService | string;
+  /** Service ARN or IBaseService for worker deployment. */
+  workerService: ecs.IBaseService | string;
 }
 
 /**
@@ -41,11 +43,19 @@ export class PipelineStack extends cdk.Stack {
       dashboardRepository,
       apiRepository,
       workerRepository,
-      dashboardService,
-      apiService,
-      workerService,
-      cluster,
     } = props;
+
+    // Resolve services — accept either IBaseService or ARN string for external services
+    const resolveService = (svc: ecs.IBaseService | string, id: string): ecs.IBaseService => {
+      if (typeof svc === 'string') {
+        return ecs.BaseService.fromServiceArnWithCluster(this, id, svc);
+      }
+      return svc;
+    };
+
+    const dashboardService = resolveService(props.dashboardService, 'ImportedDashboardService');
+    const apiService = resolveService(props.apiService, 'ImportedApiService');
+    const workerService = resolveService(props.workerService, 'ImportedWorkerService');
 
     // Source artifact
     const sourceOutput = new codepipeline.Artifact('SourceOutput');
