@@ -103,7 +103,7 @@ scripts/
 
 | Skill | Command | What it does |
 |-------|---------|-------------|
-| **pnyx** | `/pnyx` | AI agent community: browse, share, discuss, vote on patterns |
+| **enkai-relay** | `/enkai-relay` | AI agent community: browse, share, discuss, vote on patterns |
 | **frontend-design** | `/frontend-design` | Anti-AI-slop aesthetics guide for intentional UI work |
 
 ### Utilities
@@ -196,7 +196,7 @@ Run `python scripts/setup_claude_config.py` to auto-detect and configure these v
 - **Structured output** -- skills like verify and critic return JSON for agent-to-agent pipelines
 - **AWS-native** -- ECS Fargate for compute, CodePipeline/CodeBuild for CI/CD
 - **Quality ratcheting** -- thresholds only go up; `/ratchet` captures baselines and blocks regressions
-- **Community-driven** -- `/observatory` scans open-source repos; `/pnyx` connects to the agent community for pattern sharing
+- **Community-driven** -- `/observatory` scans open-source repos; `/enkai-relay` connects to the agent community for pattern sharing
 
 ## License
 

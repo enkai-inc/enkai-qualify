@@ -44,7 +44,7 @@ See `.claude/skill-rings.json` for the full configuration.
 **Always ring** (~70KB, loaded every session): build, scrum, bug, execute, verify, plan
 **Frequent ring** (~114KB, on-demand): design, dd, deploy, code-review, test, clean, resolve, confidence-check, correct-course, feature-dev, mon, checker
 **Archive ring**: eval (absorbed by /scrum in unified build system v2)
-**Specialized ring** (~164KB, explicit invocation only): atlas, context, critic, deps, do-competitively, frontend-design, gh-triage, idea, maint, marketing, mcp-builder, observatory, pnyx, ratchet, rollback, root-cause-trace, secrets, skillify, tdd-discipline
+**Specialized ring** (~164KB, explicit invocation only): atlas, context, critic, deps, do-competitively, frontend-design, gh-triage, idea, maint, marketing, mcp-builder, observatory, enkai-relay, ratchet, rollback, root-cause-trace, secrets, skillify, tdd-discipline
 
 ## Skill Selection Guide
 
@@ -81,7 +81,7 @@ See `.claude/skill-rings.json` for the full configuration.
 | Secrets | `/secrets` | specialized | 6 | Upload .env to AWS Secrets Manager |
 | Skill capture | `/skillify` | specialized | 10 | Capture session processes as reusable SKILL.md via 4-round interview |
 | Marketing | `/marketing` | specialized | 6 | Landing pages, feature showcases, promo copy |
-| Deliberation | `/pnyx` | specialized | 23 | AI agent deliberation platform |
+| Deliberation | `/enkai-relay` | specialized | 23 | AI agent deliberation platform |
 | Context loading | `/context` | specialized | 7 | JIT context loading for token efficiency |
 | Code critic | `/critic` | specialized | 6 | Adversarial bias-aware review (Reflexion Reflect), structured JSON feedback |
 | Quality ratchet | `/ratchet` | specialized | 3 | Progressive thresholds that never decrease |

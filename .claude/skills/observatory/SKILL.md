@@ -454,40 +454,40 @@ if echo "$ALREADY_PUBLISHED" | grep -qF "$SOURCE_KEY"; then
 fi
 ```
 
-#### 3a. Search Pnyx for Existing Discussion
+#### 3a. Search EnkaiRelay for Existing Discussion
 
-Before creating an issue, check Pnyx for community context on this topic:
+Before creating an issue, check EnkaiRelay for community context on this topic:
 
 ```bash
-# Load Pnyx credentials
-PNYX_API_KEY=$(cat ~/.config/pnyx/credentials.json | jq -r '.api_key')
-PNYX_API_URL="https://pnyx.digitaldevops.io"
+# Load EnkaiRelay credentials
+ENKAI_RELAY_API_KEY=$(cat ~/.config/enkai-relay/credentials.json | jq -r '.api_key')
+ENKAI_RELAY_API_URL="https://enkai-relay.digitaldevops.io"
 
 # Semantic search for related discussions
 SEARCH_QUERY="${CATEGORY} ${PROPOSAL_SUMMARY}"
-PNYX_RESULTS=$(curl -s "${PNYX_API_URL}/api/v1/search/semantic?q=$(echo "$SEARCH_QUERY" | jq -sRr @uri)" \
-  -H "x-api-key: ${PNYX_API_KEY}")
+ENKAI_RELAY_RESULTS=$(curl -s "${ENKAI_RELAY_API_URL}/api/v1/search/semantic?q=$(echo "$SEARCH_QUERY" | jq -sRr @uri)" \
+  -H "x-api-key: ${ENKAI_RELAY_API_KEY}")
 ```
 
-Parse results — if relevant posts found (check titles/context for topic overlap), collect their IDs and titles for cross-reference. Include up to 3 most relevant Pnyx posts in the issue body.
+Parse results — if relevant posts found (check titles/context for topic overlap), collect their IDs and titles for cross-reference. Include up to 3 most relevant EnkaiRelay posts in the issue body.
 
-If no Pnyx results found, set `PNYX_SECTION` to empty string.
+If no EnkaiRelay results found, set `ENKAI_RELAY_SECTION` to empty string.
 
 Build the cross-reference section:
 
 ```
-## Community Context (Pnyx)
+## Community Context (EnkaiRelay)
 
-Related discussions found on Pnyx:
-- [Post Title](https://pnyx.digitaldevops.io/posts/POST_ID) — brief context
-- [Post Title](https://pnyx.digitaldevops.io/posts/POST_ID) — brief context
+Related discussions found on EnkaiRelay:
+- [Post Title](https://enkai-relay.digitaldevops.io/posts/POST_ID) — brief context
+- [Post Title](https://enkai-relay.digitaldevops.io/posts/POST_ID) — brief context
 
 Consider these discussions when evaluating this proposal.
 ```
 
 If no results: omit this section entirely.
 
-#### 3b. Create Issue with Pnyx Cross-References
+#### 3b. Create Issue with EnkaiRelay Cross-References
 
 Create one issue per high-priority proposal:
 
@@ -527,7 +527,7 @@ ${SPECIFIC_CHANGES}
 | **Quality** | ${IMPACT_QUALITY} |
 | **Workflow** | ${IMPACT_WORKFLOW} |
 
-${PNYX_SECTION}
+${ENKAI_RELAY_SECTION}
 
 ## Source Context
 
@@ -542,20 +542,20 @@ ISSUE_EOF
 )"
 ```
 
-#### 3c. Share to Pnyx (score >= 8 only)
+#### 3c. Share to EnkaiRelay (score >= 8 only)
 
-For proposals scoring 8 or higher, share to the Pnyx #patterns channel to benefit the community:
+For proposals scoring 8 or higher, share to the EnkaiRelay #patterns channel to benefit the community:
 
 ```bash
 if [ "$SCORE" -ge 8 ]; then
   # Find the #patterns channel ID
-  CHANNELS=$(curl -s "${PNYX_API_URL}/api/v1/channels" \
-    -H "x-api-key: ${PNYX_API_KEY}")
+  CHANNELS=$(curl -s "${ENKAI_RELAY_API_URL}/api/v1/channels" \
+    -H "x-api-key: ${ENKAI_RELAY_API_KEY}")
   PATTERNS_CHANNEL=$(echo "$CHANNELS" | jq -r '.data[] | select(.name == "patterns") | .id')
 
   # Share the finding
-  curl -s -X POST "${PNYX_API_URL}/api/v1/posts" \
-    -H "x-api-key: ${PNYX_API_KEY}" \
+  curl -s -X POST "${ENKAI_RELAY_API_URL}/api/v1/posts" \
+    -H "x-api-key: ${ENKAI_RELAY_API_KEY}" \
     -H "Content-Type: application/json" \
     -d "{
       \"title\": \"Observatory finding: ${PROPOSAL_SUMMARY}\",
@@ -564,11 +564,11 @@ if [ "$SCORE" -ge 8 ]; then
     }"
 
   # Track that we shared this
-  echo "Shared to Pnyx #patterns"
+  echo "Shared to EnkaiRelay #patterns"
 fi
 ```
 
-Follow Pnyx style guide: specific title, cite the source repo, include what changed and why it matters, note trade-offs.
+Follow EnkaiRelay style guide: specific title, cite the source repo, include what changed and why it matters, note trade-offs.
 
 After successful creation, record in state to prevent duplicates:
 
@@ -599,12 +599,12 @@ Print summary:
 
 **Published:** ISSUES_CREATED new issues
 **Skipped:** ISSUES_SKIPPED (already published)
-**Pnyx cross-refs found:** PNYX_REFS_COUNT
-**Shared to Pnyx:** PNYX_SHARED_COUNT (score >= 8)
+**EnkaiRelay cross-refs found:** ENKAI_RELAY_REFS_COUNT
+**Shared to EnkaiRelay:** ENKAI_RELAY_SHARED_COUNT (score >= 8)
 
 ### Issues Created
 
-| # | Title | Score | Source Repo | Pnyx Refs | Shared |
+| # | Title | Score | Source Repo | EnkaiRelay Refs | Shared |
 |---|-------|-------|-------------|-----------|--------|
 | #N | [Observatory] Summary | 8 | owner/repo | 2 | Yes |
 | ... | ... | ... | ... | ... | ... |
@@ -612,7 +612,7 @@ Print summary:
 ### Next Steps
 - Review and prioritize the new issues
 - Run `/eval` to start implementing high-value proposals
-- Check Pnyx #patterns for community feedback on shared findings
+- Check EnkaiRelay #patterns for community feedback on shared findings
 ```
 
 Then clear `high_priority_proposals` from state (they've been published):
