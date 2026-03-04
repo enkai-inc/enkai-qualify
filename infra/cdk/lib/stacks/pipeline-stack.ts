@@ -99,9 +99,11 @@ export class PipelineStack extends cdk.Stack {
             },
             build: {
               commands: [
+                'echo Clearing Docker build cache...',
+                'docker builder prune -f || true',
                 'echo Building the Docker image...',
                 'cd dashboard',
-                'docker build --no-cache -t $REPOSITORY_URI:latest -t $REPOSITORY_URI:$IMAGE_TAG .',
+                'docker build --no-cache --pull -t $REPOSITORY_URI:latest -t $REPOSITORY_URI:$IMAGE_TAG .',
               ],
             },
             post_build: {
@@ -120,7 +122,6 @@ export class PipelineStack extends cdk.Stack {
             'discard-paths': 'yes',
           },
         }),
-        cache: codebuild.Cache.local(codebuild.LocalCacheMode.DOCKER_LAYER),
       }
     );
 

@@ -23,6 +23,9 @@ RUN npm ci && npm cache clean --force
 FROM public.ecr.aws/docker/library/node:20-alpine AS builder
 WORKDIR /app
 
+# Install OpenSSL and libc6-compat for Prisma client during build
+RUN apk add --no-cache libc6-compat openssl
+
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -33,8 +36,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Generate Prisma client (required for TypeScript types)
 RUN npx prisma generate
 
-# Build the application
-RUN npm run build
+# Ensure clean build output (no stale cache)
+RUN rm -rf .next .turbo
+
+# Build with Webpack (Turbopack standalone has a runtime chunk generation bug
+# that serves stale client bundles missing recent component changes)
+RUN npx next build --webpack
 
 # =============================================================================
 # Stage 3: Production Runner
