@@ -101,7 +101,7 @@ export class PipelineStack extends cdk.Stack {
               commands: [
                 'echo Building the Docker image...',
                 'cd dashboard',
-                'docker build -t $REPOSITORY_URI:latest -t $REPOSITORY_URI:$IMAGE_TAG .',
+                'docker build --no-cache -t $REPOSITORY_URI:latest -t $REPOSITORY_URI:$IMAGE_TAG .',
               ],
             },
             post_build: {
@@ -228,7 +228,7 @@ export class PipelineStack extends cdk.Stack {
             commands: [
               'echo Building the Docker image...',
               'cd api',
-              'docker build -t $REPOSITORY_URI:latest -t $REPOSITORY_URI:$IMAGE_TAG .',
+              'docker build --no-cache -t $REPOSITORY_URI:latest -t $REPOSITORY_URI:$IMAGE_TAG .',
             ],
           },
           post_build: {
@@ -285,7 +285,7 @@ export class PipelineStack extends cdk.Stack {
             commands: [
               'echo Building the Docker image...',
               'cd worker',
-              'docker build -t $REPOSITORY_URI:latest -t $REPOSITORY_URI:$IMAGE_TAG .',
+              'docker build --no-cache -t $REPOSITORY_URI:latest -t $REPOSITORY_URI:$IMAGE_TAG .',
             ],
           },
           post_build: {

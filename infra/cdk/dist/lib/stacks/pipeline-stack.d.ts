@@ -8,8 +8,10 @@ export interface PipelineStackProps extends cdk.StackProps {
     environment: string;
     dashboardRepository: ecr.Repository;
     apiRepository: ecr.Repository;
+    workerRepository: ecr.Repository;
     dashboardService: ecs.FargateService;
     apiService: ecs.FargateService;
+    workerService: ecs.FargateService;
     cluster: ecs.Cluster;
 }
 /**
