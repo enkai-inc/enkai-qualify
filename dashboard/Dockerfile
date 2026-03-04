@@ -36,8 +36,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Generate Prisma client (required for TypeScript types)
 RUN npx prisma generate
 
-# Build the application
-RUN npm run build
+# Ensure clean build output (no stale cache)
+RUN rm -rf .next .turbo
+
+# Build with Webpack (Turbopack standalone has a runtime chunk generation bug
+# that serves stale client bundles missing recent component changes)
+RUN npx next build --webpack
 
 # =============================================================================
 # Stage 3: Production Runner
