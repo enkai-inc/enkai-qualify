@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { getIdea, updateIdea, deleteIdea } from '@/lib/services/idea-service';
+import { logger } from '@/lib/logger';
 
 const updateIdeaSchema = z.object({
   title: z.string().max(200).optional(),
@@ -37,7 +38,7 @@ export async function GET(
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error getting idea:', error);
+    logger.error('Error getting idea', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Failed to get idea' }, { status: 500 });
   }
 }
@@ -69,7 +70,7 @@ export async function PUT(
     if (error instanceof Error && error.message === 'Idea not found') {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
     }
-    console.error('Error updating idea:', error);
+    logger.error('Error updating idea', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to update idea' },
       { status: 500 }
@@ -95,7 +96,7 @@ export async function DELETE(
     if (error instanceof Error && error.message === 'Idea not found') {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
     }
-    console.error('Error deleting idea:', error);
+    logger.error('Error deleting idea', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to delete idea' },
       { status: 500 }
