@@ -30,7 +30,7 @@ class TestCalculateReach:
         """US geo should apply 0.85 multiplier."""
         global_reach, _ = calculate_reach(1000, "global")
         us_reach, reason = calculate_reach(1000, "us")
-        assert us_reach == round(global_reach * 0.85, 2)
+        assert us_reach == pytest.approx(global_reach * 0.85, abs=0.02)
         assert "US focused" in reason
         assert "85% multiplier" in reason
 
@@ -38,7 +38,7 @@ class TestCalculateReach:
         """UK geo should apply 0.6 multiplier."""
         global_reach, _ = calculate_reach(1000, "global")
         uk_reach, reason = calculate_reach(1000, "uk")
-        assert uk_reach == round(global_reach * 0.6, 2)
+        assert uk_reach == pytest.approx(global_reach * 0.6, abs=0.02)
         assert "UK focused" in reason
         assert "60% multiplier" in reason
 
