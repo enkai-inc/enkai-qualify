@@ -1,7 +1,8 @@
 """Discovery API routes."""
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from ..auth import get_current_user
 from ..services.discovery import DiscoveryEngine, OpportunityType
 
 router = APIRouter(prefix="/discovery", tags=["discovery"])
@@ -25,7 +26,7 @@ class DiscoveryResponse(BaseModel):
 
 
 @router.post("/keywords", response_model=DiscoveryResponse)
-async def discover_keywords(request: DiscoveryRequest) -> DiscoveryResponse:
+async def discover_keywords(request: DiscoveryRequest, current_user: dict = Depends(get_current_user)) -> DiscoveryResponse:
     """Discover keyword opportunities.
 
     Args:
