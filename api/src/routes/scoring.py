@@ -99,6 +99,9 @@ async def get_prioritized_opportunities(
     Returns:
         PrioritizedResponse with list of opportunities.
     """
+    # Clamp pagination bounds
+    limit = min(max(limit, 1), 100)
+
     # TODO: Integrate with discovery engine
     return PrioritizedResponse(
         opportunities=[],
