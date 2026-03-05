@@ -91,7 +91,7 @@ async function generatePackAsync(packId: string) {
     data: {
       status: 'READY',
       s3Key: `packs/${packId}/bundle.zip`,
-      downloadUrl: `https://metis-packs.s3.amazonaws.com/packs/${packId}/bundle.zip`,
+      downloadUrl: `https://enkai-qualify-packs.s3.amazonaws.com/packs/${packId}/bundle.zip`,
       expiresAt,
     },
   });

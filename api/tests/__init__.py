@@ -1,1 +1,1 @@
-"""Tests for Metis API."""
+"""Tests for Enkai Qualify API."""

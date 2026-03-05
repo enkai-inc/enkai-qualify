@@ -329,8 +329,8 @@ export class PipelineStack extends cdk.Stack {
     // Note: You need to create a CodeStar connection manually and update the ARN
     const sourceAction = new codepipeline_actions.CodeStarConnectionsSourceAction({
       actionName: 'GitHub_Source',
-      owner: 'tegryan-ddo', // Update with actual owner
-      repo: 'metis', // Update with actual repo
+      owner: 'enkai-inc', // Update with actual owner
+      repo: 'enkai-qualify', // Update with actual repo
       branch: 'main',
       output: sourceOutput,
       connectionArn: 'arn:aws:codeconnections:us-east-1:882384879235:connection/36b17d25-a4cc-467d-94fb-4cea5e6bc986',

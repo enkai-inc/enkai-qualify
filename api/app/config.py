@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     cors_origins: List[str] = ["http://localhost:3000"]
 
     # Database
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/metis"
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/enkai_qualify"
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"

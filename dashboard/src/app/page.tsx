@@ -1,7 +1,7 @@
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold mb-4">Metis Dashboard</h1>
+      <h1 className="text-4xl font-bold mb-4">Enkai Qualify Dashboard</h1>
       <p className="text-lg text-gray-600">
         AI-powered development toolkit
       </p>

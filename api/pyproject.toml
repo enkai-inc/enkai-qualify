@@ -1,12 +1,12 @@
 [project]
-name = "metis-api"
+name = "enkai-qualify-api"
 version = "0.1.0"
-description = "Metis API - AI-powered development toolkit backend"
+description = "Enkai Qualify API - AI-powered development toolkit backend"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
-    {name = "Metis Team"}
+    {name = "Enkai Qualify Team"}
 ]
 keywords = ["api", "fastapi", "ai", "development"]
 

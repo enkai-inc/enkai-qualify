@@ -106,7 +106,7 @@ describe('ValidationPanel - Run Validation button', () => {
     const mockPendingResponse = {
       status: 'pending',
       githubIssue: 42,
-      githubIssueUrl: 'https://github.com/tegryan-ddo/metis/issues/42',
+      githubIssueUrl: 'https://github.com/enkai-inc/enkai-qualify/issues/42',
     };
 
     mockFetch.mockResolvedValueOnce({

@@ -1,1 +1,1 @@
-"""Metis API package."""
+"""Enkai Qualify API package."""

@@ -37,9 +37,9 @@ export function Sidebar({ user }: SidebarProps) {
       <div className="flex h-16 items-center px-6">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-            <span className="text-lg font-bold text-white">M</span>
+            <span className="text-lg font-bold text-white">E</span>
           </div>
-          <span className="text-xl font-semibold text-white">Metis</span>
+          <span className="text-xl font-semibold text-white">Enkai Qualify</span>
         </Link>
       </div>
 

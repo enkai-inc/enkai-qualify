@@ -34,7 +34,7 @@ jest.mock('@/lib/services/idea-service', () => ({
 jest.mock('@/lib/services/github-service', () => ({
   createRefinementIssue: jest.fn().mockResolvedValue({
     issueNumber: 42,
-    issueUrl: 'https://github.com/tegryan-ddo/metis/issues/42',
+    issueUrl: 'https://github.com/enkai-inc/enkai-qualify/issues/42',
   }),
 }));
 
@@ -105,7 +105,7 @@ describe('POST /api/ideas/[id]/refine', () => {
       const data = await response.json();
       expect(data.status).toBe('pending');
       expect(data.githubIssue).toBe(42);
-      expect(data.githubIssueUrl).toBe('https://github.com/tegryan-ddo/metis/issues/42');
+      expect(data.githubIssueUrl).toBe('https://github.com/enkai-inc/enkai-qualify/issues/42');
     });
 
     it('calls createRefinementIssue with correct parameters', async () => {

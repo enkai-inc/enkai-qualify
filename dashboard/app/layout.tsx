@@ -5,7 +5,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Metis - SaaS Opportunity Discovery',
+  title: 'Enkai Qualify - SaaS Opportunity Discovery',
   description: 'Find data-driven opportunities for SaaS products',
 };
 

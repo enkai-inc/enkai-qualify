@@ -20,6 +20,6 @@
     "@aws-cdk/aws-ecs:arnFormatIncludesClusterName": true,
     "@aws-cdk/core:enablePartitionLiterals": true,
     "environment": "dev",
-    "projectName": "metis"
+    "projectName": "enkai-qualify"
   }
 }

@@ -2,11 +2,11 @@
   "$schema": "project-config-schema",
   "$comment": "Project-specific configuration. Update these values when importing .claude/ into a new repo.",
   "project": {
-    "name": "metis",
-    "display_name": "Metis",
+    "name": "enkai-qualify",
+    "display_name": "Enkai Qualify",
     "description": "Project description",
-    "repo_owner": "tegryan-ddo",
-    "repo_name": "metis"
+    "repo_owner": "enkai-inc",
+    "repo_name": "enkai-qualify"
   },
   "paths": {
     "docs_root": "docs",
@@ -33,16 +33,16 @@
   ],
   "github": {
     "labels": {
-      "build": "metis:build",
-      "in_progress": "metis:in-progress",
-      "needs_human": "metis:needs-human",
+      "build": "enkai-qualify:build",
+      "in_progress": "enkai-qualify:in-progress",
+      "needs_human": "enkai-qualify:needs-human",
       "idea_generation": "enkai:build"
     }
   },
   "aws": {
     "profile": "default",
     "region": "us-east-1",
-    "stack_prefix": "metis",
+    "stack_prefix": "enkai-qualify",
     "stacks": {
       "network": "${stack_prefix}-${environment}-network",
       "ecr": "${stack_prefix}-${environment}-ecr",
@@ -51,8 +51,8 @@
       "pipeline": "${stack_prefix}-${environment}-pipeline"
     },
     "services": {
-      "dashboard_url": "https://app.metis.dev",
-      "api_url": "https://api.metis.dev",
+      "dashboard_url": "https://app.enkai-qualify.dev",
+      "api_url": "https://api.enkai-qualify.dev",
       "dashboard_service": "${stack_prefix}-${environment}-dashboard",
       "api_service": "${stack_prefix}-${environment}-api",
       "cluster": "${stack_prefix}-${environment}-cluster"
@@ -67,7 +67,7 @@
     }
   },
   "secrets": {
-    "prefix": "metis",
+    "prefix": "enkai-qualify",
     "pattern": "${prefix}/{environment}/*"
   },
   "worktree": {
@@ -93,7 +93,7 @@
     "differentiators": []
   },
   "token_optimization": {
-    "cache_prefix": "metis",
+    "cache_prefix": "enkai-qualify",
     "s3_bucket_env_var": "CLAUDE_ATLAS_CACHE_BUCKET",
     "warn_threshold_tokens": 30000,
     "critical_threshold_tokens": 50000

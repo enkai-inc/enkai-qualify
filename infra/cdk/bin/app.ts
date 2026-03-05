@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Metis CDK Application Entry Point
+ * Enkai Qualify CDK Application Entry Point
  *
  * Deployment order:
  * 1. NetworkStack - VPC foundation
@@ -23,7 +23,7 @@ const app = new cdk.App();
 
 // Get context values
 const environment = app.node.tryGetContext('environment') || 'dev';
-const projectName = app.node.tryGetContext('projectName') || 'metis';
+const projectName = app.node.tryGetContext('projectName') || 'enkai-qualify';
 
 // Common stack props
 const env: cdk.Environment = {
@@ -87,8 +87,8 @@ ecsStack.addDependency(ecrStack);
 // 5. Pipeline Stack - CodePipeline + CodeBuild
 //
 // Deploy dashboard and API to the shared enkai-dev cluster where production
-// traffic is routed (metis.digitaldevops.io → enkai-shared-dev ALB → enkai-dev cluster).
-// Worker stays in metis-dev-cluster since it has no HTTP traffic and no shared equivalent.
+// traffic is routed (enkai-qualify.digitaldevops.io → enkai-shared-dev ALB → enkai-dev cluster).
+// Worker stays in enkai-qualify-dev-cluster since it has no HTTP traffic and no shared equivalent.
 const pipelineStack = new PipelineStack(app, `${stackPrefix}-pipeline`, {
   env,
   projectName,
@@ -96,8 +96,8 @@ const pipelineStack = new PipelineStack(app, `${stackPrefix}-pipeline`, {
   dashboardRepository: ecrStack.dashboardRepository,
   apiRepository: ecrStack.apiRepository,
   workerRepository: ecrStack.workerRepository,
-  dashboardService: 'arn:aws:ecs:us-east-1:882384879235:service/enkai-dev/metis-dashboard-v2',
-  apiService: 'arn:aws:ecs:us-east-1:882384879235:service/enkai-dev/metis-api-v2',
+  dashboardService: 'arn:aws:ecs:us-east-1:882384879235:service/enkai-dev/enkai-qualify-dashboard-v2',
+  apiService: 'arn:aws:ecs:us-east-1:882384879235:service/enkai-dev/enkai-qualify-api-v2',
   workerService: ecsStack.workerService,
   tags: commonTags,
 });

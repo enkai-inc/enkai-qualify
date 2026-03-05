@@ -1,4 +1,4 @@
-# Metis API Production Dependencies
+# Enkai Qualify API Production Dependencies
 # Generated for FastAPI deployment on ECS Fargate
 
 # Core Framework

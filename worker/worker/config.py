@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     )
 
     # Database
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/metis"
+    database_url: str = "postgresql://postgres:postgres@localhost:5432/enkai_qualify"
 
     # Anthropic
     anthropic_api_key: str = ""
@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     github_app_private_key: str = ""
 
     # GitHub repo
-    github_repo_owner: str = "tegryan-ddo"
-    github_repo_name: str = "metis"
+    github_repo_owner: str = "enkai-inc"
+    github_repo_name: str = "enkai-qualify"
 
     # Polling
     poll_interval_seconds: int = 60
