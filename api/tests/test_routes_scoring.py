@@ -34,11 +34,14 @@ def mock_scorer():
 class TestScoringEndpoints:
     """Tests for scoring API endpoints."""
 
+    DEV_HEADERS = {"x-dev-user-id": "test-user"}
+
     @pytest.mark.asyncio
     async def test_score_endpoint(self, mock_scorer):
         """Test POST /api/scoring/score endpoint."""
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=self.DEV_HEADERS,
         ) as client:
             response = await client.post(
                 "/api/scoring/score",
@@ -68,7 +71,8 @@ class TestScoringEndpoints:
     async def test_score_batch_endpoint(self, mock_scorer):
         """Test POST /api/scoring/score/batch endpoint."""
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=self.DEV_HEADERS,
         ) as client:
             response = await client.post(
                 "/api/scoring/score/batch",
@@ -105,7 +109,8 @@ class TestScoringEndpoints:
     async def test_prioritized_endpoint(self, mock_scorer):
         """Test GET /api/scoring/prioritized endpoint."""
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=self.DEV_HEADERS,
         ) as client:
             response = await client.get("/api/scoring/prioritized")
 
@@ -118,7 +123,8 @@ class TestScoringEndpoints:
     async def test_prioritized_with_params(self, mock_scorer):
         """Test prioritized endpoint with query parameters."""
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=self.DEV_HEADERS,
         ) as client:
             response = await client.get(
                 "/api/scoring/prioritized",
@@ -131,7 +137,8 @@ class TestScoringEndpoints:
     async def test_score_invalid_request(self):
         """Test score endpoint with invalid request."""
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://test",
+            headers=self.DEV_HEADERS,
         ) as client:
             response = await client.post(
                 "/api/scoring/score",

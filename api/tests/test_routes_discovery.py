@@ -8,9 +8,11 @@ class TestDiscoveryRoutes:
     """Tests for discovery API endpoints."""
 
     @pytest.fixture
-    def client(self) -> TestClient:
-        """Create test client."""
-        return TestClient(app)
+    def client(self, auth_headers) -> TestClient:
+        """Create test client with auth headers."""
+        client = TestClient(app)
+        client.headers.update(auth_headers)
+        return client
 
     def test_discovery_keywords_endpoint(self, client: TestClient) -> None:
         """Test POST /api/discovery/keywords endpoint."""
