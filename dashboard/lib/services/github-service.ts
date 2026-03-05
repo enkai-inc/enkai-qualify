@@ -1,8 +1,8 @@
 import { Octokit } from '@octokit/rest';
 import { createAppAuth } from '@octokit/auth-app';
 
-const REPO_OWNER = 'enkai-inc';
-const REPO_NAME = 'enkai-qualify';
+const REPO_OWNER = process.env.GITHUB_REPO_OWNER || 'enkai-inc';
+const REPO_NAME = process.env.GITHUB_REPO_NAME || 'enkai-qualify';
 const IDEA_GENERATION_LABEL = 'enkai:build';
 
 function getOctokit(): Octokit {

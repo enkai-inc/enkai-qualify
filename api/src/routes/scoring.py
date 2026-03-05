@@ -1,5 +1,7 @@
 """RICE scoring API endpoints."""
-from fastapi import APIRouter, HTTPException
+from functools import lru_cache
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from src.models.rice import RiceScore, RiceFactors
@@ -7,16 +9,11 @@ from src.services.scoring import RiceScorer
 
 router = APIRouter(prefix="/scoring", tags=["scoring"])
 
-# Singleton scorer instance
-_scorer: RiceScorer | None = None
 
-
+@lru_cache
 def get_scorer() -> RiceScorer:
     """Get or create the RiceScorer singleton."""
-    global _scorer
-    if _scorer is None:
-        _scorer = RiceScorer()
-    return _scorer
+    return RiceScorer()
 
 
 class ScoreRequest(BaseModel):
@@ -46,7 +43,9 @@ class PrioritizedResponse(BaseModel):
 
 
 @router.post("/score", response_model=RiceScore)
-async def calculate_score(request: ScoreRequest) -> RiceScore:
+async def calculate_score(
+    request: ScoreRequest, scorer: RiceScorer = Depends(get_scorer)
+) -> RiceScore:
     """Calculate RICE score for a single opportunity.
 
     Args:
@@ -56,14 +55,15 @@ async def calculate_score(request: ScoreRequest) -> RiceScore:
         Complete RiceScore with all breakdowns.
     """
     try:
-        scorer = get_scorer()
         return await scorer.calculate(request.keyword, request.factors)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/score/batch", response_model=ScoreBatchResponse)
-async def calculate_scores_batch(request: ScoreBatchRequest) -> ScoreBatchResponse:
+async def calculate_scores_batch(
+    request: ScoreBatchRequest, scorer: RiceScorer = Depends(get_scorer)
+) -> ScoreBatchResponse:
     """Calculate RICE scores for multiple opportunities.
 
     Args:
@@ -73,7 +73,6 @@ async def calculate_scores_batch(request: ScoreBatchRequest) -> ScoreBatchRespon
         ScoreBatchResponse with list of scores in same order.
     """
     try:
-        scorer = get_scorer()
         opportunities = [(r.keyword, r.factors) for r in request.opportunities]
         scores = await scorer.calculate_batch(opportunities)
         return ScoreBatchResponse(scores=scores)
