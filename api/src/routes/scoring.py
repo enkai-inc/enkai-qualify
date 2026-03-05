@@ -1,12 +1,15 @@
 """RICE scoring API endpoints."""
 from functools import lru_cache
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, model_validator
 
 from src.auth import get_current_user
 from src.models.rice import RiceScore, RiceFactors
 from src.services.scoring import RiceScorer
+
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/scoring", tags=["scoring"])
 
@@ -64,7 +67,8 @@ async def calculate_score(
     try:
         return await scorer.calculate(request.keyword, request.factors)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("scoring_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Scoring calculation failed")
 
 
 @router.post("/score/batch", response_model=ScoreBatchResponse)
@@ -84,7 +88,8 @@ async def calculate_scores_batch(
         scores = await scorer.calculate_batch(opportunities)
         return ScoreBatchResponse(scores=scores)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("batch_scoring_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Batch scoring calculation failed")
 
 
 @router.get("/prioritized", response_model=PrioritizedResponse)
