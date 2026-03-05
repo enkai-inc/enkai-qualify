@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .resolver import Module
 
@@ -24,7 +24,11 @@ class ScaffoldGenerator:
         self.templates_dir = Path(templates_dir)
         self.env = Environment(
             loader=FileSystemLoader(str(self.templates_dir)),
-            autoescape=False,
+            autoescape=select_autoescape(
+                enabled_extensions=("html", "htm", "xml"),
+                default_for_string=False,
+            ),
+            keep_trailing_newline=True,
         )
 
     def generate_scaffold(self, modules: list[Module]) -> dict[str, Any]:
