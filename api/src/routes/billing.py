@@ -33,6 +33,7 @@ class PortalRequest(BaseModel):
     """Request for customer portal session."""
 
     customer_id: str
+    user_id: str
 
 
 class PortalResponse(BaseModel):
@@ -110,13 +111,24 @@ async def create_portal(
     """Get Stripe customer portal URL.
 
     Args:
-        request: Portal request with customer_id.
+        request: Portal request with customer_id and user_id.
         current_user: Authenticated user from ALB Cognito headers.
         stripe_client: Stripe client dependency.
 
     Returns:
         Portal session URL.
+
+    Raises:
+        HTTPException: 403 if user_id does not match authenticated user.
     """
+    if request.user_id != current_user["sub"]:
+        logger.warning(
+            "portal_user_mismatch",
+            request_user_id=request.user_id,
+            authenticated_user_id=current_user["sub"],
+        )
+        raise HTTPException(status_code=403, detail="Not authorized for this customer")
+
     try:
         url = stripe_client.create_portal_session(customer_id=request.customer_id)
         return PortalResponse(url=url)
