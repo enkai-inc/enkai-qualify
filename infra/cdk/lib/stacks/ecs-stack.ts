@@ -464,7 +464,7 @@ export class EcsStack extends cdk.Stack {
     // Add API route rule (before Cognito auth, priority 10)
     httpsListener.addAction('ApiRoute', {
       priority: 10,
-      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/v1/*', '/health', '/docs', '/redoc'])],
+      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/v1/*', '/health'])],
       action: elbv2.ListenerAction.forward([apiTargetGroup]),
     });
 

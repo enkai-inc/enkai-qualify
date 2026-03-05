@@ -12,10 +12,15 @@ from .routes import router
 
 limiter = Limiter(key_func=get_remote_address)
 
+is_production = os.environ.get("ENVIRONMENT", "development") == "prod"
+
 app = FastAPI(
     title="Enkai Qualify API",
     description="SaaS opportunity discovery backend",
     version="0.1.0",
+    docs_url=None if is_production else "/docs",
+    redoc_url=None if is_production else "/redoc",
+    openapi_url=None if is_production else "/openapi.json",
 )
 
 app.state.limiter = limiter
