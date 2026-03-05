@@ -32,7 +32,7 @@ class EffortEstimator:
 
     def _cache_key(self, keyword: str, opp_type: str | None) -> str:
         raw = f"{keyword}:{opp_type or 'none'}"
-        return hashlib.md5(raw.encode()).hexdigest()
+        return hashlib.sha256(raw.encode()).hexdigest()
 
     async def estimate(
         self,
