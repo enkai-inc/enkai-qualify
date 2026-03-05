@@ -342,6 +342,31 @@ export class PipelineStack extends cdk.Stack {
       actions: [sourceAction],
     });
 
+    // Infra stage - deploy IAM roles via CloudFormation
+    const infraAction = new codepipeline_actions.CloudFormationCreateUpdateStackAction({
+      actionName: 'Deploy_IAM_Roles',
+      stackName: `${projectName}-${environment}-iam`,
+      templatePath: sourceOutput.atPath('infra/cdk/iam-roles.yaml'),
+      adminPermissions: false,
+      cfnCapabilities: [cdk.CfnCapabilities.NAMED_IAM],
+      parameterOverrides: {
+        ProjectName: projectName,
+        Environment: environment,
+      },
+    });
+
+    this.pipeline.addStage({
+      stageName: 'Infra',
+      actions: [infraAction],
+    });
+
+    infraAction.addToDeploymentRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['iam:*'],
+        resources: [`arn:aws:iam::${this.account}:role/${projectName}-${environment}-*`],
+      }),
+    );
+
     // Build stage - parallel builds
     this.pipeline.addStage({
       stageName: 'Build',
