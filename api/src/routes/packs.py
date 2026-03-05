@@ -109,6 +109,7 @@ async def create_pack(request: CreatePackRequest, current_user: dict = Depends(g
     # Store pack info
     pack_data = result.to_dict()
     pack_data["status"] = "completed" if not result.errors else "completed_with_warnings"
+    pack_data["user_id"] = current_user["sub"]
     _packs_store[result.pack_id] = pack_data
 
     return PackResponse(
@@ -146,6 +147,8 @@ async def get_pack(pack_id: str, current_user: dict = Depends(get_current_user))
         raise HTTPException(status_code=404, detail=f"Pack not found: {pack_id}")
 
     pack_data = _packs_store[pack_id]
+    if pack_data.get("user_id") and pack_data["user_id"] != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Access denied")
 
     return PackResponse(
         pack_id=pack_data["pack_id"],
@@ -178,6 +181,8 @@ async def get_download_url(pack_id: str, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=404, detail=f"Pack not found: {pack_id}")
 
     pack_data = _packs_store[pack_id]
+    if pack_data.get("user_id") and pack_data["user_id"] != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Access denied")
 
     if not pack_data.get("download_url"):
         # Try to get URL from storage
@@ -208,6 +213,7 @@ async def list_packs(current_user: dict = Depends(get_current_user)) -> list[Pac
     Returns:
         List of PackResponse objects.
     """
+    user_id = current_user["sub"]
     return [
         PackResponse(
             pack_id=data["pack_id"],
@@ -222,6 +228,7 @@ async def list_packs(current_user: dict = Depends(get_current_user)) -> list[Pac
             errors=data["errors"],
         )
         for data in _packs_store.values()
+        if data.get("user_id") == user_id
     ]
 
 
