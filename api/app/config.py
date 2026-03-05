@@ -3,6 +3,7 @@
 from functools import lru_cache
 from typing import List
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,6 +41,15 @@ class Settings(BaseSettings):
     # Authentication
     secret_key: str = "change-me-in-production"
     access_token_expire_minutes: int = 30
+
+    @model_validator(mode="after")
+    def validate_secret_key(self) -> "Settings":
+        if self.environment != "development" and self.secret_key == "change-me-in-production":
+            raise ValueError(
+                "secret_key must be changed from its default value "
+                "in non-development environments"
+            )
+        return self
 
 
 @lru_cache
