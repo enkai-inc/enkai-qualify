@@ -279,6 +279,11 @@ async def main() -> None:
     # Convert asyncpg-compatible URL (strip +asyncpg suffix if present from shared DATABASE_URL)
     db_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
 
+    # Enforce SSL for database connections
+    if "sslmode" not in db_url:
+        separator = "&" if "?" in db_url else "?"
+        db_url += f"{separator}sslmode=require"
+
     async with asyncpg.create_pool(db_url) as pool:
         github = GitHubClient(settings)
         generator = IdeaGenerator(settings.anthropic_api_key)
