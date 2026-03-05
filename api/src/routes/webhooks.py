@@ -53,6 +53,10 @@ async def stripe_webhook(
     payload = await request.body()
     webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
+    if not webhook_secret:
+        logger.error("stripe_webhook_secret_not_configured")
+        raise HTTPException(status_code=500, detail="Webhook not configured")
+
     # Verify webhook signature
     try:
         event = stripe.Webhook.construct_event(
