@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,9 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    # Environment
+    environment: str = "development"
 
     # Database
     database_url: str = "postgresql://postgres:postgres@localhost:5432/enkai_qualify"
@@ -32,6 +36,25 @@ class Settings(BaseSettings):
 
     # Polling
     poll_interval_seconds: int = 60
+
+    @model_validator(mode="after")
+    def validate_required_secrets(self) -> "Settings":
+        """Validate that required secrets are set in non-development environments."""
+        if self.environment == "development":
+            return self
+        missing = []
+        if not self.anthropic_api_key:
+            missing.append("anthropic_api_key")
+        if not self.github_app_id:
+            missing.append("github_app_id")
+        if not self.github_app_private_key:
+            missing.append("github_app_private_key")
+        if missing:
+            raise ValueError(
+                f"Required settings must be non-empty in "
+                f"non-development environments: {', '.join(missing)}"
+            )
+        return self
 
 
 @lru_cache
