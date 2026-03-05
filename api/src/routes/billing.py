@@ -3,9 +3,10 @@
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
+from ..auth import get_current_user
 from ..services.billing import StripeClient, SubscriptionService, UsageMeter
 
 logger = structlog.get_logger()
@@ -118,21 +119,21 @@ async def create_portal(
         raise HTTPException(status_code=400, detail="Portal session creation failed")
 
 
-@router.get("/subscription/{user_id}", response_model=SubscriptionResponse)
+@router.get("/subscription/me", response_model=SubscriptionResponse)
 async def get_subscription(
-    user_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
     db: Any = None,  # Would be injected via dependency
 ) -> SubscriptionResponse:
-    """Get current subscription for a user.
+    """Get current subscription for the authenticated user.
 
     Args:
-        user_id: The user's ID.
+        current_user: Authenticated user from ALB Cognito headers.
         db: Database dependency.
 
     Returns:
         Current subscription details with usage.
     """
-    # In production, db would be injected via Depends
+    user_id = current_user["sub"]
     subscription_service = SubscriptionService(db)
     usage_meter = UsageMeter(db, subscription_service)
 
