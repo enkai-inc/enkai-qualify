@@ -4,14 +4,22 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from .routes import router
+
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="Enkai Qualify API",
     description="SaaS opportunity discovery backend",
     version="0.1.0",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware - origins configurable via CORS_ORIGINS env var
 cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
