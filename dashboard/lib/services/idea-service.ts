@@ -18,6 +18,7 @@ const snapshotSchema = z.object({
 
 export interface CreateIdeaInput {
   userId: string;
+  teamId?: string;
   title: string;
   description: string;
   industry: string;
@@ -47,7 +48,7 @@ export interface UpdateIdeaInput {
 }
 
 export async function listIdeas(
-  userId: string,
+  teamId: string,
   options: {
     status?: IdeaStatus;
     search?: string;
@@ -67,7 +68,7 @@ export async function listIdeas(
   } = options;
 
   const where = {
-    userId,
+    teamId,
     ...(status ? { status } : { status: { not: IdeaStatus.ARCHIVED } }),
     ...(search && {
       OR: [
@@ -84,6 +85,9 @@ export async function listIdeas(
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
         validations: {
           orderBy: { createdAt: 'desc' },
           take: 1,
@@ -96,6 +100,8 @@ export async function listIdeas(
   return {
     items: ideas.map((idea) => ({
       ...idea,
+      creator: idea.user,
+      user: undefined,
       latestValidation: idea.validations[0] ?? null,
       validations: undefined,
     })),
@@ -106,9 +112,9 @@ export async function listIdeas(
   };
 }
 
-export async function getIdea(id: string, userId: string) {
+export async function getIdea(id: string, teamId: string) {
   const idea = await prisma.idea.findFirst({
-    where: { id, userId },
+    where: { id, teamId },
     include: {
       versions: {
         orderBy: { version: 'desc' },
@@ -138,6 +144,7 @@ export async function createIdea(input: CreateIdeaInput) {
   const idea = await prisma.idea.create({
     data: {
       userId: input.userId,
+      teamId: input.teamId,
       title: input.title,
       description: input.description,
       industry: input.industry,
@@ -167,13 +174,13 @@ export async function createIdea(input: CreateIdeaInput) {
 
 export async function updateIdea(
   id: string,
-  userId: string,
+  teamId: string,
   input: UpdateIdeaInput,
   createVersion = true
 ) {
-  // Verify ownership
+  // Verify team access
   const existing = await prisma.idea.findFirst({
-    where: { id, userId },
+    where: { id, teamId },
   });
 
   if (!existing) {
@@ -219,10 +226,10 @@ export async function updateIdea(
   return idea;
 }
 
-export async function deleteIdea(id: string, userId: string) {
-  // Verify ownership
+export async function deleteIdea(id: string, teamId: string) {
+  // Verify team access
   const existing = await prisma.idea.findFirst({
-    where: { id, userId },
+    where: { id, teamId },
   });
 
   if (!existing) {
@@ -239,11 +246,11 @@ export async function deleteIdea(id: string, userId: string) {
 export async function restoreVersion(
   ideaId: string,
   versionId: string,
-  userId: string
+  teamId: string
 ) {
-  // Verify ownership
+  // Verify team access
   const idea = await prisma.idea.findFirst({
-    where: { id: ideaId, userId },
+    where: { id: ideaId, teamId },
   });
 
   if (!idea) {
@@ -293,11 +300,12 @@ export async function restoreVersion(
 export async function branchFromVersion(
   ideaId: string,
   versionId: string,
+  teamId: string,
   userId: string
 ) {
-  // Verify ownership
+  // Verify team access
   const idea = await prisma.idea.findFirst({
-    where: { id: ideaId, userId },
+    where: { id: ideaId, teamId },
   });
 
   if (!idea) {
@@ -318,6 +326,7 @@ export async function branchFromVersion(
   const newIdea = await prisma.idea.create({
     data: {
       userId,
+      teamId,
       title: `${snapshot.title} (Branch)`,
       description: snapshot.description,
       industry: snapshot.industry,

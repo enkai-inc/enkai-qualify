@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: ideaId,
         userId: user.id,
+        teamId: user.teamId,
         title: `Generating: ${body.industry} opportunity...`,
         description: body.problemDescription,
         industry: body.industry,

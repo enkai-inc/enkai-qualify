@@ -7,7 +7,7 @@ export async function GET() {
     const user = await requireAuth();
 
     const scans = await prisma.marketScan.findMany({
-      where: { userId: user.id },
+      where: { teamId: user.teamId! },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

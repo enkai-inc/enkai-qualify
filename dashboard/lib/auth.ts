@@ -68,11 +68,14 @@ export async function getCurrentUser() {
     return null;
   }
 
+  const DEFAULT_TEAM_ID = 'default-team';
+
   // Try to find existing user by real cognitoId
   let user = await prisma.user.findUnique({
     where: { cognitoId },
     include: {
       subscription: true,
+      team: true,
     },
   });
 
@@ -104,21 +107,34 @@ export async function getCurrentUser() {
       await prisma.user.delete({ where: { id: internalUser.id } });
     }
 
+    // Auto-assign to default team if no team
+    if (!user.teamId) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { teamId: DEFAULT_TEAM_ID },
+        include: { subscription: true, team: true },
+      });
+    }
+
     return user;
   }
 
   // Check if user exists by email (e.g., created via internal API with synthetic cognitoId)
   const existingByEmail = await prisma.user.findUnique({
     where: { email: cognitoUser.email },
-    include: { subscription: true },
+    include: { subscription: true, team: true },
   });
 
   if (existingByEmail) {
     // Update the cognitoId to the real one so future lookups work directly
+    // Also auto-assign to default team if no team
     return await prisma.user.update({
       where: { id: existingByEmail.id },
-      data: { cognitoId },
-      include: { subscription: true },
+      data: {
+        cognitoId,
+        ...(existingByEmail.teamId ? {} : { teamId: DEFAULT_TEAM_ID }),
+      },
+      include: { subscription: true, team: true },
     });
   }
 
@@ -129,6 +145,7 @@ export async function getCurrentUser() {
         cognitoId,
         email: cognitoUser.email,
         name: cognitoUser.name || null,
+        teamId: DEFAULT_TEAM_ID,
         subscription: {
           create: {
             tier: 'FREE',
@@ -138,6 +155,7 @@ export async function getCurrentUser() {
       },
       include: {
         subscription: true,
+        team: true,
       },
     });
     return user;
@@ -150,10 +168,10 @@ export async function getCurrentUser() {
       // Could be cognitoId or email conflict — try both
       return await prisma.user.findUnique({
         where: { cognitoId },
-        include: { subscription: true },
+        include: { subscription: true, team: true },
       }) ?? await prisma.user.findUnique({
         where: { email: cognitoUser.email },
-        include: { subscription: true },
+        include: { subscription: true, team: true },
       });
     }
     throw error;
@@ -188,21 +206,12 @@ export function getSubscriptionLimits(tier: string) {
 }
 
 /**
- * Check if user can create more ideas
+ * Check if user's team can create more ideas (team-scoped limit)
  */
 export async function canCreateIdea(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
-      subscription: true,
-      _count: {
-        select: {
-          ideas: {
-            where: { status: { not: IdeaStatus.ARCHIVED } },
-          },
-        },
-      },
-    },
+    include: { subscription: true },
   });
 
   if (!user?.subscription) return false;
@@ -210,7 +219,16 @@ export async function canCreateIdea(userId: string): Promise<boolean> {
   const limits = getSubscriptionLimits(user.subscription.tier);
   if (limits.ideas === -1) return true; // unlimited
 
-  return user._count.ideas < limits.ideas;
+  // Count non-archived ideas across the team
+  const teamIdeaCount = user.teamId
+    ? await prisma.idea.count({
+        where: { teamId: user.teamId, status: { not: IdeaStatus.ARCHIVED } },
+      })
+    : await prisma.idea.count({
+        where: { userId, status: { not: IdeaStatus.ARCHIVED } },
+      });
+
+  return teamIdeaCount < limits.ideas;
 }
 
 /**

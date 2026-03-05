@@ -20,7 +20,7 @@ export async function POST(
 
     const { id, versionId } = await params;
 
-    const newIdea = await branchFromVersion(id, versionId, user.id);
+    const newIdea = await branchFromVersion(id, versionId, user.teamId!, user.id);
 
     return NextResponse.json({
       idea: newIdea,

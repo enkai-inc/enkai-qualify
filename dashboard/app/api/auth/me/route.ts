@@ -34,6 +34,8 @@ export async function GET() {
         id: user.id,
         email: user.email,
         name: user.name,
+        teamId: user.teamId,
+        team: (user as any).team ? { id: (user as any).team.id, name: (user as any).team.name } : null,
         subscription: sanitizeSubscription(
           user.subscription as Record<string, unknown> | null
         ),

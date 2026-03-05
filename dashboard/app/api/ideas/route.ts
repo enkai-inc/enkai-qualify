@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       : 'updatedAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
 
-    const result = await listIdeas(user.id, {
+    const result = await listIdeas(user.teamId!, {
       status: status ?? undefined,
       search,
       page,
@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
 
     const idea = await createIdea({
       userId: user.id,
+      teamId: user.teamId!,
       title: parsed.data.title,
       description: parsed.data.description,
       industry: parsed.data.industry,
