@@ -78,7 +78,22 @@ export async function getCurrentUser() {
 
   if (user) return user;
 
-  // If user doesn't exist, create them (handle race condition)
+  // Check if user exists by email (e.g., created via internal API with synthetic cognitoId)
+  const existingByEmail = await prisma.user.findUnique({
+    where: { email: cognitoUser.email },
+    include: { subscription: true },
+  });
+
+  if (existingByEmail) {
+    // Update the cognitoId to the real one so future lookups work directly
+    return await prisma.user.update({
+      where: { id: existingByEmail.id },
+      data: { cognitoId },
+      include: { subscription: true },
+    });
+  }
+
+  // If user doesn't exist at all, create them (handle race condition)
   try {
     user = await prisma.user.create({
       data: {
@@ -103,8 +118,12 @@ export async function getCurrentUser() {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
+      // Could be cognitoId or email conflict — try both
       return await prisma.user.findUnique({
         where: { cognitoId },
+        include: { subscription: true },
+      }) ?? await prisma.user.findUnique({
+        where: { email: cognitoUser.email },
         include: { subscription: true },
       });
     }
