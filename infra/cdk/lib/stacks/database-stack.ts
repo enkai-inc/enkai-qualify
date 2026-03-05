@@ -110,6 +110,7 @@ export class DatabaseStack extends cdk.Stack {
       cacheSubnetGroupName: redisSubnetGroup.ref,
       vpcSecurityGroupIds: [this.redisSecurityGroup.securityGroupId],
       snapshotRetentionLimit: isProd ? 7 : 0,
+      transitEncryptionEnabled: true,
     });
     this.redisCluster.addDependency(redisSubnetGroup);
 

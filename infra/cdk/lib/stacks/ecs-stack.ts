@@ -245,7 +245,7 @@ export class EcsStack extends cdk.Stack {
       environment: {
         ENVIRONMENT: environment,
         DEBUG: isProd ? 'false' : 'true',
-        REDIS_URL: `redis://${redisCluster.attrRedisEndpointAddress}:6379/0`,
+        REDIS_URL: `rediss://${redisCluster.attrRedisEndpointAddress}:6379/0`,
       },
       secrets: usePlaceholder ? undefined : {
         DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret, 'connectionString'),
