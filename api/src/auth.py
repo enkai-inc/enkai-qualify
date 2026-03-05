@@ -1,14 +1,30 @@
 """Authentication middleware for ALB Cognito integration."""
 
-import base64
-import json
 import os
+from functools import lru_cache
 from typing import Any
 
+import httpx
+import jwt
 import structlog
 from fastapi import HTTPException, Request
 
 logger = structlog.get_logger()
+
+_ALB_KEY_CACHE: dict[str, str] = {}
+
+
+def _get_alb_public_key(kid: str, region: str) -> str:
+    """Fetch and cache ALB public key for JWT verification."""
+    if kid in _ALB_KEY_CACHE:
+        return _ALB_KEY_CACHE[kid]
+
+    key_url = f"https://public-keys.auth.elb.{region}.amazonaws.com/{kid}"
+    resp = httpx.get(key_url, timeout=5.0)
+    resp.raise_for_status()
+    public_key = resp.text
+    _ALB_KEY_CACHE[kid] = public_key
+    return public_key
 
 
 async def get_current_user(request: Request) -> dict[str, Any]:
@@ -41,20 +57,23 @@ async def get_current_user(request: Request) -> dict[str, Any]:
         raise HTTPException(status_code=401, detail="Authentication required")
 
     try:
-        # JWT is three base64-encoded segments separated by dots
-        parts = oidc_data.split(".")
-        if len(parts) != 3:
-            raise ValueError("Invalid JWT format")
+        # Get the key ID from the JWT header
+        unverified_header = jwt.get_unverified_header(oidc_data)
+        kid = unverified_header.get("kid")
+        if not kid:
+            raise ValueError("JWT header missing kid")
 
-        # Decode the payload (second segment)
-        payload_b64 = parts[1]
-        # Add padding if needed
-        padding = 4 - len(payload_b64) % 4
-        if padding != 4:
-            payload_b64 += "=" * padding
+        # Get AWS region from environment
+        region = os.environ.get("AWS_REGION", "us-east-1")
 
-        payload_bytes = base64.urlsafe_b64decode(payload_b64)
-        payload = json.loads(payload_bytes)
+        # Fetch the public key and verify the JWT
+        public_key = _get_alb_public_key(kid, region)
+        payload = jwt.decode(
+            oidc_data,
+            public_key,
+            algorithms=["ES256"],
+            options={"verify_exp": True},
+        )
 
         sub = payload.get("sub", oidc_identity)
         email = payload.get("email", "")
@@ -62,6 +81,12 @@ async def get_current_user(request: Request) -> dict[str, Any]:
         logger.debug("auth_success", sub=sub, email=email)
         return {"sub": sub, "email": email}
 
+    except jwt.ExpiredSignatureError:
+        logger.warning("auth_token_expired")
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError as e:
+        logger.error("auth_jwt_invalid", error=str(e))
+        raise HTTPException(status_code=401, detail="Invalid authentication token")
     except Exception as e:
         logger.error("auth_jwt_decode_failed", error=str(e))
         raise HTTPException(status_code=401, detail="Invalid authentication token")
