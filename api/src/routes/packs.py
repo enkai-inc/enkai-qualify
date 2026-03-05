@@ -1,6 +1,5 @@
 """Pack API routes."""
 
-from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException

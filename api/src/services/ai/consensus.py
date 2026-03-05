@@ -1,11 +1,16 @@
 """Consensus engine for multi-model idea generation."""
 import asyncio
 from collections import defaultdict
+
+import structlog
+
 from .base import AIProvider, GeneratedIdea, GenerationInput
 from .claude import ClaudeProvider
 from .openai import OpenAIProvider
 from .gemini import GeminiProvider
 from .perplexity import PerplexityProvider
+
+logger = structlog.get_logger()
 
 
 class ConsensusResult:
@@ -64,7 +69,7 @@ class ConsensusEngine:
                 timeout=30.0
             )
         except Exception as e:
-            print(f"Provider {provider.name} failed: {e}")
+            logger.warning("Provider failed", provider=provider.name, error=str(e))
             return None
 
     def _rank_by_consensus(self, ideas: list[GeneratedIdea]) -> list[GeneratedIdea]:
