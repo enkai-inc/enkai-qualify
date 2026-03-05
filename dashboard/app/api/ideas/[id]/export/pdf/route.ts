@@ -11,7 +11,7 @@ export async function GET(
     const user = await requireAuth();
     const { id } = await params;
 
-    const result = await getIdea(id, user.id);
+    const result = await getIdea(id, user.teamId!);
 
     if (!result) {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });

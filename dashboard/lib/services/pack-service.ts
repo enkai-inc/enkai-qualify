@@ -10,6 +10,7 @@ const PRESIGNED_URL_EXPIRY = 24 * 60 * 60; // 24 hours in seconds
 export interface CreatePackInput {
   ideaId: string;
   userId: string;
+  teamId?: string;
   modules: string[];
   complexity: 'MVP' | 'STANDARD' | 'FULL';
 }
@@ -26,6 +27,7 @@ export async function createPack(input: CreatePackInput) {
     data: {
       ideaId: input.ideaId,
       userId: input.userId,
+      teamId: input.teamId,
       modules: input.modules,
       complexity: input.complexity,
       workUnitCount: input.modules.length * workUnitMultiplier[input.complexity],
@@ -40,9 +42,9 @@ export async function createPack(input: CreatePackInput) {
   return pack;
 }
 
-export async function getPack(id: string, userId: string) {
+export async function getPack(id: string, teamId: string) {
   const pack = await prisma.pack.findFirst({
-    where: { id, userId },
+    where: { id, teamId },
     include: {
       idea: {
         select: {
@@ -56,9 +58,9 @@ export async function getPack(id: string, userId: string) {
   return pack;
 }
 
-export async function listPacks(userId: string) {
+export async function listPacks(teamId: string) {
   const packs = await prisma.pack.findMany({
-    where: { userId },
+    where: { teamId },
     include: {
       idea: {
         select: {
@@ -125,10 +127,10 @@ async function generatePackAsync(packId: string) {
   }
 }
 
-export async function regeneratePack(id: string, userId: string) {
+export async function regeneratePack(id: string, teamId: string) {
   // Find the existing pack
   const pack = await prisma.pack.findFirst({
-    where: { id, userId },
+    where: { id, teamId },
   });
 
   if (!pack) {
@@ -166,13 +168,13 @@ export async function regeneratePack(id: string, userId: string) {
   });
 }
 
-export async function getPackProgress(id: string, userId: string): Promise<{
+export async function getPackProgress(id: string, teamId: string): Promise<{
   status: PackStatus;
   progress: number;
   message: string;
 }> {
   const pack = await prisma.pack.findFirst({
-    where: { id, userId },
+    where: { id, teamId },
     select: { status: true },
   });
 

@@ -10,28 +10,54 @@ jest.mock('@/lib/db', () => ({
   prisma: {
     user: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    idea: {
+      count: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    marketScan: {
+      updateMany: jest.fn(),
     },
   },
 }));
 
-// Mock @prisma/client for IdeaStatus enum
-jest.mock('@prisma/client', () => ({
-  IdeaStatus: {
-    PENDING: 'PENDING',
-    DRAFT: 'DRAFT',
-    VALIDATED: 'VALIDATED',
-    PACK_GENERATED: 'PACK_GENERATED',
-    ARCHIVED: 'ARCHIVED',
-  },
-}));
+// Mock @prisma/client for IdeaStatus enum and Prisma namespace
+jest.mock('@prisma/client', () => {
+  class PrismaClientKnownRequestError extends Error {
+    code: string;
+    constructor(message: string, opts: { code: string; clientVersion?: string }) {
+      super(message);
+      this.code = opts.code;
+      this.name = 'PrismaClientKnownRequestError';
+    }
+  }
+  return {
+    IdeaStatus: {
+      PENDING: 'PENDING',
+      DRAFT: 'DRAFT',
+      VALIDATED: 'VALIDATED',
+      PACK_GENERATED: 'PACK_GENERATED',
+      ARCHIVED: 'ARCHIVED',
+    },
+    Prisma: {
+      PrismaClientKnownRequestError,
+    },
+  };
+});
 
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/db';
 
 const mockHeaders = headers as jest.Mock;
 const mockFindUnique = prisma.user.findUnique as jest.Mock;
+const mockFindFirst = (prisma.user as any).findFirst as jest.Mock;
 const mockCreate = prisma.user.create as jest.Mock;
+const mockUpdate = (prisma.user as any).update as jest.Mock;
+const mockIdeaCount = (prisma as any).idea.count as jest.Mock;
 
 // Helper to create a valid OIDC JWT with the given payload
 function makeOidcJwt(payload: Record<string, unknown>): string {
@@ -54,6 +80,8 @@ const testUser = {
   cognitoId: testCognitoId,
   email: 'test@example.com',
   name: 'Test User',
+  teamId: 'default-team',
+  team: { id: 'default-team', name: 'Default Team' },
   subscription: { tier: 'FREE', periodEnd: new Date() },
 };
 
@@ -80,6 +108,7 @@ describe('getCurrentUser', () => {
       }),
     });
     mockFindUnique.mockResolvedValue(testUser);
+    mockFindFirst.mockResolvedValue(null);
 
     const result = await getCurrentUser();
 
@@ -113,19 +142,26 @@ describe('getCurrentUser', () => {
       }),
     });
 
-    // First findUnique returns null (user not found)
-    // Then create throws P2002 (unique constraint violation)
-    // Then second findUnique returns the user (created by another request)
-    mockFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(testUser);
+    // 1st findUnique (cognitoId lookup) → null
+    // 2nd findUnique (email lookup) → null
+    // create throws P2002
+    // 3rd findUnique (re-fetch by cognitoId) → testUser
+    mockFindUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(testUser);
 
-    const prismaError = new Error('Unique constraint failed');
-    Object.assign(prismaError, { code: 'P2002' });
+    const { Prisma } = require('@prisma/client');
+    const prismaError = new Prisma.PrismaClientKnownRequestError(
+      'Unique constraint failed',
+      { code: 'P2002' }
+    );
     mockCreate.mockRejectedValue(prismaError);
 
     const result = await getCurrentUser();
 
     expect(result).toEqual(testUser);
-    expect(mockFindUnique).toHaveBeenCalledTimes(2);
+    expect(mockFindUnique).toHaveBeenCalledTimes(3);
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });
 
@@ -138,6 +174,7 @@ describe('getCurrentUser', () => {
       }),
     });
 
+    // Both cognitoId and email lookups return null
     mockFindUnique.mockResolvedValue(null);
     mockCreate.mockRejectedValue(new Error('Database connection failed'));
 
@@ -153,31 +190,33 @@ describe('canCreateIdea', () => {
   it('should return false when user has no subscription', async () => {
     mockFindUnique.mockResolvedValue({
       id: 'user-1',
+      teamId: 'default-team',
       subscription: null,
-      _count: { ideas: 0 },
     });
 
     const result = await canCreateIdea('user-1');
     expect(result).toBe(false);
   });
 
-  it('should return true when user is under the idea limit', async () => {
+  it('should return true when team is under the idea limit', async () => {
     mockFindUnique.mockResolvedValue({
       id: 'user-1',
+      teamId: 'default-team',
       subscription: { tier: 'FREE' },
-      _count: { ideas: 2 },
     });
+    mockIdeaCount.mockResolvedValue(2);
 
     const result = await canCreateIdea('user-1');
     expect(result).toBe(true);
   });
 
-  it('should return false when user is at the idea limit', async () => {
+  it('should return false when team is at the idea limit', async () => {
     mockFindUnique.mockResolvedValue({
       id: 'user-1',
+      teamId: 'default-team',
       subscription: { tier: 'FREE' },
-      _count: { ideas: 3 },
     });
+    mockIdeaCount.mockResolvedValue(3);
 
     const result = await canCreateIdea('user-1');
     expect(result).toBe(false);
@@ -186,36 +225,27 @@ describe('canCreateIdea', () => {
   it('should return true for AGENCY tier (unlimited)', async () => {
     mockFindUnique.mockResolvedValue({
       id: 'user-1',
+      teamId: 'default-team',
       subscription: { tier: 'AGENCY' },
-      _count: { ideas: 999 },
     });
 
     const result = await canCreateIdea('user-1');
     expect(result).toBe(true);
   });
 
-  it('should exclude ARCHIVED ideas from the count query', async () => {
+  it('should count non-archived ideas by teamId', async () => {
     mockFindUnique.mockResolvedValue({
       id: 'user-1',
+      teamId: 'default-team',
       subscription: { tier: 'FREE' },
-      _count: { ideas: 2 },
     });
+    mockIdeaCount.mockResolvedValue(2);
 
     await canCreateIdea('user-1');
 
-    // Verify the Prisma query filters out ARCHIVED ideas
-    expect(mockFindUnique).toHaveBeenCalledWith(
-      expect.objectContaining({
-        include: expect.objectContaining({
-          _count: {
-            select: {
-              ideas: {
-                where: { status: { not: 'ARCHIVED' } },
-              },
-            },
-          },
-        }),
-      })
-    );
+    // Verify the count query uses teamId and excludes ARCHIVED
+    expect(mockIdeaCount).toHaveBeenCalledWith({
+      where: { teamId: 'default-team', status: { not: 'ARCHIVED' } },
+    });
   });
 });

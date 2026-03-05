@@ -27,7 +27,7 @@ export async function GET(
     const user = await requireAuth();
     const { id } = await params;
 
-    const result = await getIdea(id, user.id);
+    const result = await getIdea(id, user.teamId!);
 
     if (!result) {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
@@ -60,7 +60,7 @@ export async function PUT(
       );
     }
 
-    const idea = await updateIdea(id, user.id, parsed.data);
+    const idea = await updateIdea(id, user.teamId!, parsed.data);
 
     return NextResponse.json(idea);
   } catch (error) {
@@ -86,7 +86,7 @@ export async function DELETE(
     const user = await requireAuth();
     const { id } = await params;
 
-    await deleteIdea(id, user.id);
+    await deleteIdea(id, user.teamId!);
 
     return NextResponse.json({ success: true });
   } catch (error) {
