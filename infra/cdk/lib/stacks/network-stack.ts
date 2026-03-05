@@ -8,7 +8,7 @@ export interface NetworkStackProps extends cdk.StackProps {
 }
 
 /**
- * Network Stack - VPC foundation for Metis infrastructure
+ * Network Stack - VPC foundation for Enkai Qualify infrastructure
  *
  * Creates:
  * - VPC with 2 AZs

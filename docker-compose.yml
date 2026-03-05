@@ -35,7 +35,7 @@ services:
       context: ./worker
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=postgresql://metis:metis_dev@postgres:5432/metis
+      - DATABASE_URL=postgresql://enkai_qualify:enkai_qualify_dev@postgres:5432/enkai_qualify
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - GITHUB_APP_ID=${GITHUB_APP_ID:-}
       - GITHUB_APP_INSTALLATION_ID=${GITHUB_APP_INSTALLATION_ID:-}
@@ -49,9 +49,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-metis}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-metis_dev}
-      POSTGRES_DB: ${POSTGRES_DB:-metis}
+      POSTGRES_USER: ${POSTGRES_USER:-enkai_qualify}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-enkai_qualify_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-enkai_qualify}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

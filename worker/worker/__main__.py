@@ -1,4 +1,4 @@
-"""Metis idea generation worker entry point.
+"""Enkai Qualify idea generation worker entry point.
 
 Polls GitHub for open issues labeled enkai:build,
 generates ideas via Claude, updates the database, and closes issues.
@@ -116,7 +116,7 @@ async def process_issue(
 **Features:** {len(idea.features)} features generated
 **Technologies:** {", ".join(idea.technologies)}
 
-The idea has been updated to DRAFT status. View it in the [Metis dashboard](https://metis.digitaldevops.io/ideas)."""
+The idea has been updated to DRAFT status. View it in the [Enkai Qualify dashboard](https://enkai-qualify.digitaldevops.io/ideas)."""
 
     await github.close_issue(issue.number, comment)
     log.info("issue_processed_successfully", idea_id=params.idea_id)
@@ -192,7 +192,7 @@ async def process_validation_issue(
 | Competition Level | {result.competition_score} |
 | Revenue Estimate | ${result.revenue_estimate:,} |
 
-View results in the [Metis dashboard](https://metis.digitaldevops.io/ideas)."""
+View results in the [Enkai Qualify dashboard](https://enkai-qualify.digitaldevops.io/ideas)."""
 
     await github.close_issue(issue.number, comment)
     log.info("validation_issue_processed", idea_id=params.idea_id)
@@ -262,7 +262,7 @@ async def process_refinement_issue(
 **Features:** {len(refined.features)} features
 **Technologies:** {", ".join(refined.technologies)}
 
-View the updated idea in the [Metis dashboard](https://metis.digitaldevops.io/ideas)."""
+View the updated idea in the [Enkai Qualify dashboard](https://enkai-qualify.digitaldevops.io/ideas)."""
 
     await github.close_issue(issue.number, comment)
     log.info("refinement_issue_processed", idea_id=params.idea_id)

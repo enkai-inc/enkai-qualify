@@ -33,7 +33,7 @@ jest.mock('@/lib/services/idea-service', () => ({
 jest.mock('@/lib/services/github-service', () => ({
   createValidationIssue: jest.fn().mockResolvedValue({
     issueNumber: 99,
-    issueUrl: 'https://github.com/tegryan-ddo/metis/issues/99',
+    issueUrl: 'https://github.com/enkai-inc/enkai-qualify/issues/99',
   }),
 }));
 
@@ -55,7 +55,7 @@ describe('POST /api/ideas/[id]/validate', () => {
     const data = await response.json();
     expect(data.status).toBe('pending');
     expect(data.githubIssue).toBe(99);
-    expect(data.githubIssueUrl).toBe('https://github.com/tegryan-ddo/metis/issues/99');
+    expect(data.githubIssueUrl).toBe('https://github.com/enkai-inc/enkai-qualify/issues/99');
   });
 
   it('calls createValidationIssue with correct parameters', async () => {

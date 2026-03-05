@@ -32,7 +32,7 @@ class PackStorage:
             region: AWS region. Defaults to AWS_REGION env var.
             url_expiration_hours: Hours until signed URL expires.
         """
-        self.bucket_name = bucket_name or os.getenv("PACK_STORAGE_BUCKET", "metis-packs")
+        self.bucket_name = bucket_name or os.getenv("PACK_STORAGE_BUCKET", "enkai-qualify-packs")
         self.region = region or os.getenv("AWS_REGION", "us-east-1")
         self.url_expiration_hours = url_expiration_hours
 

@@ -1,8 +1,8 @@
 import { Octokit } from '@octokit/rest';
 import { createAppAuth } from '@octokit/auth-app';
 
-const REPO_OWNER = 'tegryan-ddo';
-const REPO_NAME = 'metis';
+const REPO_OWNER = 'enkai-inc';
+const REPO_NAME = 'enkai-qualify';
 const IDEA_GENERATION_LABEL = 'enkai:build';
 
 function getOctokit(): Octokit {
@@ -61,7 +61,7 @@ export async function createIdeaGenerationIssue(
       repo: REPO_NAME,
       name: IDEA_GENERATION_LABEL,
       color: '7057ff',
-      description: 'Idea generation request from Metis dashboard',
+      description: 'Idea generation request from Enkai Qualify dashboard',
     });
   }
 
@@ -282,7 +282,7 @@ export async function createMarketScanIssue(
       repo: REPO_NAME,
       name: IDEA_GENERATION_LABEL,
       color: '7057ff',
-      description: 'Idea generation request from Metis dashboard',
+      description: 'Idea generation request from Enkai Qualify dashboard',
     });
   }
 

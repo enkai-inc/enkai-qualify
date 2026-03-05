@@ -1,1 +1,1 @@
-"""Metis idea generation worker."""
+"""Enkai Qualify idea generation worker."""

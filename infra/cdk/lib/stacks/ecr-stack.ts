@@ -8,7 +8,7 @@ export interface EcrStackProps extends cdk.StackProps {
 }
 
 /**
- * ECR Stack - Container repositories for Metis services
+ * ECR Stack - Container repositories for Enkai Qualify services
  *
  * Creates:
  * - Dashboard repository

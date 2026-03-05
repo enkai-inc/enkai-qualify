@@ -17,7 +17,7 @@ test.describe('Home Page', () => {
 
   test('should have correct page title', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle(/Metis/);
+    await expect(page).toHaveTitle(/Enkai Qualify/);
   });
 
   test('should display New Idea button after redirect', async ({ page }) => {

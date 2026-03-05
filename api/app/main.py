@@ -1,4 +1,4 @@
-"""Metis API - FastAPI Application Entry Point."""
+"""Enkai Qualify API - FastAPI Application Entry Point."""
 
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -24,14 +24,14 @@ class HealthResponse(BaseModel):
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown events."""
     # Startup
-    print(f"Starting Metis API v{settings.version}")
+    print(f"Starting Enkai Qualify API v{settings.version}")
     yield
     # Shutdown
-    print("Shutting down Metis API")
+    print("Shutting down Enkai Qualify API")
 
 
 app = FastAPI(
-    title="Metis API",
+    title="Enkai Qualify API",
     description="AI-powered development toolkit backend",
     version=settings.version,
     lifespan=lifespan,
@@ -55,7 +55,7 @@ async def health_check() -> HealthResponse:
     return HealthResponse(
         status="healthy",
         timestamp=datetime.utcnow().isoformat(),
-        service="metis-api",
+        service="enkai-qualify-api",
         version=settings.version,
     )
 
@@ -64,7 +64,7 @@ async def health_check() -> HealthResponse:
 async def root() -> dict[str, Any]:
     """Root endpoint with API information."""
     return {
-        "service": "metis-api",
+        "service": "enkai-qualify-api",
         "version": settings.version,
         "docs": "/docs" if settings.debug else None,
     }

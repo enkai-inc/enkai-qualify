@@ -419,7 +419,7 @@ export class EcsStack extends cdk.Stack {
       '2qcaf479drm0tg372mnm8upjfr'
     );
 
-    // Import ACM certificate for metis.digitaldevops.io
+    // Import ACM certificate for enkai-qualify.digitaldevops.io
     const certificate = acm.Certificate.fromCertificateArn(
       this,
       'Certificate',

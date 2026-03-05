@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-# Multi-stage production Dockerfile for Metis worker
+# Multi-stage production Dockerfile for Enkai Qualify worker
 # No HTTP server - just a polling loop
 
 # =============================================================================

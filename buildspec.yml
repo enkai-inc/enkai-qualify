@@ -1,4 +1,4 @@
-# Metis Build Specification for AWS CodeBuild
+# Enkai Qualify Build Specification for AWS CodeBuild
 # Builds both dashboard and api containers in parallel
 #
 # Environment variables required:
