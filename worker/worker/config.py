@@ -40,7 +40,8 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_required_secrets(self) -> "Settings":
         """Validate that required secrets are set in non-development environments."""
-        if self.environment == "development":
+        dev_environments = {"development", "dev", "local", "test"}
+        if self.environment in dev_environments:
             return self
         missing = []
         if not self.anthropic_api_key:

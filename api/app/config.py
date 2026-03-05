@@ -44,7 +44,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_secret_key(self) -> "Settings":
-        if self.environment != "development" and self.secret_key == "change-me-in-production":
+        dev_environments = {"development", "dev", "local", "test"}
+        if self.environment not in dev_environments and self.secret_key == "change-me-in-production":
             raise ValueError(
                 "secret_key must be changed from its default value "
                 "in non-development environments"
