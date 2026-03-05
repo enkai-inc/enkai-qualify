@@ -29,8 +29,8 @@ async function findOrCreateUser(email: string) {
         name: email.split('@')[0],
         subscription: {
           create: {
-            tier: 'AGENCY',
-            periodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            tier: 'FREE',
+            periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           },
         },
       },
