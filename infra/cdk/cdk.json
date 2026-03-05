@@ -20,6 +20,9 @@
     "@aws-cdk/aws-ecs:arnFormatIncludesClusterName": true,
     "@aws-cdk/core:enablePartitionLiterals": true,
     "environment": "dev",
-    "projectName": "enkai-qualify"
+    "projectName": "enkai-qualify",
+    "cognitoUserPoolId": "us-east-1_zlw7qsJMJ",
+    "cognitoClientId": "2qcaf479drm0tg372mnm8upjfr",
+    "certificateArn": "arn:aws:acm:us-east-1:882384879235:certificate/b846e9b3-2a34-4599-90c8-2ebf5e1bb2c2"
   }
 }
