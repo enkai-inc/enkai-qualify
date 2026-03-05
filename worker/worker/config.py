@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     environment: str = "development"
 
     # Database
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/enkai_qualify"
+    database_url: str = ""
 
     # Anthropic
     anthropic_api_key: str = ""
@@ -49,6 +49,8 @@ class Settings(BaseSettings):
             missing.append("github_app_id")
         if not self.github_app_private_key:
             missing.append("github_app_private_key")
+        if not self.database_url:
+            missing.append("database_url")
         if missing:
             raise ValueError(
                 f"Required settings must be non-empty in "
