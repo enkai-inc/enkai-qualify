@@ -18,6 +18,15 @@ from .scaffold import ScaffoldGenerator
 from .storage import PackStorage
 
 
+def _safe_zip_path(root: str, file_path: str) -> str:
+    """Ensure file_path stays within root directory."""
+    import posixpath
+    normalized = posixpath.normpath(posixpath.join(root, file_path))
+    if not normalized.startswith(root + "/") and normalized != root:
+        raise ValueError(f"Path traversal detected: {file_path}")
+    return normalized
+
+
 class PackConfig(BaseModel):
     """Configuration for pack assembly."""
 
@@ -312,7 +321,8 @@ class PackAssembler:
 
             # Add scaffold files
             for file_path, content in scaffold.get("files", {}).items():
-                zf.writestr(f"{root}/{file_path}", content)
+                safe_path = _safe_zip_path(root, file_path)
+                zf.writestr(safe_path, content)
 
             # Add module manifest
             manifest = {
