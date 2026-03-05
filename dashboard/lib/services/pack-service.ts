@@ -1,5 +1,11 @@
 import { prisma } from '@/lib/db';
 import { PackStatus } from '@prisma/client';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+const s3Client = new S3Client({});
+const PACK_BUCKET = process.env.PACK_STORAGE_BUCKET || 'enkai-qualify-packs';
+const PRESIGNED_URL_EXPIRY = 24 * 60 * 60; // 24 hours in seconds
 
 export interface CreatePackInput {
   ideaId: string;
@@ -84,14 +90,23 @@ async function generatePackAsync(packId: string) {
   // 5. Generate signed download URL
 
   // For now, simulate success
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  const s3Key = `packs/${packId}/bundle.zip`;
+  const expiresAt = new Date(Date.now() + PRESIGNED_URL_EXPIRY * 1000);
+
+  const command = new GetObjectCommand({
+    Bucket: PACK_BUCKET,
+    Key: s3Key,
+  });
+  const downloadUrl = await getSignedUrl(s3Client, command, {
+    expiresIn: PRESIGNED_URL_EXPIRY,
+  });
 
   await prisma.pack.update({
     where: { id: packId },
     data: {
       status: 'READY',
-      s3Key: `packs/${packId}/bundle.zip`,
-      downloadUrl: `https://enkai-qualify-packs.s3.amazonaws.com/packs/${packId}/bundle.zip`,
+      s3Key,
+      downloadUrl,
       expiresAt,
     },
   });
