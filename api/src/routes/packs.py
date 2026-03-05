@@ -2,10 +2,13 @@
 
 from typing import Any
 
+import structlog
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..services.pack import PackAssembler, PackConfig
+
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/packs", tags=["packs"])
 
@@ -86,7 +89,8 @@ async def create_pack(request: CreatePackRequest) -> PackResponse:
     try:
         result = assembler.assemble(config)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Pack assembly failed: {e}") from e
+        logger.error("pack_assembly_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Pack assembly failed") from e
 
     # Store pack info
     pack_data = result.to_dict()

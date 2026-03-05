@@ -1,7 +1,10 @@
 """Generation API routes."""
+import structlog
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from ..services.ai import ConsensusEngine, GenerationInput
+
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/generate", tags=["generation"])
 engine = ConsensusEngine()
@@ -31,4 +34,5 @@ async def generate_ideas(request: GenerateRequest):
             total_cost=result.total_cost
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("idea_generation_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Idea generation failed")
