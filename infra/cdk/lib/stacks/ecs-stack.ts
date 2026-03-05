@@ -449,9 +449,15 @@ export class EcsStack extends cdk.Stack {
     });
 
     // Internal API routes bypass Cognito auth (worker callback endpoints)
+    // Security: restrict to VPC CIDR so only internal services can reach these
+    // endpoints via the ALB. Application-level auth (WORKER_API_KEY) provides
+    // additional defense-in-depth — see dashboard/lib/internal-auth.ts
     httpsListener.addAction('InternalApiRoute', {
       priority: 5,
-      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/internal/*'])],
+      conditions: [
+        elbv2.ListenerCondition.pathPatterns(['/api/internal/*']),
+        elbv2.ListenerCondition.sourceIps([vpc.vpcCidrBlock]),
+      ],
       action: elbv2.ListenerAction.forward([dashboardTargetGroup]),
     });
 
