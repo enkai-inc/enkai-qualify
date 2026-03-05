@@ -86,7 +86,7 @@ async def process_issue(
         log.error("generation_failed_all_retries", error=str(last_error))
         await github.add_comment(
             issue.number,
-            f"Idea generation failed after {MAX_RETRIES} attempts.\n\nError: {last_error}",
+            f"Generation failed after {MAX_RETRIES} attempts. Check worker logs for details.",
         )
         await github.add_label(issue.number, GENERATION_FAILED_LABEL)
         return
@@ -169,7 +169,7 @@ async def process_validation_issue(
         log.error("validation_failed_all_retries", error=str(last_error))
         await github.add_comment(
             issue.number,
-            f"Validation failed after {MAX_RETRIES} attempts.\n\nError: {last_error}",
+            f"Validation failed after {MAX_RETRIES} attempts. Check worker logs for details.",
         )
         await github.add_label(issue.number, GENERATION_FAILED_LABEL)
         return
@@ -235,7 +235,7 @@ async def process_refinement_issue(
         log.error("refinement_failed_all_retries", error=str(last_error))
         await github.add_comment(
             issue.number,
-            f"Refinement failed after {MAX_RETRIES} attempts.\n\nError: {last_error}",
+            f"Refinement failed after {MAX_RETRIES} attempts. Check worker logs for details.",
         )
         await github.add_label(issue.number, GENERATION_FAILED_LABEL)
         return

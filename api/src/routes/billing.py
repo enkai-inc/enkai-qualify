@@ -2,10 +2,13 @@
 
 from typing import Any
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..services.billing import StripeClient, SubscriptionService, UsageMeter
+
+logger = structlog.get_logger()
 
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -89,7 +92,8 @@ async def create_checkout(
         )
         return CheckoutResponse(url=url)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("checkout_session_failed", error=str(e))
+        raise HTTPException(status_code=400, detail="Checkout session creation failed")
 
 
 @router.post("/portal", response_model=PortalResponse)
@@ -110,7 +114,8 @@ async def create_portal(
         url = stripe_client.create_portal_session(customer_id=request.customer_id)
         return PortalResponse(url=url)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("portal_session_failed", error=str(e))
+        raise HTTPException(status_code=400, detail="Portal session creation failed")
 
 
 @router.get("/subscription/{user_id}", response_model=SubscriptionResponse)
@@ -201,4 +206,5 @@ async def charge_pack(
             amount=limits.overage_price,
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("billing_operation_failed", error=str(e))
+        raise HTTPException(status_code=400, detail="Billing operation failed")
