@@ -443,7 +443,7 @@ export class EcsStack extends cdk.Stack {
         userPoolDomain: cognito.UserPoolDomain.fromDomainName(this, 'CognitoDomain', 'enkai-dev'),
         onUnauthenticatedRequest: elbv2.UnauthenticatedAction.AUTHENTICATE,
         scope: 'openid email profile',
-        sessionTimeout: cdk.Duration.days(7),
+        sessionTimeout: cdk.Duration.hours(8),
         next: elbv2.ListenerAction.forward([dashboardTargetGroup]),
       }),
     });
