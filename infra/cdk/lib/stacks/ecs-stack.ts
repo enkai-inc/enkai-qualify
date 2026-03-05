@@ -409,21 +409,21 @@ export class EcsStack extends cdk.Stack {
     const cognitoUserPool = cognito.UserPool.fromUserPoolId(
       this,
       'CognitoUserPool',
-      'us-east-1_zlw7qsJMJ'
+      this.node.tryGetContext('cognitoUserPoolId')
     );
 
     // Import existing user pool client
     const cognitoClient = cognito.UserPoolClient.fromUserPoolClientId(
       this,
       'CognitoClient',
-      '2qcaf479drm0tg372mnm8upjfr'
+      this.node.tryGetContext('cognitoClientId')
     );
 
     // Import ACM certificate for enkai-qualify.digitaldevops.io
     const certificate = acm.Certificate.fromCertificateArn(
       this,
       'Certificate',
-      'arn:aws:acm:us-east-1:882384879235:certificate/b846e9b3-2a34-4599-90c8-2ebf5e1bb2c2'
+      this.node.tryGetContext('certificateArn')
     );
 
     // HTTPS Listener with Cognito authentication
