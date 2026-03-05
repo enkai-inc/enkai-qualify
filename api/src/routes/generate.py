@@ -1,10 +1,11 @@
 """Generation API routes."""
 import structlog
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from ..auth import get_current_user
 from ..services.ai import ConsensusEngine, GenerationInput
 
 logger = structlog.get_logger()
@@ -29,7 +30,7 @@ class GenerateResponse(BaseModel):
 
 @router.post("/ideas", response_model=GenerateResponse)
 @limiter.limit("10/minute")
-async def generate_ideas(request: Request, body: GenerateRequest):
+async def generate_ideas(request: Request, body: GenerateRequest, current_user: dict = Depends(get_current_user)):
     try:
         input = GenerationInput(**body.model_dump())
         result = await engine.generate_with_consensus(input)

@@ -4,6 +4,7 @@ from functools import lru_cache
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from src.auth import get_current_user
 from src.models.rice import RiceScore, RiceFactors
 from src.services.scoring import RiceScorer
 
@@ -44,7 +45,7 @@ class PrioritizedResponse(BaseModel):
 
 @router.post("/score", response_model=RiceScore)
 async def calculate_score(
-    request: ScoreRequest, scorer: RiceScorer = Depends(get_scorer)
+    request: ScoreRequest, scorer: RiceScorer = Depends(get_scorer), current_user: dict = Depends(get_current_user)
 ) -> RiceScore:
     """Calculate RICE score for a single opportunity.
 
@@ -62,7 +63,7 @@ async def calculate_score(
 
 @router.post("/score/batch", response_model=ScoreBatchResponse)
 async def calculate_scores_batch(
-    request: ScoreBatchRequest, scorer: RiceScorer = Depends(get_scorer)
+    request: ScoreBatchRequest, scorer: RiceScorer = Depends(get_scorer), current_user: dict = Depends(get_current_user)
 ) -> ScoreBatchResponse:
     """Calculate RICE scores for multiple opportunities.
 
@@ -84,6 +85,7 @@ async def calculate_scores_batch(
 async def get_prioritized_opportunities(
     limit: int = 50,
     min_score: float = 0,
+    current_user: dict = Depends(get_current_user),
 ) -> PrioritizedResponse:
     """Get opportunities sorted by RICE score.
 

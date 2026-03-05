@@ -3,9 +3,10 @@
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from ..auth import get_current_user
 from ..services.pack import PackAssembler, PackConfig
 
 logger = structlog.get_logger()
@@ -63,7 +64,7 @@ class ModulesListResponse(BaseModel):
 
 
 @router.post("", response_model=PackResponse)
-async def create_pack(request: CreatePackRequest) -> PackResponse:
+async def create_pack(request: CreatePackRequest, current_user: dict = Depends(get_current_user)) -> PackResponse:
     """Create a new pack from selected modules.
 
     Args:
@@ -116,7 +117,7 @@ async def create_pack(request: CreatePackRequest) -> PackResponse:
 
 
 @router.get("/{pack_id}", response_model=PackResponse)
-async def get_pack(pack_id: str) -> PackResponse:
+async def get_pack(pack_id: str, current_user: dict = Depends(get_current_user)) -> PackResponse:
     """Get pack status and details.
 
     Args:
@@ -148,7 +149,7 @@ async def get_pack(pack_id: str) -> PackResponse:
 
 
 @router.get("/{pack_id}/download")
-async def get_download_url(pack_id: str) -> dict[str, Any]:
+async def get_download_url(pack_id: str, current_user: dict = Depends(get_current_user)) -> dict[str, Any]:
     """Get or refresh download URL for a pack.
 
     Args:
@@ -188,7 +189,7 @@ async def get_download_url(pack_id: str) -> dict[str, Any]:
 
 
 @router.get("", response_model=list[PackResponse])
-async def list_packs() -> list[PackResponse]:
+async def list_packs(current_user: dict = Depends(get_current_user)) -> list[PackResponse]:
     """List all packs.
 
     Returns:
@@ -212,7 +213,7 @@ async def list_packs() -> list[PackResponse]:
 
 
 @router.get("/modules/available", response_model=ModulesListResponse)
-async def list_available_modules() -> ModulesListResponse:
+async def list_available_modules(current_user: dict = Depends(get_current_user)) -> ModulesListResponse:
     """List all available modules for pack creation.
 
     Returns:
