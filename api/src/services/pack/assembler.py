@@ -1,6 +1,7 @@
 """Pack assembler - orchestrates the full pack building pipeline."""
 
 import json
+import shutil
 import tempfile
 import zipfile
 from dataclasses import dataclass, field
@@ -142,59 +143,64 @@ class PackAssembler:
                 errors.append(f"Issue generation warning: {e}")
 
         # Step 5: Create zip archive
+        zip_path = None
         try:
-            zip_path = self._create_zip(
-                pack_id=pack_id,
-                project_name=config.project_name,
-                modules=modules,
-                scaffold=scaffold,
-                issues=issues,
-                include_scripts=config.include_scripts,
-            )
-        except Exception as e:
+            try:
+                zip_path = self._create_zip(
+                    pack_id=pack_id,
+                    project_name=config.project_name,
+                    modules=modules,
+                    scaffold=scaffold,
+                    issues=issues,
+                    include_scripts=config.include_scripts,
+                )
+            except Exception as e:
+                return PackResult(
+                    pack_id=pack_id,
+                    project_name=config.project_name,
+                    modules_included=[m.module_id for m in modules],
+                    total_work_units=len(work_units),
+                    issues_generated=len(issues),
+                    zip_path=None,
+                    download_url=None,
+                    download_expiration=None,
+                    created_at=created_at,
+                    errors=[f"Failed to create zip: {e}"] + errors,
+                )
+
+            # Step 6: Upload to S3
+            download_url = None
+            download_expiration = None
+
+            if config.upload_to_s3:
+                try:
+                    download_url, download_expiration = self.storage.upload_pack(
+                        zip_path=zip_path,
+                        pack_id=pack_id,
+                        metadata={
+                            "project-name": config.project_name,
+                            "module-count": str(len(modules)),
+                            "work-unit-count": str(len(work_units)),
+                        },
+                    )
+                except Exception as e:
+                    errors.append(f"S3 upload warning: {e}")
+
             return PackResult(
                 pack_id=pack_id,
                 project_name=config.project_name,
                 modules_included=[m.module_id for m in modules],
                 total_work_units=len(work_units),
                 issues_generated=len(issues),
-                zip_path=None,
-                download_url=None,
-                download_expiration=None,
+                zip_path=str(zip_path),
+                download_url=download_url,
+                download_expiration=download_expiration,
                 created_at=created_at,
-                errors=[f"Failed to create zip: {e}"] + errors,
+                errors=errors,
             )
-
-        # Step 6: Upload to S3
-        download_url = None
-        download_expiration = None
-
-        if config.upload_to_s3:
-            try:
-                download_url, download_expiration = self.storage.upload_pack(
-                    zip_path=zip_path,
-                    pack_id=pack_id,
-                    metadata={
-                        "project-name": config.project_name,
-                        "module-count": str(len(modules)),
-                        "work-unit-count": str(len(work_units)),
-                    },
-                )
-            except Exception as e:
-                errors.append(f"S3 upload warning: {e}")
-
-        return PackResult(
-            pack_id=pack_id,
-            project_name=config.project_name,
-            modules_included=[m.module_id for m in modules],
-            total_work_units=len(work_units),
-            issues_generated=len(issues),
-            zip_path=str(zip_path),
-            download_url=download_url,
-            download_expiration=download_expiration,
-            created_at=created_at,
-            errors=errors,
-        )
+        finally:
+            if zip_path and zip_path.parent.exists():
+                shutil.rmtree(zip_path.parent, ignore_errors=True)
 
     def _resolve_modules(self, module_ids: list[str]) -> list[Module]:
         """Load and resolve module dependencies.
