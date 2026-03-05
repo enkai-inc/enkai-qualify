@@ -1,7 +1,7 @@
 """Generation API routes."""
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -16,10 +16,10 @@ engine = ConsensusEngine()
 
 
 class GenerateRequest(BaseModel):
-    industry: str
-    target_market: str
-    technologies: list[str]
-    description: str | None = None
+    industry: str = Field(max_length=200)
+    target_market: str = Field(max_length=200)
+    description: str = Field(default="", max_length=2000)
+    technologies: list[str] = Field(default_factory=list, max_length=20)
 
 
 class GenerateResponse(BaseModel):

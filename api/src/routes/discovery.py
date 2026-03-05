@@ -1,6 +1,6 @@
 """Discovery API routes."""
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..auth import get_current_user
 from ..services.discovery import DiscoveryEngine, OpportunityType
@@ -12,9 +12,9 @@ engine = DiscoveryEngine()
 class DiscoveryRequest(BaseModel):
     """Request body for keyword discovery."""
 
-    seed_keywords: list[str]
-    min_volume: int = 100
-    max_competition: float = 0.8
+    seed_keywords: list[str] = Field(max_length=10)
+    min_volume: int = Field(default=100, ge=0, le=1000000)
+    max_competition: float = Field(default=0.7, ge=0.0, le=1.0)
     opportunity_types: list[OpportunityType] | None = None
 
 
