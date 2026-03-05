@@ -75,17 +75,21 @@ def get_stripe_client() -> StripeClient:
 @router.post("/checkout", response_model=CheckoutResponse)
 async def create_checkout(
     request: CheckoutRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
     stripe_client: StripeClient = Depends(get_stripe_client),
 ) -> CheckoutResponse:
     """Start a Stripe checkout session for subscription.
 
     Args:
         request: Checkout request with price_id and user_id.
+        current_user: Authenticated user from ALB Cognito headers.
         stripe_client: Stripe client dependency.
 
     Returns:
         Checkout session URL.
     """
+    if request.user_id != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="User ID mismatch")
     try:
         url = stripe_client.create_checkout_session(
             user_id=request.user_id,
@@ -100,12 +104,14 @@ async def create_checkout(
 @router.post("/portal", response_model=PortalResponse)
 async def create_portal(
     request: PortalRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
     stripe_client: StripeClient = Depends(get_stripe_client),
 ) -> PortalResponse:
     """Get Stripe customer portal URL.
 
     Args:
         request: Portal request with customer_id.
+        current_user: Authenticated user from ALB Cognito headers.
         stripe_client: Stripe client dependency.
 
     Returns:
@@ -170,6 +176,7 @@ async def get_subscription(
 @router.post("/charge-pack", response_model=ChargePackResponse)
 async def charge_pack(
     request: ChargePackRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
     stripe_client: StripeClient = Depends(get_stripe_client),
     db: Any = None,
 ) -> ChargePackResponse:
@@ -177,12 +184,15 @@ async def charge_pack(
 
     Args:
         request: Charge request with customer_id and user_id.
+        current_user: Authenticated user from ALB Cognito headers.
         stripe_client: Stripe client dependency.
         db: Database dependency.
 
     Returns:
         Payment intent ID and amount charged.
     """
+    if request.user_id != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="User ID mismatch")
     subscription_service = SubscriptionService(db)
     subscription = await subscription_service.get_subscription(request.user_id)
 
