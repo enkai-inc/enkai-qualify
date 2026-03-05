@@ -1,5 +1,6 @@
 """Pack API routes."""
 
+from collections import OrderedDict
 from typing import Any
 
 import structlog
@@ -13,8 +14,20 @@ logger = structlog.get_logger()
 
 router = APIRouter(prefix="/packs", tags=["packs"])
 
-# In-memory pack storage (would use a database in production)
-_packs_store: dict[str, dict[str, Any]] = {}
+MAX_PACKS_IN_MEMORY = 1000
+
+
+class LRUPackStore(OrderedDict):
+    """LRU-evicting pack store with size cap."""
+    def __setitem__(self, key, value):
+        if key in self:
+            self.move_to_end(key)
+        super().__setitem__(key, value)
+        if len(self) > MAX_PACKS_IN_MEMORY:
+            self.popitem(last=False)
+
+
+_packs_store: LRUPackStore = LRUPackStore()
 
 # Initialize assembler
 assembler = PackAssembler()
