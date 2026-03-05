@@ -6,7 +6,7 @@ import { createPackSchema } from '@/lib/validations/pack-validation';
 export async function GET() {
   try {
     const user = await requireAuth();
-    const packs = await listPacks(user.id);
+    const packs = await listPacks(user.teamId!);
 
     return NextResponse.json({ items: packs });
   } catch (error) {
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
     const pack = await createPack({
       ideaId: parsed.data.ideaId,
       userId: user.id,
+      teamId: user.teamId!,
       modules: parsed.data.modules,
       complexity: parsed.data.complexity,
     });

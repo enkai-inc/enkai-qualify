@@ -5,9 +5,9 @@ import { NextRequest } from 'next/server';
 import { POST } from './route';
 
 // Mock auth
-const mockUser = { id: 'user-123', email: 'test@example.com' };
+const mockUser = { id: 'user-123', email: 'test@example.com', teamId: 'default-team' };
 jest.mock('@/lib/auth', () => ({
-  requireAuth: jest.fn().mockResolvedValue({ id: 'user-123', email: 'test@example.com' }),
+  requireAuth: jest.fn().mockResolvedValue({ id: 'user-123', email: 'test@example.com', teamId: 'default-team' }),
   canCreateIdea: jest.fn().mockResolvedValue(true),
 }));
 
@@ -66,7 +66,7 @@ describe('POST /api/ideas/[id]/versions/[versionId]/branch', () => {
 
     const data = await response.json();
     expect(data.idea).toEqual(mockNewIdea);
-    expect(branchFromVersion).toHaveBeenCalledWith('idea-1', 'v1', 'user-123');
+    expect(branchFromVersion).toHaveBeenCalledWith('idea-1', 'v1', 'default-team', 'user-123');
   });
 
   it('returns 401 when user is not authenticated', async () => {

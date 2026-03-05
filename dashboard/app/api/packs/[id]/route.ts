@@ -10,14 +10,14 @@ export async function GET(
     const user = await requireAuth();
     const { id } = await params;
 
-    const pack = await getPack(id, user.id);
+    const pack = await getPack(id, user.teamId!);
 
     if (!pack) {
       return NextResponse.json({ error: 'Pack not found' }, { status: 404 });
     }
 
-    // Get progress info (userId enforces ownership at the data layer)
-    const progress = await getPackProgress(id, user.id);
+    // Get progress info (teamId enforces access at the data layer)
+    const progress = await getPackProgress(id, user.teamId!);
 
     return NextResponse.json({
       ...pack,

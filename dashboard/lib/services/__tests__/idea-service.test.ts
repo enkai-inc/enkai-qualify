@@ -20,13 +20,16 @@ describe('idea-service', () => {
   });
 
   describe('listIdeas', () => {
+    const teamId = 'default-team';
+
     it('should exclude ARCHIVED ideas when no status filter is provided', async () => {
       (mockPrisma.idea.findMany as jest.Mock).mockResolvedValue([]);
       (mockPrisma.idea.count as jest.Mock).mockResolvedValue(0);
 
-      await listIdeas();
+      await listIdeas(teamId);
 
       const expectedWhere = {
+        teamId,
         status: { not: 'ARCHIVED' },
       };
 
@@ -42,9 +45,10 @@ describe('idea-service', () => {
       (mockPrisma.idea.findMany as jest.Mock).mockResolvedValue([]);
       (mockPrisma.idea.count as jest.Mock).mockResolvedValue(0);
 
-      await listIdeas({ status: 'DRAFT' as any });
+      await listIdeas(teamId, { status: 'DRAFT' as any });
 
       const expectedWhere = {
+        teamId,
         status: 'DRAFT',
       };
 
@@ -60,9 +64,10 @@ describe('idea-service', () => {
       (mockPrisma.idea.findMany as jest.Mock).mockResolvedValue([]);
       (mockPrisma.idea.count as jest.Mock).mockResolvedValue(0);
 
-      await listIdeas({ status: 'ARCHIVED' as any });
+      await listIdeas(teamId, { status: 'ARCHIVED' as any });
 
       const expectedWhere = {
+        teamId,
         status: 'ARCHIVED',
       };
 

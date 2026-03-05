@@ -13,6 +13,11 @@ export interface IdeaSummary {
   currentVersion: number;
   createdAt: string;
   updatedAt: string;
+  creator?: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
   latestValidation: {
     overallScore: number;
   } | null;

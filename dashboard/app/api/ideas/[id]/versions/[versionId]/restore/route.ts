@@ -10,7 +10,7 @@ export async function POST(
     const user = await requireAuth();
     const { id, versionId } = await params;
 
-    const idea = await restoreVersion(id, versionId, user.id);
+    const idea = await restoreVersion(id, versionId, user.teamId!);
 
     return NextResponse.json({
       idea,
