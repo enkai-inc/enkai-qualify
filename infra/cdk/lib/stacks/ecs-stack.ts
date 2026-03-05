@@ -11,6 +11,7 @@ import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
 export interface EcsStackProps extends cdk.StackProps {
@@ -203,6 +204,22 @@ export class EcsStack extends cdk.Stack {
       // Container health checks were failing despite ALB health checks passing
     });
 
+    // S3 bucket for pack storage
+    const packBucket = new s3.Bucket(this, 'PackBucket', {
+      bucketName: `${projectName}-${environment}-packs`,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: !isProd,
+      lifecycleRules: [
+        {
+          expiration: cdk.Duration.days(90),
+          prefix: 'temp/',
+        },
+      ],
+    });
+
     // API Task Definition
     const apiTaskDef = new ecs.FargateTaskDefinition(this, 'ApiTaskDef', {
       memoryLimitMiB: isProd ? 1024 : 512,
@@ -223,6 +240,7 @@ export class EcsStack extends cdk.Stack {
 
     // Grant API access to database secret
     databaseSecret.grantRead(apiTaskDef.taskRole);
+    packBucket.grantReadWrite(apiTaskDef.taskRole);
 
     const apiLogGroup = new logs.LogGroup(this, 'ApiLogs', {
       logGroupName: `/ecs/${projectName}/${environment}/api`,
