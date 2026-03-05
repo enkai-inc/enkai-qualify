@@ -94,6 +94,7 @@ ${request.problemDescription}
 
 **Database update command:**
 \`\`\`sql
+-- Parameters: [ideaId]
 UPDATE "Idea" SET
   title = '<generated_title>',
   description = '<generated_description>',
@@ -101,7 +102,7 @@ UPDATE "Idea" SET
   features = '<json_array>',
   status = 'DRAFT',
   "generatedAt" = NOW()
-WHERE id = '${request.ideaId}';
+WHERE id = $1;
 \`\`\`
 `;
 
