@@ -42,6 +42,8 @@ model Idea {
 
   @@index([userId])
   @@index([status])
+  @@index([userId, status])
+  @@index([createdAt])
 }
 
 model IdeaVersion {
