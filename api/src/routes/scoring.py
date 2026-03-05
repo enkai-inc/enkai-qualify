@@ -2,7 +2,7 @@
 from functools import lru_cache
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from src.auth import get_current_user
 from src.models.rice import RiceScore, RiceFactors
@@ -28,6 +28,12 @@ class ScoreBatchRequest(BaseModel):
     """Request to calculate multiple RICE scores."""
 
     opportunities: list[ScoreRequest]
+
+    @model_validator(mode="after")
+    def validate_batch_size(self) -> "ScoreBatchRequest":
+        if len(self.opportunities) > 50:
+            raise ValueError("Batch size must not exceed 50 opportunities")
+        return self
 
 
 class ScoreBatchResponse(BaseModel):
