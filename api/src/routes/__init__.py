@@ -1,7 +1,8 @@
 """API routes registration."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from ..auth import get_current_user
 from .discovery import router as discovery_router
 from .generate import router as generate_router
 from .packs import router as packs_router
@@ -23,10 +24,10 @@ router.include_router(scoring_router)
 @router.get("/")
 async def api_root() -> dict[str, str]:
     """API root endpoint."""
-    return {"message": "Welcome to Enkai Qualify API", "version": "0.1.0"}
+    return {"message": "Enkai Qualify API"}
 
 
 @router.get("/ideas")
-async def list_ideas() -> dict[str, list]:
+async def list_ideas(user: dict = Depends(get_current_user)) -> dict[str, list]:
     """List ideas endpoint (placeholder)."""
     return {"ideas": [], "total": 0}
