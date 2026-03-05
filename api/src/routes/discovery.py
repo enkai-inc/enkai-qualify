@@ -1,9 +1,12 @@
 """Discovery API routes."""
-from fastapi import APIRouter, Depends
+import structlog
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from ..auth import get_current_user
 from ..services.discovery import DiscoveryEngine, OpportunityType
+
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/discovery", tags=["discovery"])
 engine = DiscoveryEngine()
@@ -27,20 +30,17 @@ class DiscoveryResponse(BaseModel):
 
 @router.post("/keywords", response_model=DiscoveryResponse)
 async def discover_keywords(request: DiscoveryRequest, current_user: dict = Depends(get_current_user)) -> DiscoveryResponse:
-    """Discover keyword opportunities.
-
-    Args:
-        request: Discovery request with seed keywords and filters.
-
-    Returns:
-        Discovery results with scored keyword opportunities.
-    """
-    results = await engine.discover(
-        seed_keywords=request.seed_keywords,
-        min_volume=request.min_volume,
-        max_competition=request.max_competition,
-        opportunity_types=request.opportunity_types,
-    )
+    """Discover keyword opportunities."""
+    try:
+        results = await engine.discover(
+            seed_keywords=request.seed_keywords,
+            min_volume=request.min_volume,
+            max_competition=request.max_competition,
+            opportunity_types=request.opportunity_types,
+        )
+    except Exception as e:
+        logger.error("discovery_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Discovery service error")
 
     return DiscoveryResponse(
         results=[r.model_dump() for r in results],
