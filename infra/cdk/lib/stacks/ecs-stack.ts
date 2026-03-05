@@ -72,6 +72,7 @@ export class EcsStack extends cdk.Stack {
       vpc,
       internetFacing: true,
       loadBalancerName: `${projectName}-${environment}-alb`,
+      dropInvalidHeaderFields: true,
       securityGroup: new ec2.SecurityGroup(this, 'AlbSG', {
         vpc,
         securityGroupName: `${projectName}-${environment}-alb-sg`,
