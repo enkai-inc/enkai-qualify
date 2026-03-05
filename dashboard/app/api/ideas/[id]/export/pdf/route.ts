@@ -8,10 +8,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    const user = await requireAuth();
     const { id } = await params;
 
-    const result = await getIdea(id);
+    const result = await getIdea(id, user.id);
 
     if (!result) {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
