@@ -1,7 +1,6 @@
 """AI-powered effort estimator for RICE scoring."""
 import json
 import hashlib
-from typing import Any
 
 from anthropic import AsyncAnthropic
 
