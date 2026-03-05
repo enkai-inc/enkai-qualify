@@ -1,14 +1,18 @@
 """Enkai Qualify API - FastAPI Application Entry Point."""
 
+import time
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any
 
-from fastapi import FastAPI
+import structlog
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.config import settings
+
+request_logger = structlog.get_logger("api.request")
 
 
 class HealthResponse(BaseModel):
@@ -47,6 +51,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    """Log every request with method, path, status_code, and duration_ms."""
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = round((time.perf_counter() - start) * 1000, 2)
+    request_logger.info(
+        "request_handled",
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+        duration_ms=duration_ms,
+    )
+    return response
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])

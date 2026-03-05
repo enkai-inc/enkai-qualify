@@ -279,31 +279,31 @@ async def main() -> None:
     # Convert asyncpg-compatible URL (strip +asyncpg suffix if present from shared DATABASE_URL)
     db_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
 
-    pool = await asyncpg.create_pool(db_url)
-    github = GitHubClient(settings)
-    generator = IdeaGenerator(settings.anthropic_api_key)
+    async with asyncpg.create_pool(db_url) as pool:
+        github = GitHubClient(settings)
+        generator = IdeaGenerator(settings.anthropic_api_key)
 
-    logger.info("worker_ready")
+        logger.info("worker_ready")
 
-    while True:
-        try:
-            issues = await github.list_pending_issues()
-            if issues:
-                logger.info("found_issues", count=len(issues))
-            for issue in issues:
-                try:
-                    if issue.title.startswith("[Validation]"):
-                        await process_validation_issue(issue, github, generator, pool)
-                    elif issue.title.startswith("[Refinement]"):
-                        await process_refinement_issue(issue, github, generator, pool)
-                    else:
-                        await process_issue(issue, github, generator, pool)
-                except Exception:
-                    logger.exception("issue_processing_error", issue_number=issue.number)
-        except Exception:
-            logger.exception("poll_cycle_error")
+        while True:
+            try:
+                issues = await github.list_pending_issues()
+                if issues:
+                    logger.info("found_issues", count=len(issues))
+                for issue in issues:
+                    try:
+                        if issue.title.startswith("[Validation]"):
+                            await process_validation_issue(issue, github, generator, pool)
+                        elif issue.title.startswith("[Refinement]"):
+                            await process_refinement_issue(issue, github, generator, pool)
+                        else:
+                            await process_issue(issue, github, generator, pool)
+                    except Exception:
+                        logger.exception("issue_processing_error", issue_number=issue.number)
+            except Exception:
+                logger.exception("poll_cycle_error")
 
-        await asyncio.sleep(settings.poll_interval_seconds)
+            await asyncio.sleep(settings.poll_interval_seconds)
 
 
 if __name__ == "__main__":
