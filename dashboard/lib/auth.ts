@@ -68,7 +68,7 @@ export async function getCurrentUser() {
     return null;
   }
 
-  // Try to find existing user
+  // Try to find existing user by real cognitoId
   let user = await prisma.user.findUnique({
     where: { cognitoId },
     include: {
@@ -76,7 +76,36 @@ export async function getCurrentUser() {
     },
   });
 
-  if (user) return user;
+  if (user) {
+    // Check if there's also an old internal-* user with the same email that has ideas
+    // This handles the case where ideas were created via internal API with a synthetic cognitoId
+    const internalUser = await prisma.user.findFirst({
+      where: {
+        email: user.email,
+        cognitoId: { startsWith: 'internal-' },
+        NOT: { id: user.id },
+      },
+      include: { _count: { select: { ideas: true } } },
+    });
+
+    if (internalUser && internalUser._count.ideas > 0) {
+      // Merge: move ideas and scans from internal user to real user, then delete internal user
+      await prisma.idea.updateMany({
+        where: { userId: internalUser.id },
+        data: { userId: user.id },
+      });
+      await prisma.marketScan.updateMany({
+        where: { userId: internalUser.id },
+        data: { userId: user.id },
+      });
+      await prisma.user.delete({ where: { id: internalUser.id } });
+    } else if (internalUser) {
+      // No ideas, just clean up the duplicate
+      await prisma.user.delete({ where: { id: internalUser.id } });
+    }
+
+    return user;
+  }
 
   // Check if user exists by email (e.g., created via internal API with synthetic cognitoId)
   const existingByEmail = await prisma.user.findUnique({
