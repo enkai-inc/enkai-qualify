@@ -10,6 +10,7 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import { Construct } from 'constructs';
 
 export interface EcsStackProps extends cdk.StackProps {
@@ -523,5 +524,41 @@ export class EcsStack extends cdk.Stack {
       description: 'Worker service ARN',
       exportName: `${projectName}-${environment}-worker-service-arn`,
     });
+
+    // CloudWatch Alarms (production only)
+    if (isProd) {
+      // ALB 5xx error rate alarm
+      new cloudwatch.Alarm(this, 'Alb5xxAlarm', {
+        alarmName: `${projectName}-${environment}-alb-5xx-errors`,
+        alarmDescription: 'ALB is returning elevated 5xx errors',
+        metric: this.alb.metrics.httpCodeElb(
+          elbv2.HttpCodeElb.ELB_5XX_COUNT,
+          {
+            period: cdk.Duration.minutes(5),
+            statistic: 'Sum',
+          },
+        ),
+        threshold: 10,
+        evaluationPeriods: 3,
+        comparisonOperator:
+          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+
+      // ECS API service CPU utilization alarm
+      new cloudwatch.Alarm(this, 'ApiCpuAlarm', {
+        alarmName: `${projectName}-${environment}-api-cpu-high`,
+        alarmDescription: 'API service CPU utilization exceeds 80%',
+        metric: this.apiService.metricCpuUtilization({
+          period: cdk.Duration.minutes(5),
+          statistic: 'Average',
+        }),
+        threshold: 80,
+        evaluationPeriods: 3,
+        comparisonOperator:
+          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+    }
   }
 }
