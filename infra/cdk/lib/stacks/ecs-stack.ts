@@ -178,6 +178,9 @@ export class EcsStack extends cdk.Stack {
 
     dashboardTaskDef.addContainer('dashboard', {
       containerName: 'dashboard',
+      linuxParameters: new ecs.LinuxParameters(this, 'DashboardLinuxParams', {
+        initProcessEnabled: true,
+      }),
       image: usePlaceholder
         ? ecs.ContainerImage.fromRegistry('public.ecr.aws/nginx/nginx:alpine')
         : ecs.ContainerImage.fromEcrRepository(dashboardRepository, 'latest'),
@@ -234,6 +237,9 @@ export class EcsStack extends cdk.Stack {
 
     apiTaskDef.addContainer('api', {
       containerName: 'api',
+      linuxParameters: new ecs.LinuxParameters(this, 'ApiLinuxParams', {
+        initProcessEnabled: true,
+      }),
       image: usePlaceholder
         ? ecs.ContainerImage.fromRegistry('public.ecr.aws/nginx/nginx:alpine')
         : ecs.ContainerImage.fromEcrRepository(apiRepository, 'latest'),
@@ -366,6 +372,9 @@ export class EcsStack extends cdk.Stack {
 
     workerTaskDef.addContainer('worker', {
       containerName: 'worker',
+      linuxParameters: new ecs.LinuxParameters(this, 'WorkerLinuxParams', {
+        initProcessEnabled: true,
+      }),
       image: usePlaceholder
         ? ecs.ContainerImage.fromRegistry('public.ecr.aws/docker/library/python:3.12-slim')
         : ecs.ContainerImage.fromEcrRepository(workerRepository, 'latest'),
