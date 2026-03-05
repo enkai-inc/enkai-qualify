@@ -1,6 +1,12 @@
 import { headers } from 'next/headers';
-import { IdeaStatus } from '@prisma/client';
+import { IdeaStatus, Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { prisma } from './db';
+
+const oidcPayloadSchema = z.object({
+  sub: z.string(),
+  email: z.string().email(),
+}).passthrough();
 
 /**
  * Cognito user info extracted from ALB headers
@@ -27,9 +33,14 @@ function parseOidcData(oidcData: string): CognitoUser | null {
       Buffer.from(parts[1], 'base64').toString('utf-8')
     );
 
+    const validated = oidcPayloadSchema.safeParse(payload);
+    if (!validated.success) {
+      return null;
+    }
+
     return {
-      sub: payload.sub,
-      email: payload.email,
+      sub: validated.data.sub,
+      email: validated.data.email,
       name: payload.name || payload.given_name,
       emailVerified: payload.email_verified,
     };
@@ -89,9 +100,8 @@ export async function getCurrentUser() {
   } catch (error) {
     // Handle race condition: another request created the user first
     if (
-      error instanceof Error &&
-      'code' in error &&
-      (error as any).code === 'P2002'
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
     ) {
       return await prisma.user.findUnique({
         where: { cognitoId },

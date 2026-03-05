@@ -54,7 +54,7 @@ export async function PUT(
     const parsed = updateIdeaSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { error: 'Invalid input', details: 'Invalid input fields' },
         { status: 400 }
       );
     }
