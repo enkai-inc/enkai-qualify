@@ -7,6 +7,7 @@ Usage: python -m worker
 """
 
 import asyncio
+import os
 
 import asyncpg
 import structlog
@@ -40,6 +41,7 @@ structlog.configure(
 )
 logger = structlog.get_logger()
 
+DASHBOARD_URL = os.environ.get('DASHBOARD_URL', 'https://enkai-qualify.digitaldevops.io')
 MAX_RETRIES = 3
 RETRY_DELAYS = [5, 15, 45]
 
@@ -116,7 +118,7 @@ async def process_issue(
 **Features:** {len(idea.features)} features generated
 **Technologies:** {", ".join(idea.technologies)}
 
-The idea has been updated to DRAFT status. View it in the [Enkai Qualify dashboard](https://enkai-qualify.digitaldevops.io/ideas)."""
+The idea has been updated to DRAFT status. View it in the [Enkai Qualify dashboard]({DASHBOARD_URL}/ideas)."""
 
     await github.close_issue(issue.number, comment)
     log.info("issue_processed_successfully", idea_id=params.idea_id)
@@ -192,7 +194,7 @@ async def process_validation_issue(
 | Competition Level | {result.competition_score} |
 | Revenue Estimate | ${result.revenue_estimate:,} |
 
-View results in the [Enkai Qualify dashboard](https://enkai-qualify.digitaldevops.io/ideas)."""
+View results in the [Enkai Qualify dashboard]({DASHBOARD_URL}/ideas)."""
 
     await github.close_issue(issue.number, comment)
     log.info("validation_issue_processed", idea_id=params.idea_id)
@@ -262,7 +264,7 @@ async def process_refinement_issue(
 **Features:** {len(refined.features)} features
 **Technologies:** {", ".join(refined.technologies)}
 
-View the updated idea in the [Enkai Qualify dashboard](https://enkai-qualify.digitaldevops.io/ideas)."""
+View the updated idea in the [Enkai Qualify dashboard]({DASHBOARD_URL}/ideas)."""
 
     await github.close_issue(issue.number, comment)
     log.info("refinement_issue_processed", idea_id=params.idea_id)
