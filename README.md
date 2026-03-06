@@ -204,4 +204,4 @@ MIT
 
 ## Credits
 
-Built on the [Pedro framework](https://github.com/tegryan-ddo/pedro).
+Built on the [Pedro framework](https://github.com/enkai-inc/pedro).
