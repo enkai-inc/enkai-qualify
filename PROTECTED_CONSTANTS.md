@@ -5,5 +5,5 @@
 
 | Constant | Value |
 |----------|-------|
-| repo_owner | tegryan-ddo |
+| repo_owner | enkai-inc |
 | repo_name | pedro |
