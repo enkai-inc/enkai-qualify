@@ -41,7 +41,7 @@ structlog.configure(
 )
 logger = structlog.get_logger()
 
-DASHBOARD_URL = os.environ.get('DASHBOARD_URL', 'https://enkai-qualify.digitaldevops.io')
+DASHBOARD_URL = os.environ.get('DASHBOARD_URL', 'https://login.enkai.ca')
 MAX_RETRIES = 3
 RETRY_DELAYS = [5, 15, 45]
 

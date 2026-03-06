@@ -448,7 +448,7 @@ export class EcsStack extends cdk.Stack {
       this.node.tryGetContext('cognitoClientId')
     );
 
-    // Import ACM certificate for enkai-qualify.digitaldevops.io
+    // Import ACM certificate for login.enkai.ca
     const certificate = acm.Certificate.fromCertificateArn(
       this,
       'Certificate',
