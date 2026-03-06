@@ -289,6 +289,9 @@ export async function generateIdeaSummaryPdf(
           lineBreak: false,
         });
 
+      // Reset Y to prevent page overflow from creating blank pages
+      doc.y = pageBottom;
+
       // Right: page number
       doc
         .font('Helvetica')
@@ -299,6 +302,9 @@ export async function generateIdeaSummaryPdf(
           align: 'right',
           lineBreak: false,
         });
+
+      // Reset Y again after last text call on this page
+      doc.y = pageBottom;
     }
 
     doc.end();
