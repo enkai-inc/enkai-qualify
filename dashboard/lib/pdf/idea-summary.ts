@@ -269,6 +269,11 @@ export async function generateIdeaSummaryPdf(
 
       const pageBottom = doc.page.height - 30;
 
+      // Temporarily zero out bottom margin so text() at the page bottom
+      // doesn't trigger pdfkit's automatic page-break logic
+      const savedMarginBottom = doc.page.margins.bottom;
+      doc.page.margins.bottom = 0;
+
       // Divider line
       doc
         .save()
@@ -289,9 +294,6 @@ export async function generateIdeaSummaryPdf(
           lineBreak: false,
         });
 
-      // Reset Y to prevent page overflow from creating blank pages
-      doc.y = pageBottom;
-
       // Right: page number
       doc
         .font('Helvetica')
@@ -303,8 +305,8 @@ export async function generateIdeaSummaryPdf(
           lineBreak: false,
         });
 
-      // Reset Y again after last text call on this page
-      doc.y = pageBottom;
+      // Restore margin
+      doc.page.margins.bottom = savedMarginBottom;
     }
 
     doc.end();
