@@ -87,7 +87,7 @@ ecsStack.addDependency(ecrStack);
 // 5. Pipeline Stack - CodePipeline + CodeBuild
 //
 // All services run on the shared enkai-dev cluster.
-// Dashboard/API: enkai-qualify.digitaldevops.io → enkai-shared-dev ALB → enkai-dev cluster.
+// Dashboard/API: login.enkai.ca → enkai-shared-dev ALB → enkai-dev cluster.
 // Worker: no HTTP traffic, runs as standalone service on enkai-dev cluster.
 const pipelineStack = new PipelineStack(app, `${stackPrefix}-pipeline`, {
   env,
