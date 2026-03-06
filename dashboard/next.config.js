@@ -4,6 +4,9 @@ const nextConfig = {
   // Produces a minimal self-contained build (~150MB vs ~1GB)
   output: 'standalone',
 
+  // Exclude packages that need runtime access to data files (e.g. .afm font metrics)
+  serverExternalPackages: ['pdfkit'],
+
   // Strict mode for better React practices
   reactStrictMode: true,
 
