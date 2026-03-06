@@ -51,8 +51,8 @@
       "pipeline": "${stack_prefix}-${environment}-pipeline"
     },
     "services": {
-      "dashboard_url": "https://enkai-qualify.digitaldevops.io",
-      "api_url": "https://enkai-qualify.digitaldevops.io/api",
+      "dashboard_url": "https://login.enkai.ca",
+      "api_url": "https://login.enkai.ca/api",
       "dashboard_service": "${stack_prefix}-${environment}-dashboard",
       "api_service": "${stack_prefix}-${environment}-api",
       "cluster": "${stack_prefix}-${environment}-cluster"

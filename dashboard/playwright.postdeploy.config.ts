@@ -18,7 +18,7 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://enkai-qualify.digitaldevops.io',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://login.enkai.ca',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     ignoreHTTPSErrors: true,
