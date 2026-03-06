@@ -14,7 +14,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const TEMPLATE_FACTORY_OWNER = 'tegryan-ddo';
+const TEMPLATE_FACTORY_OWNER = 'enkai-inc';
 const TEMPLATE_FACTORY_REPO = 'template-factory';
 const MODULES_DIR = path.join(__dirname, '..', 'modules');
 
