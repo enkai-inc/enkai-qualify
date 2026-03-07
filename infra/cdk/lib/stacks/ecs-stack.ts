@@ -10,6 +10,8 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
 export interface EcsStackProps extends cdk.StackProps {
@@ -130,6 +132,22 @@ export class EcsStack extends cdk.Stack {
       description: 'Allow ECS services to access Redis',
     });
 
+    // S3 bucket for pack storage
+    const packBucket = new s3.Bucket(this, 'PackBucket', {
+      bucketName: `${projectName}-${environment}-packs`,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: !isProd,
+      lifecycleRules: [
+        {
+          expiration: cdk.Duration.days(90),
+          prefix: 'temp/',
+        },
+      ],
+    });
+
     // Dashboard Task Definition
     const dashboardTaskDef = new ecs.FargateTaskDefinition(
       this,
@@ -155,6 +173,9 @@ export class EcsStack extends cdk.Stack {
 
     // Grant dashboard access to database secret for Prisma migrations
     databaseSecret.grantRead(dashboardTaskDef.taskRole);
+
+    // Grant dashboard access to pack storage bucket
+    packBucket.grantReadWrite(dashboardTaskDef.taskRole);
 
     // API Keys secret for external services (Anthropic, Stripe, etc.)
     const apiKeysSecret = secretsmanager.Secret.fromSecretNameV2(
@@ -188,6 +209,7 @@ export class EcsStack extends cdk.Stack {
       environment: {
         NODE_ENV: 'production',
         NEXT_PUBLIC_API_URL: `http://api.${projectName}.internal:8000`,
+        PACK_STORAGE_BUCKET: `${projectName}-${environment}-packs`,
       },
       secrets: usePlaceholder ? undefined : {
         DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret, 'connectionString'),
@@ -220,8 +242,9 @@ export class EcsStack extends cdk.Stack {
       })
     );
 
-    // Grant API access to database secret
+    // Grant API access to database secret and pack bucket
     databaseSecret.grantRead(apiTaskDef.taskRole);
+    packBucket.grantReadWrite(apiTaskDef.taskRole);
 
     const apiLogGroup = new logs.LogGroup(this, 'ApiLogs', {
       logGroupName: `/ecs/${projectName}/${environment}/api`,
