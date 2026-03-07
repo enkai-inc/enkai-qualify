@@ -1,5 +1,12 @@
 import { prisma } from '@/lib/db';
 import { PackStatus } from '@prisma/client';
+import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { generatePackZip, PackFeature, PackValidation } from './pack-generator';
+
+const s3Client = new S3Client({});
+const PACK_BUCKET = process.env.PACK_STORAGE_BUCKET || 'enkai-qualify-packs';
+const PRESIGNED_URL_EXPIRY = 24 * 60 * 60; // 24 hours in seconds
 
 export interface CreatePackInput {
   ideaId: string;
@@ -27,8 +34,6 @@ export async function createPack(input: CreatePackInput) {
     },
   });
 
-  // In a real implementation, this would trigger a background job
-  // For now, we simulate async pack generation
   generatePackAsync(pack.id).catch(console.error);
 
   return pack;
@@ -67,45 +72,96 @@ export async function listPacks(userId: string) {
 }
 
 async function generatePackAsync(packId: string) {
-  // Update status to GENERATING
-  await prisma.pack.update({
-    where: { id: packId },
-    data: { status: 'GENERATING' },
-  });
+  try {
+    // Update status to GENERATING
+    await prisma.pack.update({
+      where: { id: packId },
+      data: { status: 'GENERATING' },
+    });
 
-  // Simulate pack generation time (2-5 seconds)
-  await new Promise((resolve) => setTimeout(resolve, 2000 + Math.random() * 3000));
+    // Load full pack with idea data and latest validation
+    const pack = await prisma.pack.findUnique({
+      where: { id: packId },
+      include: {
+        idea: {
+          include: {
+            validations: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
 
-  // In production, this would:
-  // 1. Load module templates from the module library
-  // 2. Customize templates based on idea features
-  // 3. Bundle into a downloadable package
-  // 4. Upload to S3
-  // 5. Generate signed download URL
+    if (!pack || !pack.idea) {
+      throw new Error(`Pack ${packId} or associated idea not found`);
+    }
 
-  // For now, simulate success
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const idea = pack.idea;
+    const validation = idea.validations[0] ?? null;
 
-  await prisma.pack.update({
-    where: { id: packId },
-    data: {
-      status: 'READY',
-      s3Key: `packs/${packId}/bundle.zip`,
-      downloadUrl: `https://metis-packs.s3.amazonaws.com/packs/${packId}/bundle.zip`,
-      expiresAt,
-    },
-  });
+    // Generate the ZIP buffer
+    const zipBuffer = await generatePackZip({
+      ideaTitle: idea.title,
+      ideaDescription: idea.description,
+      industry: idea.industry,
+      targetMarket: idea.targetMarket,
+      technologies: idea.technologies,
+      features: (idea.features as unknown as PackFeature[]) || [],
+      modules: pack.modules,
+      complexity: pack.complexity as 'MVP' | 'STANDARD' | 'FULL',
+      validation: validation
+        ? ({
+            keywordScore: validation.keywordScore,
+            painPointScore: validation.painPointScore,
+            competitionScore: validation.competitionScore,
+            revenueEstimate: validation.revenueEstimate,
+            overallScore: validation.overallScore,
+          } as PackValidation)
+        : null,
+    });
 
-  // Update subscription usage
-  const pack = await prisma.pack.findUnique({
-    where: { id: packId },
-    select: { userId: true },
-  });
+    // Upload to S3
+    const s3Key = `packs/${packId}/bundle.zip`;
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: PACK_BUCKET,
+        Key: s3Key,
+        Body: zipBuffer,
+        ContentType: 'application/zip',
+        ContentDisposition: `attachment; filename="${packId}.zip"`,
+      })
+    );
 
-  if (pack) {
+    // Generate presigned download URL
+    const expiresAt = new Date(Date.now() + PRESIGNED_URL_EXPIRY * 1000);
+    const downloadUrl = await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({ Bucket: PACK_BUCKET, Key: s3Key }),
+      { expiresIn: PRESIGNED_URL_EXPIRY }
+    );
+
+    await prisma.pack.update({
+      where: { id: packId },
+      data: {
+        status: 'READY',
+        s3Key,
+        downloadUrl,
+        expiresAt,
+      },
+    });
+
+    // Update subscription usage
     await prisma.subscription.update({
       where: { userId: pack.userId },
       data: { packsUsed: { increment: 1 } },
+    });
+  } catch (error) {
+    console.error(`Pack generation failed for ${packId}:`, error);
+    await prisma.pack.update({
+      where: { id: packId },
+      data: { status: 'FAILED' },
     });
   }
 }

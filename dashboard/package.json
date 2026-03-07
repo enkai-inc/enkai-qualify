@@ -28,6 +28,7 @@
     "@prisma/client": "^5.14.0",
     "@tanstack/react-query": "^5.32.0",
     "clsx": "^2.1.1",
+    "jszip": "^3.10.1",
     "next": "^16.1.6",
     "pdfkit": "^0.17.2",
     "react": "^18.3.1",
