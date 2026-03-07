@@ -1,14 +1,18 @@
-"""Metis API - FastAPI Application Entry Point."""
+"""Enkai Qualify API - FastAPI Application Entry Point."""
 
+import time
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any
 
-from fastapi import FastAPI
+import structlog
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.config import settings
+
+request_logger = structlog.get_logger("api.request")
 
 
 class HealthResponse(BaseModel):
@@ -24,14 +28,14 @@ class HealthResponse(BaseModel):
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown events."""
     # Startup
-    print(f"Starting Metis API v{settings.version}")
+    print(f"Starting Enkai Qualify API v{settings.version}")
     yield
     # Shutdown
-    print("Shutting down Metis API")
+    print("Shutting down Enkai Qualify API")
 
 
 app = FastAPI(
-    title="Metis API",
+    title="Enkai Qualify API",
     description="AI-powered development toolkit backend",
     version=settings.version,
     lifespan=lifespan,
@@ -44,9 +48,25 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
+
+
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    """Log every request with method, path, status_code, and duration_ms."""
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = round((time.perf_counter() - start) * 1000, 2)
+    request_logger.info(
+        "request_handled",
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+        duration_ms=duration_ms,
+    )
+    return response
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
@@ -55,7 +75,7 @@ async def health_check() -> HealthResponse:
     return HealthResponse(
         status="healthy",
         timestamp=datetime.utcnow().isoformat(),
-        service="metis-api",
+        service="enkai-qualify-api",
         version=settings.version,
     )
 
@@ -64,7 +84,7 @@ async def health_check() -> HealthResponse:
 async def root() -> dict[str, Any]:
     """Root endpoint with API information."""
     return {
-        "service": "metis-api",
+        "service": "enkai-qualify-api",
         "version": settings.version,
         "docs": "/docs" if settings.debug else None,
     }

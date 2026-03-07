@@ -8,23 +8,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Team {
+  id          String       @id @default(cuid())
+  name        String
+  users       User[]
+  ideas       Idea[]
+  packs       Pack[]
+  marketScans MarketScan[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
 model User {
   id            String         @id @default(cuid())
   cognitoId     String         @unique
   email         String         @unique
   name          String?
+  teamId        String?
+  team          Team?          @relation(fields: [teamId], references: [id])
   ideas         Idea[]
   packs         Pack[]
   marketScans   MarketScan[]
   subscription  Subscription?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+
+  @@index([teamId])
 }
 
 model Idea {
   id             String         @id @default(cuid())
   userId         String
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId         String?
+  team           Team?          @relation(fields: [teamId], references: [id])
   title          String
   description    String         @db.Text
   industry       String
@@ -42,6 +59,10 @@ model Idea {
 
   @@index([userId])
   @@index([status])
+  @@index([userId, status])
+  @@index([teamId])
+  @@index([teamId, status])
+  @@index([createdAt])
 }
 
 model IdeaVersion {
@@ -82,6 +103,8 @@ model Pack {
   idea          Idea           @relation(fields: [ideaId], references: [id], onDelete: Cascade)
   userId        String
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId        String?
+  team          Team?          @relation(fields: [teamId], references: [id])
   modules       String[]
   complexity    PackComplexity
   workUnitCount Int
@@ -93,6 +116,7 @@ model Pack {
   updatedAt     DateTime       @updatedAt
 
   @@index([userId])
+  @@index([teamId])
   @@index([ideaId])
 }
 
@@ -128,6 +152,8 @@ model MarketScan {
   id              String   @id @default(cuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId          String?
+  team            Team?    @relation(fields: [teamId], references: [id])
   industry        String
   niche           String?
   status          String   @default("PENDING")
@@ -140,6 +166,7 @@ model MarketScan {
   updatedAt       DateTime @updatedAt
 
   @@index([userId])
+  @@index([teamId])
   @@index([status])
 }
 

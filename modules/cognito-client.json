@@ -34,7 +34,7 @@
     "cognito"
   ],
   "source": {
-    "repo": "tegryan-ddo/template-factory",
+    "repo": "enkai-inc/template-factory",
     "path": "patches/auth/cognito-client"
   }
 }

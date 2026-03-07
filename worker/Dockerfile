@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-# Multi-stage production Dockerfile for Metis worker
+# Multi-stage production Dockerfile for Enkai Qualify worker
 # No HTTP server - just a polling loop
 
 # =============================================================================
@@ -47,6 +47,7 @@ COPY --chown=appuser:appgroup ./worker ./worker
 USER appuser
 
 # No EXPOSE - worker has no HTTP server
-# No HEALTHCHECK - ECS will monitor the process
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD pgrep -f "python -m worker" || exit 1
 
 CMD ["python", "-m", "worker"]

@@ -10,6 +10,8 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
 export interface EcsStackProps extends cdk.StackProps {
@@ -71,6 +73,7 @@ export class EcsStack extends cdk.Stack {
       vpc,
       internetFacing: true,
       loadBalancerName: `${projectName}-${environment}-alb`,
+      dropInvalidHeaderFields: true,
       securityGroup: new ec2.SecurityGroup(this, 'AlbSG', {
         vpc,
         securityGroupName: `${projectName}-${environment}-alb-sg`,
@@ -177,6 +180,9 @@ export class EcsStack extends cdk.Stack {
 
     dashboardTaskDef.addContainer('dashboard', {
       containerName: 'dashboard',
+      linuxParameters: new ecs.LinuxParameters(this, 'DashboardLinuxParams', {
+        initProcessEnabled: true,
+      }),
       image: usePlaceholder
         ? ecs.ContainerImage.fromRegistry('public.ecr.aws/nginx/nginx:alpine')
         : ecs.ContainerImage.fromEcrRepository(dashboardRepository, 'latest'),
@@ -202,6 +208,22 @@ export class EcsStack extends cdk.Stack {
       // Container health checks were failing despite ALB health checks passing
     });
 
+    // S3 bucket for pack storage
+    const packBucket = new s3.Bucket(this, 'PackBucket', {
+      bucketName: `${projectName}-${environment}-packs`,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: !isProd,
+      lifecycleRules: [
+        {
+          expiration: cdk.Duration.days(90),
+          prefix: 'temp/',
+        },
+      ],
+    });
+
     // API Task Definition
     const apiTaskDef = new ecs.FargateTaskDefinition(this, 'ApiTaskDef', {
       memoryLimitMiB: isProd ? 1024 : 512,
@@ -222,6 +244,7 @@ export class EcsStack extends cdk.Stack {
 
     // Grant API access to database secret
     databaseSecret.grantRead(apiTaskDef.taskRole);
+    packBucket.grantReadWrite(apiTaskDef.taskRole);
 
     const apiLogGroup = new logs.LogGroup(this, 'ApiLogs', {
       logGroupName: `/ecs/${projectName}/${environment}/api`,
@@ -233,6 +256,9 @@ export class EcsStack extends cdk.Stack {
 
     apiTaskDef.addContainer('api', {
       containerName: 'api',
+      linuxParameters: new ecs.LinuxParameters(this, 'ApiLinuxParams', {
+        initProcessEnabled: true,
+      }),
       image: usePlaceholder
         ? ecs.ContainerImage.fromRegistry('public.ecr.aws/nginx/nginx:alpine')
         : ecs.ContainerImage.fromEcrRepository(apiRepository, 'latest'),
@@ -244,7 +270,7 @@ export class EcsStack extends cdk.Stack {
       environment: {
         ENVIRONMENT: environment,
         DEBUG: isProd ? 'false' : 'true',
-        REDIS_URL: `redis://${redisCluster.attrRedisEndpointAddress}:6379/0`,
+        REDIS_URL: `rediss://${redisCluster.attrRedisEndpointAddress}:6379/0`,
       },
       secrets: usePlaceholder ? undefined : {
         DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret, 'connectionString'),
@@ -269,7 +295,7 @@ export class EcsStack extends cdk.Stack {
       desiredCount: isProd ? 2 : 1,
       securityGroups: [serviceSG],
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      enableExecuteCommand: true,
+      enableExecuteCommand: !isProd,
       circuitBreaker: { rollback: true },
       minHealthyPercent: 100,
       maxHealthyPercent: 200,
@@ -286,7 +312,7 @@ export class EcsStack extends cdk.Stack {
       desiredCount: isProd ? 2 : 1,
       securityGroups: [serviceSG],
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      enableExecuteCommand: true,
+      enableExecuteCommand: !isProd,
       circuitBreaker: { rollback: true },
       minHealthyPercent: 100,
       maxHealthyPercent: 200,
@@ -365,6 +391,9 @@ export class EcsStack extends cdk.Stack {
 
     workerTaskDef.addContainer('worker', {
       containerName: 'worker',
+      linuxParameters: new ecs.LinuxParameters(this, 'WorkerLinuxParams', {
+        initProcessEnabled: true,
+      }),
       image: usePlaceholder
         ? ecs.ContainerImage.fromRegistry('public.ecr.aws/docker/library/python:3.12-slim')
         : ecs.ContainerImage.fromEcrRepository(workerRepository, 'latest'),
@@ -396,7 +425,7 @@ export class EcsStack extends cdk.Stack {
       desiredCount: 1,
       securityGroups: [serviceSG],
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      enableExecuteCommand: true,
+      enableExecuteCommand: !isProd,
       circuitBreaker: { rollback: true },
       minHealthyPercent: 0,
       maxHealthyPercent: 100,
@@ -409,21 +438,21 @@ export class EcsStack extends cdk.Stack {
     const cognitoUserPool = cognito.UserPool.fromUserPoolId(
       this,
       'CognitoUserPool',
-      'us-east-1_zlw7qsJMJ'
+      this.node.tryGetContext('cognitoUserPoolId')
     );
 
     // Import existing user pool client
     const cognitoClient = cognito.UserPoolClient.fromUserPoolClientId(
       this,
       'CognitoClient',
-      '2qcaf479drm0tg372mnm8upjfr'
+      this.node.tryGetContext('cognitoClientId')
     );
 
-    // Import ACM certificate for metis.digitaldevops.io
+    // Import ACM certificate for login.enkai.ca
     const certificate = acm.Certificate.fromCertificateArn(
       this,
       'Certificate',
-      'arn:aws:acm:us-east-1:882384879235:certificate/b846e9b3-2a34-4599-90c8-2ebf5e1bb2c2'
+      this.node.tryGetContext('certificateArn')
     );
 
     // HTTPS Listener with Cognito authentication
@@ -442,22 +471,28 @@ export class EcsStack extends cdk.Stack {
         userPoolDomain: cognito.UserPoolDomain.fromDomainName(this, 'CognitoDomain', 'enkai-dev'),
         onUnauthenticatedRequest: elbv2.UnauthenticatedAction.AUTHENTICATE,
         scope: 'openid email profile',
-        sessionTimeout: cdk.Duration.days(7),
+        sessionTimeout: cdk.Duration.hours(8),
         next: elbv2.ListenerAction.forward([dashboardTargetGroup]),
       }),
     });
 
     // Internal API routes bypass Cognito auth (worker callback endpoints)
+    // Security: restrict to VPC CIDR so only internal services can reach these
+    // endpoints via the ALB. Application-level auth (WORKER_API_KEY) provides
+    // additional defense-in-depth — see dashboard/lib/internal-auth.ts
     httpsListener.addAction('InternalApiRoute', {
       priority: 5,
-      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/internal/*'])],
+      conditions: [
+        elbv2.ListenerCondition.pathPatterns(['/api/internal/*']),
+        elbv2.ListenerCondition.sourceIps([vpc.vpcCidrBlock]),
+      ],
       action: elbv2.ListenerAction.forward([dashboardTargetGroup]),
     });
 
     // Add API route rule (before Cognito auth, priority 10)
     httpsListener.addAction('ApiRoute', {
       priority: 10,
-      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/v1/*', '/health', '/docs', '/redoc'])],
+      conditions: [elbv2.ListenerCondition.pathPatterns(['/api/v1/*', '/health'])],
       action: elbv2.ListenerAction.forward([apiTargetGroup]),
     });
 
@@ -523,5 +558,41 @@ export class EcsStack extends cdk.Stack {
       description: 'Worker service ARN',
       exportName: `${projectName}-${environment}-worker-service-arn`,
     });
+
+    // CloudWatch Alarms (production only)
+    if (isProd) {
+      // ALB 5xx error rate alarm
+      new cloudwatch.Alarm(this, 'Alb5xxAlarm', {
+        alarmName: `${projectName}-${environment}-alb-5xx-errors`,
+        alarmDescription: 'ALB is returning elevated 5xx errors',
+        metric: this.alb.metrics.httpCodeElb(
+          elbv2.HttpCodeElb.ELB_5XX_COUNT,
+          {
+            period: cdk.Duration.minutes(5),
+            statistic: 'Sum',
+          },
+        ),
+        threshold: 10,
+        evaluationPeriods: 3,
+        comparisonOperator:
+          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+
+      // ECS API service CPU utilization alarm
+      new cloudwatch.Alarm(this, 'ApiCpuAlarm', {
+        alarmName: `${projectName}-${environment}-api-cpu-high`,
+        alarmDescription: 'API service CPU utilization exceeds 80%',
+        metric: this.apiService.metricCpuUtilization({
+          period: cdk.Duration.minutes(5),
+          statistic: 'Average',
+        }),
+        threshold: 80,
+        evaluationPeriods: 3,
+        comparisonOperator:
+          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+    }
   }
 }

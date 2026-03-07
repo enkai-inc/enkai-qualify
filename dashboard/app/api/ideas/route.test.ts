@@ -5,9 +5,9 @@ import { NextRequest } from 'next/server';
 import { GET, POST } from './route';
 
 // Mock auth
-const mockUser = { id: 'user-123', email: 'test@example.com' };
+const mockUser = { id: 'user-123', email: 'test@example.com', teamId: 'default-team' };
 jest.mock('@/lib/auth', () => ({
-  requireAuth: jest.fn().mockResolvedValue({ id: 'user-123', email: 'test@example.com' }),
+  requireAuth: jest.fn().mockResolvedValue({ id: 'user-123', email: 'test@example.com', teamId: 'default-team' }),
   canCreateIdea: jest.fn().mockResolvedValue(true),
 }));
 
@@ -59,6 +59,7 @@ describe('GET /api/ideas', () => {
     it('clamps page to minimum 1 for zero', async () => {
       await GET(createGetRequest({ page: '0' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ page: 1 })
       );
     });
@@ -66,6 +67,7 @@ describe('GET /api/ideas', () => {
     it('clamps page to minimum 1 for negative values', async () => {
       await GET(createGetRequest({ page: '-5' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ page: 1 })
       );
     });
@@ -73,6 +75,7 @@ describe('GET /api/ideas', () => {
     it('defaults page to 1 when not provided', async () => {
       await GET(createGetRequest());
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ page: 1 })
       );
     });
@@ -80,6 +83,7 @@ describe('GET /api/ideas', () => {
     it('defaults page to 1 for non-numeric input', async () => {
       await GET(createGetRequest({ page: 'abc' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ page: 1 })
       );
     });
@@ -87,6 +91,7 @@ describe('GET /api/ideas', () => {
     it('defaults pageSize for zero input (falsy value)', async () => {
       await GET(createGetRequest({ pageSize: '0' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ pageSize: 10 })
       );
     });
@@ -94,6 +99,7 @@ describe('GET /api/ideas', () => {
     it('clamps pageSize to minimum 1 for negative values', async () => {
       await GET(createGetRequest({ pageSize: '-5' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ pageSize: 1 })
       );
     });
@@ -101,6 +107,7 @@ describe('GET /api/ideas', () => {
     it('clamps pageSize to maximum 100', async () => {
       await GET(createGetRequest({ pageSize: '200' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ pageSize: 100 })
       );
     });
@@ -108,6 +115,7 @@ describe('GET /api/ideas', () => {
     it('defaults pageSize to 10 when not provided', async () => {
       await GET(createGetRequest());
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ pageSize: 10 })
       );
     });
@@ -115,6 +123,7 @@ describe('GET /api/ideas', () => {
     it('defaults pageSize to 10 for non-numeric input', async () => {
       await GET(createGetRequest({ pageSize: 'abc' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ pageSize: 10 })
       );
     });
@@ -124,6 +133,7 @@ describe('GET /api/ideas', () => {
     it('defaults to updatedAt when not provided', async () => {
       await GET(createGetRequest());
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortBy: 'updatedAt' })
       );
     });
@@ -131,6 +141,7 @@ describe('GET /api/ideas', () => {
     it('accepts createdAt', async () => {
       await GET(createGetRequest({ sortBy: 'createdAt' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortBy: 'createdAt' })
       );
     });
@@ -138,6 +149,7 @@ describe('GET /api/ideas', () => {
     it('accepts updatedAt', async () => {
       await GET(createGetRequest({ sortBy: 'updatedAt' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortBy: 'updatedAt' })
       );
     });
@@ -145,6 +157,7 @@ describe('GET /api/ideas', () => {
     it('accepts title', async () => {
       await GET(createGetRequest({ sortBy: 'title' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortBy: 'title' })
       );
     });
@@ -152,6 +165,7 @@ describe('GET /api/ideas', () => {
     it('falls back to updatedAt for invalid sortBy values', async () => {
       await GET(createGetRequest({ sortBy: 'malicious; DROP TABLE ideas' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortBy: 'updatedAt' })
       );
     });
@@ -159,6 +173,7 @@ describe('GET /api/ideas', () => {
     it('falls back to updatedAt for non-whitelisted column names', async () => {
       await GET(createGetRequest({ sortBy: 'email' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortBy: 'updatedAt' })
       );
     });
@@ -168,6 +183,7 @@ describe('GET /api/ideas', () => {
     it('defaults to desc when not provided', async () => {
       await GET(createGetRequest());
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortOrder: 'desc' })
       );
     });
@@ -175,6 +191,7 @@ describe('GET /api/ideas', () => {
     it('accepts asc', async () => {
       await GET(createGetRequest({ sortOrder: 'asc' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortOrder: 'asc' })
       );
     });
@@ -182,6 +199,7 @@ describe('GET /api/ideas', () => {
     it('accepts desc', async () => {
       await GET(createGetRequest({ sortOrder: 'desc' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortOrder: 'desc' })
       );
     });
@@ -189,6 +207,7 @@ describe('GET /api/ideas', () => {
     it('falls back to desc for invalid sortOrder values', async () => {
       await GET(createGetRequest({ sortOrder: 'INVALID' }));
       expect(listIdeas).toHaveBeenCalledWith(
+        'default-team',
         expect.objectContaining({ sortOrder: 'desc' })
       );
     });

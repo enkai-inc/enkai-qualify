@@ -1,13 +1,13 @@
-# Metis
+# Enkai Qualify
 
-AI-powered development toolkit built on the Pedro framework. Named after the Greek Titaness of wisdom and deep thought, Metis brings intelligent automation to your software development lifecycle.
+AI-powered development toolkit built on the Pedro framework. Enkai Qualify brings intelligent automation to your software development lifecycle.
 
 ## Quick Start
 
 ```bash
 # 1. Clone this repo into your project
-git clone https://github.com/tegryan-ddo/metis.git
-cp -r metis/.claude/ /path/to/your-repo/.claude/
+git clone https://github.com/enkai-inc/enkai-qualify.git
+cp -r enkai-qualify/.claude/ /path/to/your-repo/.claude/
 
 # 2. Run the setup script to configure for your project
 python scripts/setup_claude_config.py
@@ -204,4 +204,4 @@ MIT
 
 ## Credits
 
-Built on the [Pedro framework](https://github.com/tegryan-ddo/pedro).
+Built on the [Pedro framework](https://github.com/enkai-inc/pedro).

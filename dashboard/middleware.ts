@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Middleware for Metis Dashboard
+ * Middleware for Enkai Qualify Dashboard
  *
  * Authentication is handled by AWS ALB with Cognito integration.
  * The ALB authenticates users before requests reach this application

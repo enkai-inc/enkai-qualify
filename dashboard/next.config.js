@@ -4,6 +4,9 @@ const nextConfig = {
   // Produces a minimal self-contained build (~150MB vs ~1GB)
   output: 'standalone',
 
+  // Exclude packages that need runtime access to data files (e.g. .afm font metrics)
+  serverExternalPackages: ['pdfkit'],
+
   // Strict mode for better React practices
   reactStrictMode: true,
 
@@ -60,7 +63,11 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.amazonaws.com",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.amazonaws.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(self)',
           },
         ],
       },

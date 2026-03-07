@@ -3,16 +3,29 @@
 import os
 from typing import Any
 
+import redis.asyncio as aioredis
 import stripe
+import structlog
 from fastapi import APIRouter, Header, HTTPException, Request
 
 from ..services.billing import SubscriptionService
 
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
-# Track processed events for idempotency
-_processed_events: set[str] = set()
+# Redis-based idempotency
+_redis: aioredis.Redis | None = None
+IDEMPOTENCY_TTL_SECONDS = 86400
+
+
+async def _get_redis() -> aioredis.Redis:
+    """Get or create a Redis connection for idempotency checks."""
+    global _redis
+    if _redis is None:
+        redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+        _redis = aioredis.from_url(redis_url, decode_responses=True)
+    return _redis
 
 
 @router.post("/stripe")
@@ -40,6 +53,10 @@ async def stripe_webhook(
     payload = await request.body()
     webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
+    if not webhook_secret:
+        logger.error("stripe_webhook_secret_not_configured")
+        raise HTTPException(status_code=500, detail="Webhook not configured")
+
     # Verify webhook signature
     try:
         event = stripe.Webhook.construct_event(
@@ -52,9 +69,16 @@ async def stripe_webhook(
     except stripe.error.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    # Idempotency check
+    # Idempotency check via Redis
     event_id = event["id"]
-    if event_id in _processed_events:
+    r = await _get_redis()
+    already_processed = await r.set(
+        f"webhook:idempotency:{event_id}",
+        "1",
+        nx=True,
+        ex=IDEMPOTENCY_TTL_SECONDS,
+    )
+    if already_processed is None:
         return {"status": "already_processed"}
 
     # Process the event
@@ -76,20 +100,14 @@ async def stripe_webhook(
             # Unhandled event type - log and continue
             pass
 
-        # Mark as processed for idempotency
-        _processed_events.add(event_id)
-
-        # Clean up old events to prevent memory growth
-        if len(_processed_events) > 10000:
-            # Remove oldest half
-            to_remove = list(_processed_events)[: len(_processed_events) // 2]
-            for e in to_remove:
-                _processed_events.discard(e)
-
     except Exception as e:
         # Log error but return 200 to prevent Stripe retries for app errors
-        # In production, log this properly
-        print(f"Error processing webhook {event_type}: {e}")
+        logger.error(
+            "Error processing webhook",
+            event_type=event_type,
+            event_id=event_id,
+            error=str(e),
+        )
 
     return {"status": "processed"}
 

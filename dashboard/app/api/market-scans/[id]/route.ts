@@ -10,16 +10,12 @@ export async function GET(
     const user = await requireAuth();
     const { id } = await params;
 
-    const scan = await prisma.marketScan.findUnique({
-      where: { id },
+    const scan = await prisma.marketScan.findFirst({
+      where: { id, teamId: user.teamId! },
     });
 
     if (!scan) {
       return NextResponse.json({ error: 'Market scan not found' }, { status: 404 });
-    }
-
-    if (scan.userId !== user.id) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     return NextResponse.json({

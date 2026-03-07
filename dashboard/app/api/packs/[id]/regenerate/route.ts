@@ -19,7 +19,7 @@ export async function POST(
       );
     }
 
-    const pack = await regeneratePack(id, user.id);
+    const pack = await regeneratePack(id, user.teamId!);
 
     if (!pack) {
       return NextResponse.json({ error: 'Pack not found' }, { status: 404 });

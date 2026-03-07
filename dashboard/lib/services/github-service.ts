@@ -1,8 +1,8 @@
 import { Octokit } from '@octokit/rest';
 import { createAppAuth } from '@octokit/auth-app';
 
-const REPO_OWNER = 'tegryan-ddo';
-const REPO_NAME = 'metis';
+const REPO_OWNER = process.env.GITHUB_REPO_OWNER || 'enkai-inc';
+const REPO_NAME = process.env.GITHUB_REPO_NAME || 'enkai-qualify';
 const IDEA_GENERATION_LABEL = 'enkai:build';
 
 function getOctokit(): Octokit {
@@ -61,7 +61,7 @@ export async function createIdeaGenerationIssue(
       repo: REPO_NAME,
       name: IDEA_GENERATION_LABEL,
       color: '7057ff',
-      description: 'Idea generation request from Metis dashboard',
+      description: 'Idea generation request from Enkai Qualify dashboard',
     });
   }
 
@@ -94,6 +94,7 @@ ${request.problemDescription}
 
 **Database update command:**
 \`\`\`sql
+-- Parameters: [ideaId]
 UPDATE "Idea" SET
   title = '<generated_title>',
   description = '<generated_description>',
@@ -101,7 +102,7 @@ UPDATE "Idea" SET
   features = '<json_array>',
   status = 'DRAFT',
   "generatedAt" = NOW()
-WHERE id = '${request.ideaId}';
+WHERE id = $1;
 \`\`\`
 `;
 
@@ -282,7 +283,7 @@ export async function createMarketScanIssue(
       repo: REPO_NAME,
       name: IDEA_GENERATION_LABEL,
       color: '7057ff',
-      description: 'Idea generation request from Metis dashboard',
+      description: 'Idea generation request from Enkai Qualify dashboard',
     });
   }
 

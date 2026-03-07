@@ -1,7 +1,7 @@
 {
-  "name": "metis-infra",
+  "name": "enkai-qualify-infra",
   "version": "0.1.0",
-  "description": "Metis CDK Infrastructure",
+  "description": "Enkai Qualify CDK Infrastructure",
   "private": true,
   "scripts": {
     "build": "tsc",

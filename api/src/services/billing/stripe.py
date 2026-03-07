@@ -11,7 +11,14 @@ class StripeClient:
 
     def __init__(self) -> None:
         """Initialize Stripe client with API key from environment."""
-        stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+        api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+        environment = os.environ.get("ENVIRONMENT", "development")
+        if not api_key and environment != "development":
+            raise RuntimeError(
+                "STRIPE_SECRET_KEY environment variable is required "
+                "in non-development environments"
+            )
+        stripe.api_key = api_key
         self.webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
     def create_checkout_session(

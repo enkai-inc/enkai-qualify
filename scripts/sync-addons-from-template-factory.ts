@@ -3,7 +3,7 @@
  * sync-addons-from-template-factory.ts
  *
  * Syncs addon definitions from the template-factory repo.
- * Template-factory patches are converted to metis module format.
+ * Template-factory patches are converted to enkai-qualify module format.
  *
  * Usage:
  *   npx tsx scripts/sync-addons-from-template-factory.ts
@@ -14,7 +14,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const TEMPLATE_FACTORY_OWNER = 'tegryan-ddo';
+const TEMPLATE_FACTORY_OWNER = 'enkai-inc';
 const TEMPLATE_FACTORY_REPO = 'template-factory';
 const MODULES_DIR = path.join(__dirname, '..', 'modules');
 
@@ -24,7 +24,7 @@ interface TemplateFactoryPatch {
   category: string;
 }
 
-interface MetisModule {
+interface EnkaiQualifyModule {
   moduleId: string;
   displayName: string;
   description: string;
@@ -109,7 +109,7 @@ async function fetchPatchFiles(patchPath: string): Promise<string[]> {
   }
 }
 
-function convertPatchToModule(patch: TemplateFactoryPatch, readme: string | null, files: string[]): MetisModule {
+function convertPatchToModule(patch: TemplateFactoryPatch, readme: string | null, files: string[]): EnkaiQualifyModule {
   // Parse description from README
   let description = `${patch.name} from template-factory`;
   if (readme) {
@@ -177,11 +177,11 @@ async function main() {
 
   // Get existing modules
   const existingModules = getExistingModules();
-  console.log(`\nExisting modules in metis: ${existingModules.size}`);
+  console.log(`\nExisting modules in enkai-qualify: ${existingModules.size}`);
 
   // Convert and save new modules
-  const newModules: MetisModule[] = [];
-  const updatedModules: MetisModule[] = [];
+  const newModules: EnkaiQualifyModule[] = [];
+  const updatedModules: EnkaiQualifyModule[] = [];
 
   for (const patch of patches) {
     const readme = await fetchPatchReadme(patch.path);
@@ -214,7 +214,7 @@ async function main() {
     console.log('\n⚠️  Dry run - no files were written');
   }
 
-  // Identify modules that metis has but template-factory doesn't
+  // Identify modules that enkai-qualify has but template-factory doesn't
   const templateFactoryModules = new Set(patches.map(p => p.name));
   const missingInTemplateFactory: string[] = [];
 
@@ -225,7 +225,7 @@ async function main() {
   }
 
   if (missingInTemplateFactory.length > 0) {
-    console.log('\n⚠️  Modules in metis not found in template-factory:');
+    console.log('\n⚠️  Modules in enkai-qualify not found in template-factory:');
     missingInTemplateFactory.forEach(m => console.log(`  - ${m}`));
     console.log('\nConsider requesting these from template-factory via enkai-relay.');
   }

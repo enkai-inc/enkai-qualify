@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { getIdea, updateIdea, deleteIdea } from '@/lib/services/idea-service';
+import { logger } from '@/lib/logger';
 
 const updateIdeaSchema = z.object({
   title: z.string().max(200).optional(),
@@ -26,7 +27,7 @@ export async function GET(
     const user = await requireAuth();
     const { id } = await params;
 
-    const result = await getIdea(id);
+    const result = await getIdea(id, user.teamId!);
 
     if (!result) {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
@@ -37,7 +38,7 @@ export async function GET(
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error getting idea:', error);
+    logger.error('Error getting idea', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Failed to get idea' }, { status: 500 });
   }
 }
@@ -54,12 +55,12 @@ export async function PUT(
     const parsed = updateIdeaSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { error: 'Invalid input', details: 'Invalid input fields' },
         { status: 400 }
       );
     }
 
-    const idea = await updateIdea(id, user.id, parsed.data);
+    const idea = await updateIdea(id, user.teamId!, parsed.data);
 
     return NextResponse.json(idea);
   } catch (error) {
@@ -69,7 +70,7 @@ export async function PUT(
     if (error instanceof Error && error.message === 'Idea not found') {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
     }
-    console.error('Error updating idea:', error);
+    logger.error('Error updating idea', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to update idea' },
       { status: 500 }
@@ -85,7 +86,7 @@ export async function DELETE(
     const user = await requireAuth();
     const { id } = await params;
 
-    await deleteIdea(id, user.id);
+    await deleteIdea(id, user.teamId!);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -95,7 +96,7 @@ export async function DELETE(
     if (error instanceof Error && error.message === 'Idea not found') {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
     }
-    console.error('Error deleting idea:', error);
+    logger.error('Error deleting idea', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to delete idea' },
       { status: 500 }

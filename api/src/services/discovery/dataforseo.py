@@ -16,6 +16,9 @@ class KeywordData(BaseModel):
     trend: str  # rising, stable, declining
 
 
+MAX_KEYWORDS_PER_REQUEST = 100
+
+
 class DataForSEOClient:
     """Client for DataForSEO keyword research API."""
 
@@ -34,6 +37,8 @@ class DataForSEOClient:
         Returns:
             List of KeywordData objects with metrics.
         """
+        keywords = keywords[:MAX_KEYWORDS_PER_REQUEST]
+
         if not self.login or not self.password:
             # Return mock data if no credentials
             return [
@@ -47,7 +52,7 @@ class DataForSEOClient:
                 for kw in keywords
             ]
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{self.base_url}/keywords_data/google_ads/search_volume/live",
                 auth=(self.login, self.password),
@@ -116,7 +121,7 @@ class DataForSEOClient:
                 f"{seed} alternative",
             ]
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{self.base_url}/keywords_data/google_ads/keywords_for_keywords/live",
                 auth=(self.login, self.password),

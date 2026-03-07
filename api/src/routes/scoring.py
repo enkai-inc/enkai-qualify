@@ -1,22 +1,23 @@
 """RICE scoring API endpoints."""
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from functools import lru_cache
 
+import structlog
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, model_validator
+
+from src.auth import get_current_user
 from src.models.rice import RiceScore, RiceFactors
 from src.services.scoring import RiceScorer
 
+logger = structlog.get_logger()
+
 router = APIRouter(prefix="/scoring", tags=["scoring"])
 
-# Singleton scorer instance
-_scorer: RiceScorer | None = None
 
-
+@lru_cache
 def get_scorer() -> RiceScorer:
     """Get or create the RiceScorer singleton."""
-    global _scorer
-    if _scorer is None:
-        _scorer = RiceScorer()
-    return _scorer
+    return RiceScorer()
 
 
 class ScoreRequest(BaseModel):
@@ -30,6 +31,12 @@ class ScoreBatchRequest(BaseModel):
     """Request to calculate multiple RICE scores."""
 
     opportunities: list[ScoreRequest]
+
+    @model_validator(mode="after")
+    def validate_batch_size(self) -> "ScoreBatchRequest":
+        if len(self.opportunities) > 50:
+            raise ValueError("Batch size must not exceed 50 opportunities")
+        return self
 
 
 class ScoreBatchResponse(BaseModel):
@@ -46,7 +53,9 @@ class PrioritizedResponse(BaseModel):
 
 
 @router.post("/score", response_model=RiceScore)
-async def calculate_score(request: ScoreRequest) -> RiceScore:
+async def calculate_score(
+    request: ScoreRequest, scorer: RiceScorer = Depends(get_scorer), current_user: dict = Depends(get_current_user)
+) -> RiceScore:
     """Calculate RICE score for a single opportunity.
 
     Args:
@@ -56,14 +65,16 @@ async def calculate_score(request: ScoreRequest) -> RiceScore:
         Complete RiceScore with all breakdowns.
     """
     try:
-        scorer = get_scorer()
         return await scorer.calculate(request.keyword, request.factors)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("scoring_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Scoring calculation failed")
 
 
 @router.post("/score/batch", response_model=ScoreBatchResponse)
-async def calculate_scores_batch(request: ScoreBatchRequest) -> ScoreBatchResponse:
+async def calculate_scores_batch(
+    request: ScoreBatchRequest, scorer: RiceScorer = Depends(get_scorer), current_user: dict = Depends(get_current_user)
+) -> ScoreBatchResponse:
     """Calculate RICE scores for multiple opportunities.
 
     Args:
@@ -73,18 +84,19 @@ async def calculate_scores_batch(request: ScoreBatchRequest) -> ScoreBatchRespon
         ScoreBatchResponse with list of scores in same order.
     """
     try:
-        scorer = get_scorer()
         opportunities = [(r.keyword, r.factors) for r in request.opportunities]
         scores = await scorer.calculate_batch(opportunities)
         return ScoreBatchResponse(scores=scores)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("batch_scoring_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Batch scoring calculation failed")
 
 
 @router.get("/prioritized", response_model=PrioritizedResponse)
 async def get_prioritized_opportunities(
     limit: int = 50,
     min_score: float = 0,
+    current_user: dict = Depends(get_current_user),
 ) -> PrioritizedResponse:
     """Get opportunities sorted by RICE score.
 
@@ -99,6 +111,9 @@ async def get_prioritized_opportunities(
     Returns:
         PrioritizedResponse with list of opportunities.
     """
+    # Clamp pagination bounds
+    limit = min(max(limit, 1), 100)
+
     # TODO: Integrate with discovery engine
     return PrioritizedResponse(
         opportunities=[],

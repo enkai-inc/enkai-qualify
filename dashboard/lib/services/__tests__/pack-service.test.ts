@@ -25,17 +25,16 @@ describe('pack-service', () => {
   });
 
   describe('getPackProgress', () => {
-    it('should accept userId parameter for ownership verification', async () => {
-      // getPackProgress should require both id and userId
+    it('should accept teamId parameter for access verification', async () => {
       (mockPrisma.pack.findFirst as jest.Mock).mockResolvedValue({
         status: 'READY',
       });
 
-      await getPackProgress('pack-123', 'user-456');
+      await getPackProgress('pack-123', 'team-456');
 
-      // Verify findFirst is called with both id and userId
+      // Verify findFirst is called with both id and teamId
       expect(mockPrisma.pack.findFirst).toHaveBeenCalledWith({
-        where: { id: 'pack-123', userId: 'user-456' },
+        where: { id: 'pack-123', teamId: 'team-456' },
         select: { status: true },
       });
     });
@@ -43,17 +42,16 @@ describe('pack-service', () => {
     it('should throw "Pack not found" when pack does not exist', async () => {
       (mockPrisma.pack.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(getPackProgress('pack-123', 'user-456')).rejects.toThrow(
+      await expect(getPackProgress('pack-123', 'team-456')).rejects.toThrow(
         'Pack not found'
       );
     });
 
-    it('should throw "Pack not found" when userId does not match', async () => {
-      // findFirst with mismatched userId returns null
+    it('should throw "Pack not found" when teamId does not match', async () => {
       (mockPrisma.pack.findFirst as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        getPackProgress('pack-123', 'wrong-user')
+        getPackProgress('pack-123', 'wrong-team')
       ).rejects.toThrow('Pack not found');
     });
 
@@ -62,7 +60,7 @@ describe('pack-service', () => {
         status: 'PENDING',
       });
 
-      const result = await getPackProgress('pack-123', 'user-456');
+      const result = await getPackProgress('pack-123', 'team-456');
 
       expect(result).toEqual({
         status: 'PENDING',
@@ -76,7 +74,7 @@ describe('pack-service', () => {
         status: 'GENERATING',
       });
 
-      const result = await getPackProgress('pack-123', 'user-456');
+      const result = await getPackProgress('pack-123', 'team-456');
 
       expect(result).toEqual({
         status: 'GENERATING',
@@ -90,7 +88,7 @@ describe('pack-service', () => {
         status: 'READY',
       });
 
-      const result = await getPackProgress('pack-123', 'user-456');
+      const result = await getPackProgress('pack-123', 'team-456');
 
       expect(result).toEqual({
         status: 'READY',
@@ -101,16 +99,16 @@ describe('pack-service', () => {
   });
 
   describe('getPack', () => {
-    it('should filter by both id and userId', async () => {
+    it('should filter by both id and teamId', async () => {
       (mockPrisma.pack.findFirst as jest.Mock).mockResolvedValue({
         id: 'pack-123',
-        userId: 'user-456',
+        teamId: 'team-456',
       });
 
-      await getPack('pack-123', 'user-456');
+      await getPack('pack-123', 'team-456');
 
       expect(mockPrisma.pack.findFirst).toHaveBeenCalledWith({
-        where: { id: 'pack-123', userId: 'user-456' },
+        where: { id: 'pack-123', teamId: 'team-456' },
         include: {
           idea: {
             select: {
@@ -122,10 +120,10 @@ describe('pack-service', () => {
       });
     });
 
-    it('should return null when pack does not belong to user', async () => {
+    it('should return null when pack does not belong to team', async () => {
       (mockPrisma.pack.findFirst as jest.Mock).mockResolvedValue(null);
 
-      const result = await getPack('pack-123', 'wrong-user');
+      const result = await getPack('pack-123', 'wrong-team');
 
       expect(result).toBeNull();
     });

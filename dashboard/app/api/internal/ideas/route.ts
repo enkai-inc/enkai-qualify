@@ -14,12 +14,23 @@ const internalCreateIdeaSchema = createIdeaSchema.extend({
  * Find or create a user by email for internal idea creation.
  * Uses a synthetic cognitoId (prefixed with "internal-") since there's no Cognito context.
  */
+const DEFAULT_TEAM_ID = 'default-team';
+
 async function findOrCreateUser(email: string) {
   let user = await prisma.user.findUnique({
     where: { email },
   });
 
-  if (user) return user;
+  if (user) {
+    // Auto-assign to default team if no team
+    if (!user.teamId) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { teamId: DEFAULT_TEAM_ID },
+      });
+    }
+    return user;
+  }
 
   try {
     user = await prisma.user.create({
@@ -27,10 +38,11 @@ async function findOrCreateUser(email: string) {
         cognitoId: `internal-${uuidv4()}`,
         email,
         name: email.split('@')[0],
+        teamId: DEFAULT_TEAM_ID,
         subscription: {
           create: {
-            tier: 'AGENCY',
-            periodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            tier: 'FREE',
+            periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           },
         },
       },
@@ -83,6 +95,7 @@ export async function POST(request: NextRequest) {
 
     const idea = await createIdea({
       userId: user.id,
+      teamId: user.teamId ?? DEFAULT_TEAM_ID,
       title: parsed.data.title,
       description: parsed.data.description,
       industry: parsed.data.industry,

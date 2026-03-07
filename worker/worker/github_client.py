@@ -13,7 +13,7 @@ logger = structlog.get_logger()
 
 GITHUB_API = "https://api.github.com"
 IDEA_GENERATION_LABEL = "enkai:build"
-GENERATION_FAILED_LABEL = "metis:generation-failed"
+GENERATION_FAILED_LABEL = "enkai-qualify:generation-failed"
 
 
 @dataclass
@@ -26,6 +26,8 @@ class GitHubIssue:
 
 class GitHubClient:
     """GitHub API client using App authentication."""
+
+    _HTTP_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 
     def __init__(self, settings: Settings) -> None:
         self._app_id = settings.github_app_id
@@ -52,7 +54,7 @@ class GitHubClient:
             return self._token
 
         app_jwt = self._generate_jwt()
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self._HTTP_TIMEOUT) as client:
             resp = await client.post(
                 f"{GITHUB_API}/app/installations/{self._installation_id}/access_tokens",
                 headers={
@@ -81,7 +83,7 @@ class GitHubClient:
     async def list_pending_issues(self) -> list[GitHubIssue]:
         """List open issues with the idea-generation label."""
         headers = await self._headers()
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self._HTTP_TIMEOUT) as client:
             resp = await client.get(
                 f"{GITHUB_API}/repos/{self._owner}/{self._repo}/issues",
                 headers=headers,
@@ -113,7 +115,7 @@ class GitHubClient:
     async def close_issue(self, number: int, comment: str) -> None:
         """Add a comment and close an issue."""
         headers = await self._headers()
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self._HTTP_TIMEOUT) as client:
             # Add comment
             await client.post(
                 f"{GITHUB_API}/repos/{self._owner}/{self._repo}/issues/{number}/comments",
@@ -131,7 +133,7 @@ class GitHubClient:
     async def add_comment(self, number: int, body: str) -> None:
         """Add a comment to an issue."""
         headers = await self._headers()
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self._HTTP_TIMEOUT) as client:
             await client.post(
                 f"{GITHUB_API}/repos/{self._owner}/{self._repo}/issues/{number}/comments",
                 headers=headers,
@@ -141,7 +143,7 @@ class GitHubClient:
     async def add_label(self, number: int, label: str) -> None:
         """Add a label to an issue."""
         headers = await self._headers()
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self._HTTP_TIMEOUT) as client:
             await client.post(
                 f"{GITHUB_API}/repos/{self._owner}/{self._repo}/issues/{number}/labels",
                 headers=headers,

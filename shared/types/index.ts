@@ -1,5 +1,5 @@
 /**
- * Shared types for Metis
+ * Shared types for Enkai Qualify
  * Used by both dashboard (Next.js) and can be referenced by API (for consistency)
  */
 

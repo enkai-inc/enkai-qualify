@@ -4,6 +4,7 @@ import { listIdeas, createIdea } from '@/lib/services/idea-service';
 import { IdeaStatus } from '@prisma/client';
 import { createIdeaSchema } from '@/lib/validations/idea-validation';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
       : 'updatedAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
 
-    const result = await listIdeas({
+    const result = await listIdeas(user.teamId!, {
       status: status ?? undefined,
       search,
       page,
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error listing ideas:', error);
+    logger.error('Error listing ideas', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to list ideas' },
       { status: 500 }
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
 
     const idea = await createIdea({
       userId: user.id,
+      teamId: user.teamId!,
       title: parsed.data.title,
       description: parsed.data.description,
       industry: parsed.data.industry,
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error creating idea:', error);
+    logger.error('Error creating idea', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to create idea' },
       { status: 500 }

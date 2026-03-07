@@ -1,23 +1,39 @@
-"""Metis API - FastAPI application entrypoint."""
+"""Enkai Qualify API - FastAPI application entrypoint."""
+
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from .routes import router
 
+limiter = Limiter(key_func=get_remote_address)
+
+is_production = os.environ.get("ENVIRONMENT", "development") == "prod"
+
 app = FastAPI(
-    title="Metis API",
+    title="Enkai Qualify API",
     description="SaaS opportunity discovery backend",
     version="0.1.0",
+    docs_url=None if is_production else "/docs",
+    redoc_url=None if is_production else "/redoc",
+    openapi_url=None if is_production else "/openapi.json",
 )
 
-# CORS middleware for local development
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS middleware - origins configurable via CORS_ORIGINS env var
+cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
 
 app.include_router(router, prefix="/api")
@@ -26,4 +42,4 @@ app.include_router(router, prefix="/api")
 @app.get("/health")
 async def health_check() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "healthy", "service": "metis-api"}
+    return {"status": "healthy", "service": "enkai-qualify-api"}

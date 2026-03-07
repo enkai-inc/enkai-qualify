@@ -1,4 +1,4 @@
-"""Metis idea generation worker entry point.
+"""Enkai Qualify idea generation worker entry point.
 
 Polls GitHub for open issues labeled enkai:build,
 generates ideas via Claude, updates the database, and closes issues.
@@ -7,6 +7,7 @@ Usage: python -m worker
 """
 
 import asyncio
+import os
 
 import asyncpg
 import structlog
@@ -40,6 +41,7 @@ structlog.configure(
 )
 logger = structlog.get_logger()
 
+DASHBOARD_URL = os.environ.get('DASHBOARD_URL', 'https://login.enkai.ca')
 MAX_RETRIES = 3
 RETRY_DELAYS = [5, 15, 45]
 
@@ -86,7 +88,7 @@ async def process_issue(
         log.error("generation_failed_all_retries", error=str(last_error))
         await github.add_comment(
             issue.number,
-            f"Idea generation failed after {MAX_RETRIES} attempts.\n\nError: {last_error}",
+            f"Generation failed after {MAX_RETRIES} attempts. Check worker logs for details.",
         )
         await github.add_label(issue.number, GENERATION_FAILED_LABEL)
         return
@@ -116,7 +118,7 @@ async def process_issue(
 **Features:** {len(idea.features)} features generated
 **Technologies:** {", ".join(idea.technologies)}
 
-The idea has been updated to DRAFT status. View it in the [Metis dashboard](https://metis.digitaldevops.io/ideas)."""
+The idea has been updated to DRAFT status. View it in the [Enkai Qualify dashboard]({DASHBOARD_URL}/ideas)."""
 
     await github.close_issue(issue.number, comment)
     log.info("issue_processed_successfully", idea_id=params.idea_id)
@@ -169,7 +171,7 @@ async def process_validation_issue(
         log.error("validation_failed_all_retries", error=str(last_error))
         await github.add_comment(
             issue.number,
-            f"Validation failed after {MAX_RETRIES} attempts.\n\nError: {last_error}",
+            f"Validation failed after {MAX_RETRIES} attempts. Check worker logs for details.",
         )
         await github.add_label(issue.number, GENERATION_FAILED_LABEL)
         return
@@ -192,7 +194,7 @@ async def process_validation_issue(
 | Competition Level | {result.competition_score} |
 | Revenue Estimate | ${result.revenue_estimate:,} |
 
-View results in the [Metis dashboard](https://metis.digitaldevops.io/ideas)."""
+View results in the [Enkai Qualify dashboard]({DASHBOARD_URL}/ideas)."""
 
     await github.close_issue(issue.number, comment)
     log.info("validation_issue_processed", idea_id=params.idea_id)
@@ -235,7 +237,7 @@ async def process_refinement_issue(
         log.error("refinement_failed_all_retries", error=str(last_error))
         await github.add_comment(
             issue.number,
-            f"Refinement failed after {MAX_RETRIES} attempts.\n\nError: {last_error}",
+            f"Refinement failed after {MAX_RETRIES} attempts. Check worker logs for details.",
         )
         await github.add_label(issue.number, GENERATION_FAILED_LABEL)
         return
@@ -262,7 +264,7 @@ async def process_refinement_issue(
 **Features:** {len(refined.features)} features
 **Technologies:** {", ".join(refined.technologies)}
 
-View the updated idea in the [Metis dashboard](https://metis.digitaldevops.io/ideas)."""
+View the updated idea in the [Enkai Qualify dashboard]({DASHBOARD_URL}/ideas)."""
 
     await github.close_issue(issue.number, comment)
     log.info("refinement_issue_processed", idea_id=params.idea_id)
@@ -279,31 +281,36 @@ async def main() -> None:
     # Convert asyncpg-compatible URL (strip +asyncpg suffix if present from shared DATABASE_URL)
     db_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
 
-    pool = await asyncpg.create_pool(db_url)
-    github = GitHubClient(settings)
-    generator = IdeaGenerator(settings.anthropic_api_key)
+    # Enforce SSL for database connections
+    if "sslmode" not in db_url:
+        separator = "&" if "?" in db_url else "?"
+        db_url += f"{separator}sslmode=require"
 
-    logger.info("worker_ready")
+    async with asyncpg.create_pool(db_url) as pool:
+        github = GitHubClient(settings)
+        generator = IdeaGenerator(settings.anthropic_api_key)
 
-    while True:
-        try:
-            issues = await github.list_pending_issues()
-            if issues:
-                logger.info("found_issues", count=len(issues))
-            for issue in issues:
-                try:
-                    if issue.title.startswith("[Validation]"):
-                        await process_validation_issue(issue, github, generator, pool)
-                    elif issue.title.startswith("[Refinement]"):
-                        await process_refinement_issue(issue, github, generator, pool)
-                    else:
-                        await process_issue(issue, github, generator, pool)
-                except Exception:
-                    logger.exception("issue_processing_error", issue_number=issue.number)
-        except Exception:
-            logger.exception("poll_cycle_error")
+        logger.info("worker_ready")
 
-        await asyncio.sleep(settings.poll_interval_seconds)
+        while True:
+            try:
+                issues = await github.list_pending_issues()
+                if issues:
+                    logger.info("found_issues", count=len(issues))
+                for issue in issues:
+                    try:
+                        if issue.title.startswith("[Validation]"):
+                            await process_validation_issue(issue, github, generator, pool)
+                        elif issue.title.startswith("[Refinement]"):
+                            await process_refinement_issue(issue, github, generator, pool)
+                        else:
+                            await process_issue(issue, github, generator, pool)
+                    except Exception:
+                        logger.exception("issue_processing_error", issue_number=issue.number)
+            except Exception:
+                logger.exception("poll_cycle_error")
+
+            await asyncio.sleep(settings.poll_interval_seconds)
 
 
 if __name__ == "__main__":

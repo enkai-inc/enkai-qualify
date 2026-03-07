@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Starting Metis Dashboard..."
+echo "Starting Enkai Qualify Dashboard..."
 
 # Run database migrations if DATABASE_URL is set
 if [ -n "$DATABASE_URL" ]; then

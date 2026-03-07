@@ -37,7 +37,7 @@ export class DatabaseStack extends cdk.Stack {
     this.databaseSecret = new secretsmanager.Secret(this, 'DatabaseSecret', {
       secretName: `${projectName}/${environment}/db-credentials`,
       generateSecretString: {
-        secretStringTemplate: JSON.stringify({ username: 'metis_admin' }),
+        secretStringTemplate: JSON.stringify({ username: 'enkai_qualify_admin' }),
         generateStringKey: 'password',
         excludePunctuation: true,
         passwordLength: 32,
@@ -75,7 +75,7 @@ export class DatabaseStack extends cdk.Stack {
       },
       securityGroups: [this.databaseSecurityGroup],
       credentials: rds.Credentials.fromSecret(this.databaseSecret),
-      databaseName: 'metis',
+      databaseName: 'enkai_qualify',
       multiAz: isProd,
       allocatedStorage: isProd ? 100 : 20,
       maxAllocatedStorage: isProd ? 500 : 50,
@@ -110,6 +110,7 @@ export class DatabaseStack extends cdk.Stack {
       cacheSubnetGroupName: redisSubnetGroup.ref,
       vpcSecurityGroupIds: [this.redisSecurityGroup.securityGroupId],
       snapshotRetentionLimit: isProd ? 7 : 0,
+      transitEncryptionEnabled: true,
     });
     this.redisCluster.addDependency(redisSubnetGroup);
 

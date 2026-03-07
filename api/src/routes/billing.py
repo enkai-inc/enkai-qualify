@@ -2,10 +2,14 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+import structlog
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
+from ..auth import get_current_user
 from ..services.billing import StripeClient, SubscriptionService, UsageMeter
+
+logger = structlog.get_logger()
 
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -29,6 +33,7 @@ class PortalRequest(BaseModel):
     """Request for customer portal session."""
 
     customer_id: str
+    user_id: str
 
 
 class PortalResponse(BaseModel):
@@ -71,17 +76,21 @@ def get_stripe_client() -> StripeClient:
 @router.post("/checkout", response_model=CheckoutResponse)
 async def create_checkout(
     request: CheckoutRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
     stripe_client: StripeClient = Depends(get_stripe_client),
 ) -> CheckoutResponse:
     """Start a Stripe checkout session for subscription.
 
     Args:
         request: Checkout request with price_id and user_id.
+        current_user: Authenticated user from ALB Cognito headers.
         stripe_client: Stripe client dependency.
 
     Returns:
         Checkout session URL.
     """
+    if request.user_id != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="User ID mismatch")
     try:
         url = stripe_client.create_checkout_session(
             user_id=request.user_id,
@@ -89,45 +98,60 @@ async def create_checkout(
         )
         return CheckoutResponse(url=url)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("checkout_session_failed", error=str(e))
+        raise HTTPException(status_code=400, detail="Checkout session creation failed")
 
 
 @router.post("/portal", response_model=PortalResponse)
 async def create_portal(
     request: PortalRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
     stripe_client: StripeClient = Depends(get_stripe_client),
 ) -> PortalResponse:
     """Get Stripe customer portal URL.
 
     Args:
-        request: Portal request with customer_id.
+        request: Portal request with customer_id and user_id.
+        current_user: Authenticated user from ALB Cognito headers.
         stripe_client: Stripe client dependency.
 
     Returns:
         Portal session URL.
+
+    Raises:
+        HTTPException: 403 if user_id does not match authenticated user.
     """
+    if request.user_id != current_user["sub"]:
+        logger.warning(
+            "portal_user_mismatch",
+            request_user_id=request.user_id,
+            authenticated_user_id=current_user["sub"],
+        )
+        raise HTTPException(status_code=403, detail="Not authorized for this customer")
+
     try:
         url = stripe_client.create_portal_session(customer_id=request.customer_id)
         return PortalResponse(url=url)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("portal_session_failed", error=str(e))
+        raise HTTPException(status_code=400, detail="Portal session creation failed")
 
 
-@router.get("/subscription/{user_id}", response_model=SubscriptionResponse)
+@router.get("/subscription/me", response_model=SubscriptionResponse)
 async def get_subscription(
-    user_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
     db: Any = None,  # Would be injected via dependency
 ) -> SubscriptionResponse:
-    """Get current subscription for a user.
+    """Get current subscription for the authenticated user.
 
     Args:
-        user_id: The user's ID.
+        current_user: Authenticated user from ALB Cognito headers.
         db: Database dependency.
 
     Returns:
         Current subscription details with usage.
     """
-    # In production, db would be injected via Depends
+    user_id = current_user["sub"]
     subscription_service = SubscriptionService(db)
     usage_meter = UsageMeter(db, subscription_service)
 
@@ -164,6 +188,7 @@ async def get_subscription(
 @router.post("/charge-pack", response_model=ChargePackResponse)
 async def charge_pack(
     request: ChargePackRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
     stripe_client: StripeClient = Depends(get_stripe_client),
     db: Any = None,
 ) -> ChargePackResponse:
@@ -171,12 +196,15 @@ async def charge_pack(
 
     Args:
         request: Charge request with customer_id and user_id.
+        current_user: Authenticated user from ALB Cognito headers.
         stripe_client: Stripe client dependency.
         db: Database dependency.
 
     Returns:
         Payment intent ID and amount charged.
     """
+    if request.user_id != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="User ID mismatch")
     subscription_service = SubscriptionService(db)
     subscription = await subscription_service.get_subscription(request.user_id)
 
@@ -201,4 +229,5 @@ async def charge_pack(
             amount=limits.overage_price,
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("billing_operation_failed", error=str(e))
+        raise HTTPException(status_code=400, detail="Billing operation failed")

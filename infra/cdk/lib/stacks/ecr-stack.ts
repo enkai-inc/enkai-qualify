@@ -8,7 +8,7 @@ export interface EcrStackProps extends cdk.StackProps {
 }
 
 /**
- * ECR Stack - Container repositories for Metis services
+ * ECR Stack - Container repositories for Enkai Qualify services
  *
  * Creates:
  * - Dashboard repository
@@ -25,12 +25,13 @@ export class EcrStack extends cdk.Stack {
     super(scope, id, props);
 
     const { projectName, environment } = props;
+    const isProd = environment === 'prod';
 
     // Dashboard repository
     this.dashboardRepository = new ecr.Repository(this, 'DashboardRepo', {
       repositoryName: `${projectName}-${environment}-dashboard`,
       imageScanOnPush: true,
-      imageTagMutability: ecr.TagMutability.MUTABLE,
+      imageTagMutability: isProd ? ecr.TagMutability.IMMUTABLE : ecr.TagMutability.MUTABLE,
       removalPolicy:
         environment === 'prod'
           ? cdk.RemovalPolicy.RETAIN
@@ -50,7 +51,7 @@ export class EcrStack extends cdk.Stack {
     this.apiRepository = new ecr.Repository(this, 'ApiRepo', {
       repositoryName: `${projectName}-${environment}-api`,
       imageScanOnPush: true,
-      imageTagMutability: ecr.TagMutability.MUTABLE,
+      imageTagMutability: isProd ? ecr.TagMutability.IMMUTABLE : ecr.TagMutability.MUTABLE,
       removalPolicy:
         environment === 'prod'
           ? cdk.RemovalPolicy.RETAIN
@@ -70,7 +71,7 @@ export class EcrStack extends cdk.Stack {
     this.workerRepository = new ecr.Repository(this, 'WorkerRepo', {
       repositoryName: `${projectName}-${environment}-worker`,
       imageScanOnPush: true,
-      imageTagMutability: ecr.TagMutability.MUTABLE,
+      imageTagMutability: isProd ? ecr.TagMutability.IMMUTABLE : ecr.TagMutability.MUTABLE,
       removalPolicy:
         environment === 'prod'
           ? cdk.RemovalPolicy.RETAIN

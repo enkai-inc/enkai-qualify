@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright E2E test configuration for Metis Dashboard
+ * Playwright E2E test configuration for Enkai Qualify Dashboard
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({

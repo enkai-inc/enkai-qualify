@@ -1,6 +1,7 @@
 """Pack assembler - orchestrates the full pack building pipeline."""
 
 import json
+import shutil
 import tempfile
 import zipfile
 from dataclasses import dataclass, field
@@ -15,6 +16,15 @@ from .issues import GeneratedIssue, IssueGenerator
 from .resolver import DependencyResolver, Module, ModuleCategory, WorkUnit
 from .scaffold import ScaffoldGenerator
 from .storage import PackStorage
+
+
+def _safe_zip_path(root: str, file_path: str) -> str:
+    """Ensure file_path stays within root directory."""
+    import posixpath
+    normalized = posixpath.normpath(posixpath.join(root, file_path))
+    if not normalized.startswith(root + "/") and normalized != root:
+        raise ValueError(f"Path traversal detected: {file_path}")
+    return normalized
 
 
 class PackConfig(BaseModel):
@@ -142,59 +152,64 @@ class PackAssembler:
                 errors.append(f"Issue generation warning: {e}")
 
         # Step 5: Create zip archive
+        zip_path = None
         try:
-            zip_path = self._create_zip(
-                pack_id=pack_id,
-                project_name=config.project_name,
-                modules=modules,
-                scaffold=scaffold,
-                issues=issues,
-                include_scripts=config.include_scripts,
-            )
-        except Exception as e:
+            try:
+                zip_path = self._create_zip(
+                    pack_id=pack_id,
+                    project_name=config.project_name,
+                    modules=modules,
+                    scaffold=scaffold,
+                    issues=issues,
+                    include_scripts=config.include_scripts,
+                )
+            except Exception as e:
+                return PackResult(
+                    pack_id=pack_id,
+                    project_name=config.project_name,
+                    modules_included=[m.module_id for m in modules],
+                    total_work_units=len(work_units),
+                    issues_generated=len(issues),
+                    zip_path=None,
+                    download_url=None,
+                    download_expiration=None,
+                    created_at=created_at,
+                    errors=[f"Failed to create zip: {e}"] + errors,
+                )
+
+            # Step 6: Upload to S3
+            download_url = None
+            download_expiration = None
+
+            if config.upload_to_s3:
+                try:
+                    download_url, download_expiration = self.storage.upload_pack(
+                        zip_path=zip_path,
+                        pack_id=pack_id,
+                        metadata={
+                            "project-name": config.project_name,
+                            "module-count": str(len(modules)),
+                            "work-unit-count": str(len(work_units)),
+                        },
+                    )
+                except Exception as e:
+                    errors.append(f"S3 upload warning: {e}")
+
             return PackResult(
                 pack_id=pack_id,
                 project_name=config.project_name,
                 modules_included=[m.module_id for m in modules],
                 total_work_units=len(work_units),
                 issues_generated=len(issues),
-                zip_path=None,
-                download_url=None,
-                download_expiration=None,
+                zip_path=str(zip_path),
+                download_url=download_url,
+                download_expiration=download_expiration,
                 created_at=created_at,
-                errors=[f"Failed to create zip: {e}"] + errors,
+                errors=errors,
             )
-
-        # Step 6: Upload to S3
-        download_url = None
-        download_expiration = None
-
-        if config.upload_to_s3:
-            try:
-                download_url, download_expiration = self.storage.upload_pack(
-                    zip_path=zip_path,
-                    pack_id=pack_id,
-                    metadata={
-                        "project-name": config.project_name,
-                        "module-count": str(len(modules)),
-                        "work-unit-count": str(len(work_units)),
-                    },
-                )
-            except Exception as e:
-                errors.append(f"S3 upload warning: {e}")
-
-        return PackResult(
-            pack_id=pack_id,
-            project_name=config.project_name,
-            modules_included=[m.module_id for m in modules],
-            total_work_units=len(work_units),
-            issues_generated=len(issues),
-            zip_path=str(zip_path),
-            download_url=download_url,
-            download_expiration=download_expiration,
-            created_at=created_at,
-            errors=errors,
-        )
+        finally:
+            if zip_path and zip_path.parent.exists():
+                shutil.rmtree(zip_path.parent, ignore_errors=True)
 
     def _resolve_modules(self, module_ids: list[str]) -> list[Module]:
         """Load and resolve module dependencies.
@@ -306,7 +321,8 @@ class PackAssembler:
 
             # Add scaffold files
             for file_path, content in scaffold.get("files", {}).items():
-                zf.writestr(f"{root}/{file_path}", content)
+                safe_path = _safe_zip_path(root, file_path)
+                zf.writestr(safe_path, content)
 
             # Add module manifest
             manifest = {
@@ -324,13 +340,13 @@ class PackAssembler:
                 "total_work_units": sum(len(m.work_units) for m in modules),
             }
             zf.writestr(
-                f"{root}/metis-manifest.json",
+                f"{root}/enkai-qualify-manifest.json",
                 json.dumps(manifest, indent=2),
             )
 
             # Add issues
             if issues:
-                issues_dir = f"{root}/.metis/issues"
+                issues_dir = f"{root}/.enkai-qualify/issues"
                 for issue in issues:
                     issue_content = {
                         "title": issue.title,
@@ -377,7 +393,7 @@ class PackAssembler:
         """
         setup_script = f"""#!/bin/bash
 # Setup script for {project_name}
-# Generated by Metis Pack Assembler
+# Generated by Enkai Qualify Pack Assembler
 
 set -e
 
@@ -387,7 +403,7 @@ echo "Setting up {project_name}..."
 if [ ! -d .git ]; then
     git init
     git add .
-    git commit -m "Initial commit from Metis pack"
+    git commit -m "Initial commit from Enkai Qualify pack"
 fi
 
 # Install dashboard dependencies
@@ -412,11 +428,11 @@ echo "Run 'cd {project_name} && ./scripts/import-issues.sh' to create GitHub iss
 
         import_script = f"""#!/bin/bash
 # Import issues to GitHub for {project_name}
-# Generated by Metis Pack Assembler
+# Generated by Enkai Qualify Pack Assembler
 
 set -e
 
-ISSUES_DIR=".metis/issues"
+ISSUES_DIR=".enkai-qualify/issues"
 
 if [ ! -d "$ISSUES_DIR" ]; then
     echo "No issues directory found at $ISSUES_DIR"

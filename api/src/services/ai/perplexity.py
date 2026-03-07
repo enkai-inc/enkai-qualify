@@ -17,7 +17,7 @@ class PerplexityProvider(AIProvider):
         prompt = f"""Generate {count} unique SaaS ideas for {input.industry} targeting {input.target_market}.
 Technologies: {', '.join(input.technologies)}. Return as JSON array."""
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {self.api_key}"},
