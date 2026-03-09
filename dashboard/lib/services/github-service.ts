@@ -7,20 +7,30 @@ const IDEA_GENERATION_LABEL = 'enkai:build';
 
 // GitHub Apps may silently drop labels during issue creation due to permission
 // scope. This fallback explicitly adds labels when they're missing.
+// Non-fatal: label failure should never block issue creation.
 async function ensureLabelsApplied(
   octokit: Octokit,
   issue: { number: number; labels: Array<string | { name?: string }> }
 ): Promise<void> {
-  const hasLabel = issue.labels.some(
-    (l) => (typeof l === 'string' ? l : l.name) === IDEA_GENERATION_LABEL
-  );
-  if (!hasLabel) {
-    await octokit.issues.addLabels({
-      owner: REPO_OWNER,
-      repo: REPO_NAME,
-      issue_number: issue.number,
-      labels: [IDEA_GENERATION_LABEL],
-    });
+  try {
+    const hasLabel = issue.labels.some(
+      (l) => (typeof l === 'string' ? l : l.name) === IDEA_GENERATION_LABEL
+    );
+    if (!hasLabel) {
+      await octokit.issues.addLabels({
+        owner: REPO_OWNER,
+        repo: REPO_NAME,
+        issue_number: issue.number,
+        labels: [IDEA_GENERATION_LABEL],
+      });
+    }
+  } catch (error) {
+    // Log but don't throw — missing label is recoverable, failing the
+    // entire issue creation flow is not.
+    console.warn(
+      `Failed to apply label to issue #${issue.number}:`,
+      error instanceof Error ? error.message : error
+    );
   }
 }
 
