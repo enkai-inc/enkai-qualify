@@ -5,6 +5,25 @@ const REPO_OWNER = process.env.GITHUB_REPO_OWNER || 'enkai-inc';
 const REPO_NAME = process.env.GITHUB_REPO_NAME || 'enkai-qualify';
 const IDEA_GENERATION_LABEL = 'enkai:build';
 
+// GitHub Apps may silently drop labels during issue creation due to permission
+// scope. This fallback explicitly adds labels when they're missing.
+async function ensureLabelsApplied(
+  octokit: Octokit,
+  issue: { number: number; labels: Array<string | { name?: string }> }
+): Promise<void> {
+  const hasLabel = issue.labels.some(
+    (l) => (typeof l === 'string' ? l : l.name) === IDEA_GENERATION_LABEL
+  );
+  if (!hasLabel) {
+    await octokit.issues.addLabels({
+      owner: REPO_OWNER,
+      repo: REPO_NAME,
+      issue_number: issue.number,
+      labels: [IDEA_GENERATION_LABEL],
+    });
+  }
+}
+
 function getOctokit(): Octokit {
   // Prefer GitHub App auth (generates short-lived tokens automatically)
   const appId = process.env.GITHUB_APP_ID;
@@ -114,6 +133,8 @@ WHERE id = $1;
     labels: [IDEA_GENERATION_LABEL],
   });
 
+  await ensureLabelsApplied(octokit, issue.data);
+
   return {
     issueNumber: issue.data.number,
     issueUrl: issue.data.html_url,
@@ -177,6 +198,8 @@ ${featuresText}
     body: issueBody,
     labels: [IDEA_GENERATION_LABEL],
   });
+
+  await ensureLabelsApplied(octokit, issue.data);
 
   return {
     issueNumber: issue.data.number,
@@ -251,6 +274,8 @@ ${request.prompt}
     body: issueBody,
     labels: [IDEA_GENERATION_LABEL],
   });
+
+  await ensureLabelsApplied(octokit, issue.data);
 
   return {
     issueNumber: issue.data.number,
@@ -350,6 +375,8 @@ ${nicheSection}
     body: issueBody,
     labels: [IDEA_GENERATION_LABEL],
   });
+
+  await ensureLabelsApplied(octokit, issue.data);
 
   return {
     issueNumber: issue.data.number,
