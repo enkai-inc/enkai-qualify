@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireInternalAuth } from '@/lib/internal-auth';
+import { createPack } from '@/lib/services/pack-service';
 
 const validationResultSchema = z.object({
   keywordScore: z.number().int().min(0).max(100),
@@ -55,12 +56,34 @@ export async function POST(
       },
     });
 
-    // Update idea status to VALIDATED if score >= 60
+    // Update idea status to VALIDATED if score >= 60 and auto-trigger pack
     if (result.overallScore >= 60) {
-      await prisma.idea.update({
+      const updatedIdea = await prisma.idea.update({
         where: { id },
         data: { status: 'VALIDATED' },
+        select: { id: true, userId: true, teamId: true },
       });
+
+      // Auto-generate MVP pack with default modules
+      const defaultModules = ['auth', 'database', 'api', 'dashboard', 'landing'];
+      try {
+        // Check if a pack is already pending/generating for this idea
+        const existingPack = await prisma.pack.findFirst({
+          where: { ideaId: id, status: { in: ['PENDING', 'GENERATING', 'READY'] } },
+        });
+        if (!existingPack) {
+          await createPack({
+            ideaId: id,
+            userId: updatedIdea.userId,
+            teamId: updatedIdea.teamId ?? undefined,
+            modules: defaultModules,
+            complexity: 'MVP',
+          });
+        }
+      } catch (packError) {
+        // Log but don't fail the validation callback
+        console.error('Auto pack generation failed to start:', packError);
+      }
     }
 
     return NextResponse.json({
