@@ -380,16 +380,17 @@ function drawPill(
  * Draw a feature card with colored left border and priority badge
  */
 function drawFeatureCard(doc: PDFKit.PDFDocument, feature: Feature) {
-  const colors = PRIORITY_COLORS[feature.priority] || PRIORITY_COLORS.low;
+  const priority = feature.priority || 'medium';
+  const colors = PRIORITY_COLORS[priority] || PRIORITY_COLORS.medium;
   const cardX = MARGIN;
   const cardY = doc.y;
   const cardWidth = PAGE_WIDTH_INNER;
 
   // Measure content height
   doc.font('Helvetica-Bold').fontSize(11);
-  const nameHeight = doc.heightOfString(feature.name, { width: cardWidth - 100 });
+  const nameHeight = doc.heightOfString(feature.name || 'Untitled', { width: cardWidth - 100 });
   doc.font('Helvetica').fontSize(10);
-  const descHeight = doc.heightOfString(feature.description, {
+  const descHeight = doc.heightOfString(feature.description || '', {
     width: cardWidth - 24,
     lineGap: 2,
   });
@@ -410,7 +411,7 @@ function drawFeatureCard(doc: PDFKit.PDFDocument, feature: Feature) {
     .restore();
 
   // Priority badge (top-right)
-  const priorityLabel = feature.priority.toUpperCase();
+  const priorityLabel = (priority).toUpperCase();
   doc.font('Helvetica-Bold').fontSize(7);
   const badgeWidth = doc.widthOfString(priorityLabel) + 12;
   const badgeX = cardX + cardWidth - badgeWidth - 10;
@@ -433,14 +434,14 @@ function drawFeatureCard(doc: PDFKit.PDFDocument, feature: Feature) {
     .font('Helvetica-Bold')
     .fontSize(11)
     .fillColor(DARK_GRAY)
-    .text(feature.name, cardX + 14, cardY + 10, { width: cardWidth - 100 });
+    .text(feature.name || 'Untitled', cardX + 14, cardY + 10, { width: cardWidth - 100 });
 
   // Feature description
   doc
     .font('Helvetica')
     .fontSize(10)
     .fillColor(MED_GRAY)
-    .text(feature.description, cardX + 14, cardY + 10 + nameHeight + 4, {
+    .text(feature.description || '', cardX + 14, cardY + 10 + nameHeight + 4, {
       width: cardWidth - 24,
       lineGap: 2,
     });
