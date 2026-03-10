@@ -89,6 +89,30 @@ Resources:
                   - !Sub arn:aws:s3:::${ProjectName}-${Environment}-packs
                   - !Sub arn:aws:s3:::${ProjectName}-${Environment}-packs/*
 
+  # Attach S3 pack access to the legacy dashboard task role
+  # The ECS task definition uses 'enkai-dashboard-task-dev' (created manually),
+  # not the TaskRole above. This policy bridges the gap.
+  DashboardPackAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: S3PackAccess
+      Roles:
+        - enkai-dashboard-task-dev
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:HeadBucket
+              - s3:GetBucketLocation
+            Resource:
+              - !Sub arn:aws:s3:::${ProjectName}-${Environment}-packs
+              - !Sub arn:aws:s3:::${ProjectName}-${Environment}-packs/*
+
 Outputs:
   ExecutionRoleArn:
     Value: !GetAtt ExecutionRole.Arn
