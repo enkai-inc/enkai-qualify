@@ -144,7 +144,7 @@ async function doGeneratePack(packId: string) {
     industry: idea.industry,
     targetMarket: idea.targetMarket,
     technologies: idea.technologies,
-    features: (idea.features as unknown as PackFeature[]) || [],
+    features: Array.isArray(idea.features) ? (idea.features as unknown as PackFeature[]) : [],
     modules: pack.modules,
     complexity: pack.complexity as 'MVP' | 'STANDARD' | 'FULL',
     validation: validation
