@@ -116,7 +116,8 @@ export default function RegisterPage() {
 
 function generateDatabaseModule(params: PackGenerationParams): FileMap {
   const files: FileMap = {};
-  const modelLines = params.features
+  const modelLines = (params.features || [])
+    .filter((f) => f && f.name)
     .map(
       (f) => `model ${f.name.replace(/[^a-zA-Z0-9]/g, '')} {
   id        String   @id @default(cuid())
@@ -834,17 +835,26 @@ ${params.modules.map((m) => `- **${m}**`).join('\n')}
   }
 
   // 5. Feature Breakdown
+  const featureRows = (params.features || [])
+    .filter((f) => f && f.name)
+    .map((f) => `| ${f.name} | ${f.priority || 'medium'} | ${f.description || ''} |`)
+    .join('\n');
   sections.push(`## 5. Feature Breakdown
 
 | Feature | Priority | Description |
 |---------|----------|-------------|
-${params.features.map((f) => `| ${f.name} | ${f.priority} | ${f.description} |`).join('\n')}
+${featureRows || '| (none) | - | - |'}
 `);
 
   // 6. Implementation Priorities
   const byPriority = { high: [] as PackFeature[], medium: [] as PackFeature[], low: [] as PackFeature[] };
   for (const f of params.features) {
-    byPriority[f.priority].push(f);
+    const bucket = byPriority[f.priority as keyof typeof byPriority];
+    if (bucket) {
+      bucket.push(f);
+    } else {
+      byPriority.medium.push(f);
+    }
   }
   sections.push(`## 6. Implementation Priorities
 
