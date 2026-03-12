@@ -3,7 +3,7 @@ import { createAppAuth } from '@octokit/auth-app';
 
 const REPO_OWNER = process.env.GITHUB_REPO_OWNER || 'enkai-inc';
 const REPO_NAME = process.env.GITHUB_REPO_NAME || 'enkai-qualify';
-const IDEA_GENERATION_LABEL = 'enkai:build';
+const IDEA_GENERATION_LABEL = 'enkai:agent-task';
 
 // GitHub Apps may silently drop labels during issue creation due to permission
 // scope. This fallback explicitly adds labels when they're missing.
