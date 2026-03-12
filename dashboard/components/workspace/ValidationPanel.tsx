@@ -39,6 +39,152 @@ function ScoreCard({ label, score, maxScore = 100, description }: ScoreCardProps
   );
 }
 
+interface KeywordEntry {
+  term: string;
+  monthlyVolume: number;
+  competition?: string;
+}
+
+interface KeywordResearch {
+  totalMonthlyVolume?: number;
+  source?: string;
+  keywords: KeywordEntry[];
+}
+
+interface TrendAnalysis {
+  direction: string;
+  stability?: string;
+  fiveYearChange?: string;
+}
+
+function ValidationDetails({ details }: { details: Record<string, unknown> }) {
+  const marketSize = details.marketSize as string | undefined;
+  const competitorCount = details.competitorCount as number | undefined;
+  const feasibilityNotes = details.feasibilityNotes as string | undefined;
+  const keywordResearch = details.keywordResearch as KeywordResearch | undefined;
+  const trendAnalysis = details.trendAnalysis as TrendAnalysis | undefined;
+  const recommendation = details.recommendation as string | undefined;
+  const mvpFeatures = details.mvpFeatures as string[] | undefined;
+
+  return (
+    <>
+      {(marketSize || competitorCount !== undefined || feasibilityNotes) && (
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Analysis Details</h3>
+          {marketSize && (
+            <p className="text-sm text-gray-600 mb-1">
+              <span className="font-medium">Market Size:</span> {marketSize}
+            </p>
+          )}
+          {competitorCount !== undefined && (
+            <p className="text-sm text-gray-600 mb-1">
+              <span className="font-medium">Competitors:</span> {competitorCount}
+            </p>
+          )}
+          {feasibilityNotes && (
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Notes:</span> {feasibilityNotes}
+            </p>
+          )}
+        </div>
+      )}
+
+      {keywordResearch && keywordResearch.keywords?.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Keyword Research</h3>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-gray-500">
+              Total Monthly Volume: {keywordResearch.totalMonthlyVolume?.toLocaleString() || 'N/A'}
+            </span>
+            <span className="text-xs text-gray-400">
+              Source: {keywordResearch.source || 'AI Estimate'}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {keywordResearch.keywords.slice(0, 6).map((kw, idx) => (
+              <div key={idx} className="flex items-center justify-between text-sm">
+                <span className="text-gray-700 truncate flex-1">{kw.term}</span>
+                <div className="flex items-center gap-3 ml-2">
+                  <span className="text-gray-900 font-medium tabular-nums">
+                    {kw.monthlyVolume?.toLocaleString() || '\u2014'}
+                  </span>
+                  {kw.competition && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      kw.competition === 'low' ? 'bg-green-100 text-green-700'
+                      : kw.competition === 'medium' ? 'bg-yellow-100 text-yellow-700'
+                      : 'bg-red-100 text-red-700'
+                    }`}>
+                      {kw.competition}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {trendAnalysis && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Trend Analysis</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className={`text-lg ${
+                trendAnalysis.direction === 'rising' ? 'text-green-500' :
+                trendAnalysis.direction === 'stable' ? 'text-blue-500' :
+                'text-red-500'
+              }`}>
+                {trendAnalysis.direction === 'rising' ? '\uD83D\uDCC8' :
+                 trendAnalysis.direction === 'stable' ? '\uD83D\uDCCA' : '\uD83D\uDCC9'}
+              </span>
+              <div>
+                <span className="text-sm font-medium text-gray-900 capitalize">
+                  {trendAnalysis.direction}
+                </span>
+                {trendAnalysis.stability && (
+                  <span className="text-xs text-gray-500 ml-1">
+                    ({trendAnalysis.stability})
+                  </span>
+                )}
+              </div>
+            </div>
+            {trendAnalysis.fiveYearChange && (
+              <span className={`text-sm font-medium ${
+                trendAnalysis.fiveYearChange.startsWith('+') ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {trendAnalysis.fiveYearChange} (5yr)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {recommendation && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-1">Recommendation</h3>
+          <p className="text-sm text-gray-600">{recommendation}</p>
+        </div>
+      )}
+
+      {mvpFeatures && mvpFeatures.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Recommended MVP Features</h3>
+          <ul className="space-y-1">
+            {mvpFeatures.map((feature, idx) => (
+              <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+                <svg className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {feature}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function ValidationPanel() {
   const { validation, idea, isLoading, isValidating, isValidationPending, validate, error } = useWorkspaceStore();
 
@@ -132,24 +278,7 @@ export function ValidationPanel() {
       </div>
 
       {validation.details && (
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Analysis Details</h3>
-          {validation.details.marketSize && (
-            <p className="text-sm text-gray-600 mb-1">
-              <span className="font-medium">Market Size:</span> {validation.details.marketSize}
-            </p>
-          )}
-          {validation.details.competitorCount !== undefined && (
-            <p className="text-sm text-gray-600 mb-1">
-              <span className="font-medium">Competitors:</span> {validation.details.competitorCount}
-            </p>
-          )}
-          {validation.details.feasibilityNotes && (
-            <p className="text-sm text-gray-600">
-              <span className="font-medium">Notes:</span> {validation.details.feasibilityNotes}
-            </p>
-          )}
-        </div>
+        <ValidationDetails details={validation.details} />
       )}
     </div>
   );

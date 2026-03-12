@@ -10,11 +10,7 @@ const validationResultSchema = z.object({
   competitionScore: z.number().int().min(0).max(100),
   revenueEstimate: z.number().int().min(0),
   overallScore: z.number().int().min(0).max(100),
-  details: z.object({
-    marketSize: z.string(),
-    competitorCount: z.number(),
-    feasibilityNotes: z.string(),
-  }),
+  details: z.record(z.string(), z.unknown()),
 });
 
 export async function POST(
@@ -52,7 +48,7 @@ export async function POST(
         competitionScore: result.competitionScore,
         revenueEstimate: result.revenueEstimate,
         overallScore: result.overallScore,
-        details: result.details,
+        details: result.details as Record<string, unknown> as import('@prisma/client').Prisma.InputJsonValue,
       },
     });
 
