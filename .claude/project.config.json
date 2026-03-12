@@ -36,7 +36,8 @@
       "build": "enkai-qualify:build",
       "in_progress": "enkai-qualify:in-progress",
       "needs_human": "enkai-qualify:needs-human",
-      "idea_generation": "enkai:build"
+      "idea_generation": "enkai:agent-task",
+      "agent_task": "enkai:agent-task"
     }
   },
   "aws": {
