@@ -14,8 +14,10 @@ You are the Scrum Master. Your job is to process all eligible GitHub issues by d
 - Aggregates Work Unit commits into per-issue PRs
 
 **Configuration**: Read `.claude/project.config.json` for:
-- GitHub labels: `github.labels.needs_human`, `github.labels.build`
+- GitHub labels: `github.labels.ready`, `github.labels.in_progress`, `github.labels.pr_open`, `github.labels.done`, `github.labels.needs_human`
 - Worktree patterns: `worktree.base_dir_pattern`
+
+**Label Convention**: All repos use `enkai:*` labels (see CLAUDE.md for full list). When decomposing an already-labeled issue, create missing labels in the repo.
 
 ## Quick Start
 
@@ -32,14 +34,29 @@ When invoked with `/scrum`, execute this workflow:
 
 ---
 
+## Step 0: Ensure Labels Exist
+
+Before processing, ensure all `enkai:*` labels exist in the repo:
+
+```bash
+# Check and create missing labels
+for label in "enkai:build" "enkai:in-progress" "enkai:pr-open" "enkai:done" "enkai:needs-human"; do
+  gh label create "$label" --description "Automated build label" --color "0E8A16" 2>/dev/null || true
+done
+```
+
+Only run this when decomposing an issue that already has an `enkai:*` label (indicating intent to use automated builds).
+
+---
+
 ## Step 1: Fetch Eligible Issues
 
 Get all open issues ready for build:
 
 ```bash
-# Fetch issues with build label, excluding those needing human attention
-gh issue list --state open --label "{BUILD_LABEL}" --json number,title,body,labels --limit 50 | \
-  jq '[.[] | select(.labels | map(.name) | index("{NEEDS_HUMAN_LABEL}") | not)]'
+# Fetch issues with enkai:build label, excluding those needing human attention
+gh issue list --state open --label "enkai:build" --json number,title,body,labels --limit 50 | \
+  jq '[.[] | select(.labels | map(.name) | index("enkai:needs-human") | not)]'
 ```
 
 If no eligible issues found, check for epic continuations:
@@ -53,7 +70,7 @@ If still no issues, report and exit:
 ```
 ## No Issues to Process
 
-No open issues found with `{BUILD_LABEL}` label (excluding `{NEEDS_HUMAN_LABEL}`).
+No open issues found with `enkai:build` label (excluding `enkai:needs-human`).
 ```
 
 ---
@@ -99,7 +116,14 @@ gh issue view <NUMBER> --json number,title,body,labels,linkedPullRequests
 
 ## Step 4: Decompose Issues into Work Units
 
-For each issue, decompose into Codex-simple Work Units.
+For each issue, first mark it as in-progress:
+
+```bash
+# Update label: ready → in-progress
+gh issue edit <NUMBER> --remove-label "enkai:build" --add-label "enkai:in-progress"
+```
+
+Then decompose into Codex-simple Work Units.
 
 ### Work Unit Constraints
 
@@ -327,10 +351,14 @@ EOF
 )"
 ```
 
-### Link PR to Issue
+### Link PR to Issue and Update Labels
 
 ```bash
+# Comment on issue
 gh issue comment <NUMBER> --body "PR created: #<PR_NUMBER>"
+
+# Update labels: remove in-progress, add pr-open
+gh issue edit <NUMBER> --remove-label "enkai:in-progress" --add-label "enkai:pr-open"
 ```
 
 ---
