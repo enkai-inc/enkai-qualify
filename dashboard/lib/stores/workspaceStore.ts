@@ -19,6 +19,34 @@ export interface IdeaData {
   features: IdeaFeature[];
   currentVersion: number;
   status: 'PENDING' | 'DRAFT' | 'VALIDATED' | 'PACK_GENERATED' | 'ARCHIVED';
+  metadata?: {
+    githubIssue?: number;
+    githubIssueUrl?: string;
+    expertAnalysis?: {
+      problemFinder?: {
+        painClusters: Array<{ name: string; severity: string; description: string }>;
+      };
+      opportunitySpotter?: {
+        concepts: Array<{ name: string; targetAudience: string; differentiator: string }>;
+        recommended?: string;
+      };
+      solutionArchitect?: {
+        mvpFeatures: string[];
+        pricing?: string;
+        timeToMvp?: string;
+      };
+    };
+    nicheTree?: {
+      levels: Array<{ level: number; name: string; estimatedTAM?: string }>;
+      selectedLevel?: number;
+    };
+    landingPage?: {
+      headline: string;
+      subheadline: string;
+      sections: Array<{ type: string; content: string }>;
+      generatedAt?: string;
+    };
+  };
 }
 
 export interface IdeaVersion {
@@ -40,11 +68,7 @@ export interface ValidationData {
   competitionScore: number;
   revenueEstimate: number;
   overallScore: number;
-  details: {
-    marketSize?: string;
-    competitorCount?: number;
-    feasibilityNotes?: string;
-  };
+  details: Record<string, unknown>;
   createdAt: string;
 }
 

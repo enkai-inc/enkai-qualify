@@ -4,3 +4,7 @@ export { RefinementInput } from './RefinementInput';
 export { QuickActions } from './QuickActions';
 export { VersionHistory } from './VersionHistory';
 export { GeneratePackCTA } from './GeneratePackCTA';
+export { ExpertAnalysisPanel } from './ExpertAnalysisPanel';
+export { PainPointsPanel } from './PainPointsPanel';
+export { LandingPagePanel } from './LandingPagePanel';
+export { NicheTreePanel } from './NicheTreePanel';
