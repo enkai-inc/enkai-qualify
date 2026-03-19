@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { IdeaStatus, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from './db';
+import { logger } from './logger';
 
 const oidcPayloadSchema = z.object({
   sub: z.string(),
@@ -182,6 +183,7 @@ export async function getCurrentUser() {
     }
   }
   // Final fallback: should not reach here, but return null safely
+  logger.warn('User creation failed after retries', { cognitoId, email: cognitoUser.email });
   return null;
 }
 
