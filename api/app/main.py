@@ -22,6 +22,7 @@ class HealthResponse(BaseModel):
     timestamp: str
     service: str
     version: str
+    dependencies: dict[str, str] = {}
 
 
 @asynccontextmanager
@@ -72,11 +73,29 @@ async def request_logging_middleware(request: Request, call_next):
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check() -> HealthResponse:
     """Health check endpoint for load balancer and container orchestration."""
+    import asyncio
+    import os
+    deps: dict[str, str] = {}
+    overall = "healthy"
+
+    # Check Redis
+    try:
+        import redis.asyncio as aioredis
+        redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+        r = aioredis.from_url(redis_url, socket_connect_timeout=2)
+        await asyncio.wait_for(r.ping(), timeout=2.0)
+        deps["redis"] = "ok"
+        await r.aclose()
+    except Exception:
+        deps["redis"] = "unavailable"
+        overall = "degraded"
+
     return HealthResponse(
-        status="healthy",
+        status=overall,
         timestamp=datetime.utcnow().isoformat(),
         service="enkai-qualify-api",
         version=settings.version,
+        dependencies=deps,
     )
 
 

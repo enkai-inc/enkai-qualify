@@ -5,7 +5,12 @@ import { createCheckoutSession, PRICE_IDS } from '@/lib/services/stripe-service'
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth();
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
 
     const { price_id } = body;
 

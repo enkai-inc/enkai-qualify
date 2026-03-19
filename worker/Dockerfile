@@ -47,7 +47,7 @@ COPY --chown=appuser:appgroup ./worker ./worker
 USER appuser
 
 # No EXPOSE - worker has no HTTP server
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=120s --retries=5 \
     CMD pgrep -f "python -m worker" || exit 1
 
 CMD ["python", "-m", "worker"]

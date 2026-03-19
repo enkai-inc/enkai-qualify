@@ -80,6 +80,7 @@ export interface ConversationMessage {
 }
 
 const POLL_INTERVAL_MS = 10_000;
+const MAX_POLL_INTERVAL_MS = 60_000;
 
 interface WorkspaceState {
   idea: IdeaData | null;
@@ -135,70 +136,85 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
     const { pollIntervalId } = get();
     if (pollIntervalId) return; // Already polling
 
-    const id = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/ideas/${ideaId}`);
-        if (!response.ok) return;
-        const data = await response.json();
-        set({ pollErrorCount: 0, hasConnectionError: false });
+    const schedulePoll = () => {
+      const errorCount = get().pollErrorCount;
+      const interval = errorCount >= 3
+        ? Math.min(POLL_INTERVAL_MS * Math.pow(2, errorCount - 2), MAX_POLL_INTERVAL_MS)
+        : POLL_INTERVAL_MS;
 
-        const state = get();
-        const newValidation = data.validation || null;
-        const newIdea = data.idea;
-
-        // Detect validation completion: new validation record appeared
-        if (state.isValidationPending && newValidation && !state.validation) {
-          set({
-            validation: newValidation,
-            idea: newIdea,
-            versions: data.versions || state.versions,
-            isValidationPending: false,
-            isValidating: false,
-          });
-          // Stop polling if refinement is also not pending
-          if (!state.isRefinementPending) {
-            get().stopPolling();
+      const id = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/ideas/${ideaId}`);
+          if (!response.ok) {
+            const ec = get().pollErrorCount + 1;
+            set({ pollErrorCount: ec, hasConnectionError: ec >= 3 });
+            if (get().pollIntervalId) schedulePoll();
+            return;
           }
-          return;
+          const data = await response.json();
+          set({ pollErrorCount: 0, hasConnectionError: false });
+
+          const state = get();
+          const newValidation = data.validation || null;
+          const newIdea = data.idea;
+
+          // Detect validation completion: new validation record appeared
+          if (state.isValidationPending && newValidation && !state.validation) {
+            set({
+              validation: newValidation,
+              idea: newIdea,
+              versions: data.versions || state.versions,
+              isValidationPending: false,
+              isValidating: false,
+            });
+            if (!state.isRefinementPending) {
+              get().stopPolling();
+              return;
+            }
+          }
+
+          // Detect refinement completion: version number increased
+          if (state.isRefinementPending && newIdea && state.idea && newIdea.currentVersion > state.idea.currentVersion) {
+            const assistantMessage: ConversationMessage = {
+              id: crypto.randomUUID(),
+              role: 'assistant',
+              content: 'Idea refined successfully. The changes have been applied.',
+              timestamp: new Date().toISOString(),
+            };
+
+            set({
+              idea: newIdea,
+              versions: data.versions || state.versions,
+              validation: newValidation,
+              isRefinementPending: false,
+              isRefining: false,
+              conversation: [...state.conversation, assistantMessage],
+            });
+            if (!state.isValidationPending) {
+              get().stopPolling();
+              return;
+            }
+          }
+        } catch {
+          const ec = get().pollErrorCount + 1;
+          set({ pollErrorCount: ec, hasConnectionError: ec >= 3 });
         }
 
-        // Detect refinement completion: version number increased
-        if (state.isRefinementPending && newIdea && state.idea && newIdea.currentVersion > state.idea.currentVersion) {
-          const assistantMessage: ConversationMessage = {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: 'Idea refined successfully. The changes have been applied.',
-            timestamp: new Date().toISOString(),
-          };
+        // Schedule next poll if still active
+        if (get().pollIntervalId) schedulePoll();
+      }, interval);
 
-          set({
-            idea: newIdea,
-            versions: data.versions || state.versions,
-            validation: newValidation,
-            isRefinementPending: false,
-            isRefining: false,
-            conversation: [...state.conversation, assistantMessage],
-          });
-          // Stop polling if validation is also not pending
-          if (!state.isValidationPending) {
-            get().stopPolling();
-          }
-          return;
-        }
-      } catch {
-        const errorCount = get().pollErrorCount + 1;
-        set({ pollErrorCount: errorCount, hasConnectionError: errorCount >= 3 });
-      }
-    }, POLL_INTERVAL_MS);
+      set({ pollIntervalId: id });
+    };
 
-    set({ pollIntervalId: id });
+    schedulePoll();
   },
 
   stopPolling: () => {
     const { pollIntervalId } = get();
     if (pollIntervalId) {
-      clearInterval(pollIntervalId);
-      set({ pollIntervalId: null });
+      clearTimeout(pollIntervalId);
+      set({ pollIntervalId: null, pollErrorCount: 0, hasConnectionError: false });
     }
   },
 
