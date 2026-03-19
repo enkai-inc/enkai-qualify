@@ -24,19 +24,22 @@ export default function PacksPage() {
   const [regenerating, setRegenerating] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchPacks() {
       try {
-        const response = await fetch('/api/packs');
+        const response = await fetch('/api/packs', { signal: controller.signal });
         if (!response.ok) throw new Error('Failed to fetch packs');
         const data = await response.json();
         setPacks(data.items || []);
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
     fetchPacks();
+    return () => controller.abort();
   }, []);
 
   async function handleRegenerate(packId: string) {
