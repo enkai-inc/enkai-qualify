@@ -92,6 +92,9 @@ async def create_pack(request: CreatePackRequest, current_user: dict = Depends(g
     if not request.module_ids:
         raise HTTPException(status_code=400, detail="At least one module_id is required")
 
+    if len(request.module_ids) > 50:
+        raise HTTPException(status_code=400, detail="Maximum 50 modules per pack")
+
     config = PackConfig(
         module_ids=request.module_ids,
         project_name=request.project_name,
