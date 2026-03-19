@@ -8,6 +8,9 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
     const { id } = await params;
 
     // Check subscription limits (regeneration counts towards limit)
@@ -19,7 +22,7 @@ export async function POST(
       );
     }
 
-    const pack = await regeneratePack(id, user.teamId!);
+    const pack = await regeneratePack(id, user.teamId);
 
     if (!pack) {
       return NextResponse.json({ error: 'Pack not found' }, { status: 404 });

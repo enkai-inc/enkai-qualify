@@ -8,7 +8,10 @@ class GeminiProvider(AIProvider):
     name = "gemini"
 
     def __init__(self):
-        genai.configure(api_key=os.environ.get("GOOGLE_AI_API_KEY"))
+        api_key = os.environ.get("GOOGLE_AI_API_KEY")
+        if not api_key:
+            raise ValueError("GOOGLE_AI_API_KEY environment variable is not set")
+        genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel("gemini-pro")
 
     async def generate_ideas(
@@ -28,5 +31,10 @@ difficulty, estimated_mrr, differentiators[], risks[]}}]"""
         text = response.text
         start = text.find('[')
         end = text.rfind(']') + 1
-        ideas_data = json.loads(text[start:end])
+        if start == -1 or end == 0:
+            raise ValueError(f"No JSON array found in Gemini response: {text[:200]}")
+        try:
+            ideas_data = json.loads(text[start:end])
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse Gemini response as JSON: {e}. Content: {text[:200]}")
         return [GeneratedIdea(**idea) for idea in ideas_data]

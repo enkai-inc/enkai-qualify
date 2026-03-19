@@ -8,6 +8,9 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
 
     // Check subscription limits
     const canCreate = await canCreateIdea(user.id);
@@ -20,7 +23,7 @@ export async function POST(
 
     const { id, versionId } = await params;
 
-    const newIdea = await branchFromVersion(id, versionId, user.teamId!, user.id);
+    const newIdea = await branchFromVersion(id, versionId, user.teamId, user.id);
 
     return NextResponse.json({
       idea: newIdea,

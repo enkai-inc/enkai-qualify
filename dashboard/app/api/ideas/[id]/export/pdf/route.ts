@@ -9,9 +9,12 @@ export async function GET(
 ) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
     const { id } = await params;
 
-    const result = await getIdea(id, user.teamId!);
+    const result = await getIdea(id, user.teamId);
 
     if (!result) {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });

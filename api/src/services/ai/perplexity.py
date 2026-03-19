@@ -9,6 +9,8 @@ class PerplexityProvider(AIProvider):
 
     def __init__(self):
         self.api_key = os.environ.get("PERPLEXITY_API_KEY")
+        if not self.api_key:
+            raise ValueError("PERPLEXITY_API_KEY environment variable is not set")
         self.base_url = "https://api.perplexity.ai"
 
     async def generate_ideas(
@@ -26,11 +28,17 @@ Technologies: {', '.join(input.technologies)}. Return as JSON array."""
                     "messages": [{"role": "user", "content": prompt}]
                 }
             )
+            response.raise_for_status()
             data = response.json()
 
         import json
         content = data["choices"][0]["message"]["content"]
         start = content.find('[')
         end = content.rfind(']') + 1
-        ideas_data = json.loads(content[start:end])
+        if start == -1 or end == 0:
+            raise ValueError(f"No JSON array found in Perplexity response: {content[:200]}")
+        try:
+            ideas_data = json.loads(content[start:end])
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse Perplexity response as JSON: {e}. Content: {content[:200]}")
         return [GeneratedIdea(**idea) for idea in ideas_data]

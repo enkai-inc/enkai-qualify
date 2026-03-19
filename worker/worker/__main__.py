@@ -8,6 +8,7 @@ Usage: python -m worker
 
 import asyncio
 import os
+import signal
 
 import asyncpg
 import structlog
@@ -44,6 +45,15 @@ logger = structlog.get_logger()
 DASHBOARD_URL = os.environ.get('DASHBOARD_URL', 'https://login.enkai.ca')
 MAX_RETRIES = 3
 RETRY_DELAYS = [5, 15, 45]
+MAX_CONSECUTIVE_FAILURES = 10
+
+_shutdown_requested = False
+
+
+def _handle_shutdown(signum, frame):
+    global _shutdown_requested
+    logger.info("shutdown_requested", signal=signum)
+    _shutdown_requested = True
 
 
 async def process_issue(
@@ -290,14 +300,20 @@ async def main() -> None:
         github = GitHubClient(settings)
         generator = IdeaGenerator(settings.anthropic_api_key)
 
+        signal.signal(signal.SIGTERM, _handle_shutdown)
+        signal.signal(signal.SIGINT, _handle_shutdown)
+
         logger.info("worker_ready")
 
-        while True:
+        consecutive_failures = 0
+        while not _shutdown_requested:
             try:
                 issues = await github.list_pending_issues()
                 if issues:
                     logger.info("found_issues", count=len(issues))
                 for issue in issues:
+                    if _shutdown_requested:
+                        break
                     try:
                         if issue.title.startswith("[Validation]"):
                             await process_validation_issue(issue, github, generator, pool)
@@ -307,10 +323,17 @@ async def main() -> None:
                             await process_issue(issue, github, generator, pool)
                     except Exception:
                         logger.exception("issue_processing_error", issue_number=issue.number)
+                consecutive_failures = 0
             except Exception:
-                logger.exception("poll_cycle_error")
+                consecutive_failures += 1
+                logger.exception("poll_cycle_error", consecutive_failures=consecutive_failures)
+                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                    logger.error("max_consecutive_failures_reached", count=consecutive_failures)
+                    return
 
             await asyncio.sleep(settings.poll_interval_seconds)
+
+        logger.info("worker_shutting_down")
 
 
 if __name__ == "__main__":

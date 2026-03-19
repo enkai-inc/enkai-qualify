@@ -49,7 +49,20 @@ export async function createPack(input: CreatePackInput) {
     },
   });
 
-  generatePackAsync(pack.id).catch(console.error);
+  generatePackAsync(pack.id).catch(async (err) => {
+    console.error('Pack generation failed:', err);
+    try {
+      await prisma.pack.update({
+        where: { id: pack.id },
+        data: {
+          status: 'FAILED',
+          errorMessage: err instanceof Error ? err.message : String(err),
+        },
+      });
+    } catch (updateErr) {
+      console.error('Failed to update pack status after generation error:', updateErr);
+    }
+  });
 
   return pack;
 }

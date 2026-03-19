@@ -6,7 +6,10 @@ import { createPackSchema } from '@/lib/validations/pack-validation';
 export async function GET() {
   try {
     const user = await requireAuth();
-    const packs = await listPacks(user.teamId!);
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
+    const packs = await listPacks(user.teamId);
 
     return NextResponse.json({ items: packs });
   } catch (error) {
@@ -24,6 +27,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
 
     // Check subscription limits
     const canGenerate = await canGeneratePack(user.id);
@@ -46,7 +52,7 @@ export async function POST(request: NextRequest) {
     const pack = await createPack({
       ideaId: parsed.data.ideaId,
       userId: user.id,
-      teamId: user.teamId!,
+      teamId: user.teamId,
       modules: parsed.data.modules,
       complexity: parsed.data.complexity,
     });

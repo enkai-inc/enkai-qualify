@@ -11,6 +11,8 @@ import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as cloudwatch_actions from 'aws-cdk-lib/aws-cloudwatch-actions';
+import * as sns from 'aws-cdk-lib/aws-sns';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
@@ -581,8 +583,22 @@ export class EcsStack extends cdk.Stack {
 
     // CloudWatch Alarms (production only)
     if (isProd) {
+      // SNS topic for alarm notifications
+      const alarmTopic = new sns.Topic(this, 'AlarmTopic', {
+        topicName: `${projectName}-${environment}-alarms`,
+        displayName: `${projectName} ${environment} Alarms`,
+      });
+
+      new cdk.CfnOutput(this, 'AlarmTopicArn', {
+        value: alarmTopic.topicArn,
+        description: 'SNS topic ARN for alarm notifications',
+        exportName: `${projectName}-${environment}-alarm-topic-arn`,
+      });
+
+      const alarmAction = new cloudwatch_actions.SnsAction(alarmTopic);
+
       // ALB 5xx error rate alarm
-      new cloudwatch.Alarm(this, 'Alb5xxAlarm', {
+      const alb5xxAlarm = new cloudwatch.Alarm(this, 'Alb5xxAlarm', {
         alarmName: `${projectName}-${environment}-alb-5xx-errors`,
         alarmDescription: 'ALB is returning elevated 5xx errors',
         metric: this.alb.metrics.httpCodeElb(
@@ -598,9 +614,11 @@ export class EcsStack extends cdk.Stack {
           cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
       });
+      alb5xxAlarm.addAlarmAction(alarmAction);
+      alb5xxAlarm.addOkAction(alarmAction);
 
       // ECS API service CPU utilization alarm
-      new cloudwatch.Alarm(this, 'ApiCpuAlarm', {
+      const apiCpuAlarm = new cloudwatch.Alarm(this, 'ApiCpuAlarm', {
         alarmName: `${projectName}-${environment}-api-cpu-high`,
         alarmDescription: 'API service CPU utilization exceeds 80%',
         metric: this.apiService.metricCpuUtilization({
@@ -613,6 +631,59 @@ export class EcsStack extends cdk.Stack {
           cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
       });
+      apiCpuAlarm.addAlarmAction(alarmAction);
+      apiCpuAlarm.addOkAction(alarmAction);
+
+      // Dashboard service memory utilization alarm
+      const dashboardMemoryAlarm = new cloudwatch.Alarm(this, 'DashboardMemoryAlarm', {
+        alarmName: `${projectName}-${environment}-dashboard-memory-high`,
+        alarmDescription: 'Dashboard service memory utilization exceeds 85%',
+        metric: this.dashboardService.metricMemoryUtilization({
+          period: cdk.Duration.minutes(5),
+          statistic: 'Average',
+        }),
+        threshold: 85,
+        evaluationPeriods: 3,
+        comparisonOperator:
+          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+      dashboardMemoryAlarm.addAlarmAction(alarmAction);
+      dashboardMemoryAlarm.addOkAction(alarmAction);
+
+      // API service memory utilization alarm
+      const apiMemoryAlarm = new cloudwatch.Alarm(this, 'ApiMemoryAlarm', {
+        alarmName: `${projectName}-${environment}-api-memory-high`,
+        alarmDescription: 'API service memory utilization exceeds 85%',
+        metric: this.apiService.metricMemoryUtilization({
+          period: cdk.Duration.minutes(5),
+          statistic: 'Average',
+        }),
+        threshold: 85,
+        evaluationPeriods: 3,
+        comparisonOperator:
+          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+      apiMemoryAlarm.addAlarmAction(alarmAction);
+      apiMemoryAlarm.addOkAction(alarmAction);
+
+      // Worker service memory utilization alarm
+      const workerMemoryAlarm = new cloudwatch.Alarm(this, 'WorkerMemoryAlarm', {
+        alarmName: `${projectName}-${environment}-worker-memory-high`,
+        alarmDescription: 'Worker service memory utilization exceeds 85%',
+        metric: this.workerService.metricMemoryUtilization({
+          period: cdk.Duration.minutes(5),
+          statistic: 'Average',
+        }),
+        threshold: 85,
+        evaluationPeriods: 3,
+        comparisonOperator:
+          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+      workerMemoryAlarm.addAlarmAction(alarmAction);
+      workerMemoryAlarm.addOkAction(alarmAction);
     }
   }
 }

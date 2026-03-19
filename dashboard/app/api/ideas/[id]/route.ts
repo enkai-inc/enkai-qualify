@@ -25,9 +25,12 @@ export async function GET(
 ) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
     const { id } = await params;
 
-    const result = await getIdea(id, user.teamId!);
+    const result = await getIdea(id, user.teamId);
 
     if (!result) {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
@@ -49,6 +52,9 @@ export async function PUT(
 ) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
     const { id } = await params;
     const body = await request.json();
 
@@ -60,7 +66,7 @@ export async function PUT(
       );
     }
 
-    const idea = await updateIdea(id, user.teamId!, parsed.data);
+    const idea = await updateIdea(id, user.teamId, parsed.data);
 
     return NextResponse.json(idea);
   } catch (error) {
@@ -84,9 +90,12 @@ export async function DELETE(
 ) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
     const { id } = await params;
 
-    await deleteIdea(id, user.teamId!);
+    await deleteIdea(id, user.teamId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -5,9 +5,12 @@ import { prisma } from '@/lib/db';
 export async function GET() {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
 
     const scans = await prisma.marketScan.findMany({
-      where: { teamId: user.teamId! },
+      where: { teamId: user.teamId },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

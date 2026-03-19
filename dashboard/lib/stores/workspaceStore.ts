@@ -93,6 +93,8 @@ interface WorkspaceState {
   isValidationPending: boolean;
   isRefinementPending: boolean;
   pollIntervalId: ReturnType<typeof setInterval> | null;
+  pollErrorCount: number;
+  hasConnectionError: boolean;
 }
 
 interface WorkspaceActions {
@@ -122,6 +124,8 @@ const initialState: WorkspaceState = {
   isValidationPending: false,
   isRefinementPending: false,
   pollIntervalId: null,
+  pollErrorCount: 0,
+  hasConnectionError: false,
 };
 
 export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set, get) => ({
@@ -136,6 +140,7 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
         const response = await fetch(`/api/ideas/${ideaId}`);
         if (!response.ok) return;
         const data = await response.json();
+        set({ pollErrorCount: 0, hasConnectionError: false });
 
         const state = get();
         const newValidation = data.validation || null;
@@ -181,7 +186,8 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
           return;
         }
       } catch {
-        // Silently ignore poll errors
+        const errorCount = get().pollErrorCount + 1;
+        set({ pollErrorCount: errorCount, hasConnectionError: errorCount >= 3 });
       }
     }, POLL_INTERVAL_MS);
 
