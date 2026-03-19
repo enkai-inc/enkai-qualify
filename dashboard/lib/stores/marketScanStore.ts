@@ -40,6 +40,7 @@ export interface MarketScanDetail {
 
 const POLL_INTERVAL_MS = 10_000;
 const MAX_POLL_INTERVAL_MS = 60_000;
+const MAX_POLL_ERRORS = 10;
 
 interface MarketScanState {
   scans: MarketScanSummary[];
@@ -194,6 +195,10 @@ export const useMarketScanStore = create<MarketScanState & MarketScanActions>((s
         } catch {
           const ec = get().pollErrorCount + 1;
           set({ pollErrorCount: ec });
+          if (ec >= MAX_POLL_ERRORS) {
+            get().stopPolling();
+            return;
+          }
         }
 
         if (get().pollIntervalId) schedulePoll();

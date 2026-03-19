@@ -81,6 +81,7 @@ export interface ConversationMessage {
 
 const POLL_INTERVAL_MS = 10_000;
 const MAX_POLL_INTERVAL_MS = 60_000;
+const MAX_POLL_ERRORS = 10;
 
 interface WorkspaceState {
   idea: IdeaData | null;
@@ -198,6 +199,10 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
         } catch {
           const ec = get().pollErrorCount + 1;
           set({ pollErrorCount: ec, hasConnectionError: ec >= 3 });
+          if (ec >= MAX_POLL_ERRORS) {
+            get().stopPolling();
+            return;
+          }
         }
 
         // Schedule next poll if still active
