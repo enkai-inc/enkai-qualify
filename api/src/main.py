@@ -27,7 +27,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware - origins configurable via CORS_ORIGINS env var
-cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
+cors_origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,

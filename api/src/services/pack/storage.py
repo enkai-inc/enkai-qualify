@@ -211,7 +211,10 @@ class PackStorage:
 
             packs = []
             for prefix in response.get("CommonPrefixes", [])[:limit]:
-                pack_id = prefix["Prefix"].split("/")[1]
+                parts = prefix["Prefix"].split("/")
+                if len(parts) < 2 or not parts[1]:
+                    continue
+                pack_id = parts[1]
                 packs.append({"pack_id": pack_id})
 
             return packs
