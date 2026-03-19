@@ -16,7 +16,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
 
     if (typeof body.industry === 'string') body.industry = body.industry.trim();
     if (typeof body.niche === 'string') body.niche = body.niche.trim();

@@ -178,49 +178,55 @@ export async function updateIdea(
   input: UpdateIdeaInput,
   createVersion = true
 ) {
-  // Verify team access
-  const existing = await prisma.idea.findFirst({
-    where: { id, teamId },
-  });
+  // Use transaction to atomically read version and update
+  const idea = await prisma.$transaction(async (tx) => {
+    // Verify team access and get current state
+    const existing = await tx.idea.findFirst({
+      where: { id, teamId },
+    });
 
-  if (!existing) {
-    throw new Error('Idea not found');
-  }
+    if (!existing) {
+      throw new Error('Idea not found');
+    }
 
-  const nextVersion = existing.currentVersion + 1;
+    const nextVersion = existing.currentVersion + 1;
 
-  const idea = await prisma.idea.update({
-    where: { id },
-    data: {
-      ...input,
-      ...(createVersion && {
-        currentVersion: nextVersion,
-        versions: {
-          create: {
-            version: nextVersion,
-            snapshot: {
-              title: input.title ?? existing.title,
-              description: input.description ?? existing.description,
-              industry: input.industry ?? existing.industry,
-              targetMarket: input.targetMarket ?? existing.targetMarket,
-              technologies: input.technologies ?? existing.technologies,
-              features: input.features ?? existing.features,
+    // Find parent version ID for linking
+    const parentVersion = createVersion
+      ? await tx.ideaVersion.findFirst({
+          where: { ideaId: id, version: existing.currentVersion },
+        })
+      : null;
+
+    return tx.idea.update({
+      where: { id },
+      data: {
+        ...input,
+        ...(createVersion && {
+          currentVersion: nextVersion,
+          versions: {
+            create: {
+              version: nextVersion,
+              snapshot: {
+                title: input.title ?? existing.title,
+                description: input.description ?? existing.description,
+                industry: input.industry ?? existing.industry,
+                targetMarket: input.targetMarket ?? existing.targetMarket,
+                technologies: input.technologies ?? existing.technologies,
+                features: input.features ?? existing.features,
+              },
+              summary: 'Updated idea',
+              parentId: parentVersion?.id,
             },
-            summary: 'Updated idea',
-            parentId: (
-              await prisma.ideaVersion.findFirst({
-                where: { ideaId: id, version: existing.currentVersion },
-              })
-            )?.id,
           },
-        },
-      }),
-    },
-    include: {
-      versions: {
-        orderBy: { version: 'desc' },
+        }),
       },
-    },
+      include: {
+        versions: {
+          orderBy: { version: 'desc' },
+        },
+      },
+    });
   });
 
   return idea;

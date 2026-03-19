@@ -119,6 +119,7 @@ model Pack {
   @@index([userId])
   @@index([teamId])
   @@index([ideaId])
+  @@index([status])
 }
 
 model Module {

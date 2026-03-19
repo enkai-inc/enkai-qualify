@@ -36,7 +36,9 @@ export async function GET(
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'no-store, private' },
+    });
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -56,7 +58,12 @@ export async function PUT(
       return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
     }
     const { id } = await params;
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
 
     const parsed = updateIdeaSchema.safeParse(body);
     if (!parsed.success) {
