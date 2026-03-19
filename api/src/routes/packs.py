@@ -1,11 +1,12 @@
 """Pack API routes."""
 
+import re
 from collections import OrderedDict
 from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from ..auth import get_current_user
 from ..services.pack import PackAssembler, PackConfig
@@ -40,6 +41,15 @@ class CreatePackRequest(BaseModel):
     project_name: str = "my-saas-project"
     include_issues: bool = True
     include_scripts: bool = True
+
+    @field_validator("project_name")
+    @classmethod
+    def validate_project_name(cls, v: str) -> str:
+        if len(v) > 100:
+            raise ValueError("project_name must be 100 characters or fewer")
+        if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$", v):
+            raise ValueError("project_name must contain only alphanumeric characters, dashes, dots, and underscores")
+        return v
 
 
 class PackResponse(BaseModel):
