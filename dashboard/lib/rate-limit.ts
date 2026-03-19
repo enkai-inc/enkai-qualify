@@ -42,8 +42,8 @@ export function checkRateLimit(
       const entriesToDelete = Math.floor(MAX_STORE_SIZE * 0.1);
       const iterator = rateLimitStore.keys();
       for (let i = 0; i < entriesToDelete; i++) {
-        const key = iterator.next().value;
-        if (key) rateLimitStore.delete(key);
+        const oldKey = iterator.next().value;
+        if (oldKey) rateLimitStore.delete(oldKey);
       }
     }
     rateLimitStore.set(key, { count: 1, resetAt: now + config.windowMs });
