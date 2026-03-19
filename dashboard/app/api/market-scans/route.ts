@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
@@ -39,7 +40,7 @@ export async function GET() {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error listing market scans:', error);
+    logger.error('Error listing market scans', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to list market scans' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { restoreVersion } from '@/lib/services/idea-service';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -29,7 +30,7 @@ export async function POST(
     if (error instanceof Error && error.message === 'Version not found') {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }
-    console.error('Error restoring version:', error);
+    logger.error('Error restoring version', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to restore version' },
       { status: 500 }

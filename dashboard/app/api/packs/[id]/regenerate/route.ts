@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canGeneratePack } from '@/lib/auth';
 import { regeneratePack } from '@/lib/services/pack-service';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -41,7 +42,7 @@ export async function POST(
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
     }
-    console.error('Error regenerating pack:', error);
+    logger.error('Error regenerating pack', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to regenerate pack' },
       { status: 500 }

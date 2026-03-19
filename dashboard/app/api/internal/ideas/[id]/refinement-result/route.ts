@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireInternalAuth } from '@/lib/internal-auth';
+import { logger } from '@/lib/logger';
 
 const refinementResultSchema = z.object({
   title: z.string().min(1),
@@ -99,7 +100,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    console.error('Error creating refinement result:', error);
+    logger.error('Error creating refinement result', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getPack, getPackProgress } from '@/lib/services/pack-service';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -33,7 +34,7 @@ export async function GET(
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error getting pack:', error);
+    logger.error('Error getting pack', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to get pack' },
       { status: 500 }

@@ -4,6 +4,7 @@ import { createIdeaGenerationIssue } from '@/lib/services/github-service';
 import { prisma } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error('Error generating idea:', error);
+    logger.error('Error generating idea', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to generate idea' },
       { status: 500 }

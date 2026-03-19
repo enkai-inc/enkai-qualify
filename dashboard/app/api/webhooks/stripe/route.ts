@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { stripe, getTierFromPriceId } from '@/lib/services/stripe-service';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 // Extended subscription type to include period fields from webhook events
 // These fields exist in webhook payloads but may not be in SDK types
@@ -18,7 +19,7 @@ interface InvoiceWithSubscription extends Stripe.Invoice {
 export async function POST(request: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.error('STRIPE_WEBHOOK_SECRET is not configured');
+    logger.error('STRIPE_WEBHOOK_SECRET is not configured');
     return NextResponse.json(
       { error: 'Webhook configuration error' },
       { status: 500 }
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
       webhookSecret
     );
   } catch (err) {
-    console.error('Webhook signature verification failed:', err);
+    logger.error('Webhook signature verification failed', { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json(
       { error: 'Invalid signature' },
       { status: 400 }
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
         const userId = session.metadata?.userId;
 
         if (!userId) {
-          console.error('No userId in checkout session metadata', { sessionId: session.id, customer: session.customer });
+          logger.error('No userId in checkout session metadata', { sessionId: session.id, customer: String(session.customer) });
           return NextResponse.json({ error: 'Missing userId in session metadata' }, { status: 400 });
         }
 
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
         const userId = subscription.metadata?.userId;
 
         if (!userId) {
-          console.error('No userId in subscription metadata');
+          logger.error('No userId in subscription metadata');
           break;
         }
 
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
         const userId = subscription.metadata?.userId;
 
         if (!userId) {
-          console.error('No userId in subscription metadata');
+          logger.error('No userId in subscription metadata');
           break;
         }
 
@@ -197,14 +198,14 @@ export async function POST(request: NextRequest) {
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
         // Could send notification email here
-        console.error('Payment failed for invoice:', invoice.id);
+        logger.error('Payment failed for invoice', { invoiceId: invoice.id });
         break;
       }
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Error handling webhook:', error);
+    logger.error('Error handling webhook', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }

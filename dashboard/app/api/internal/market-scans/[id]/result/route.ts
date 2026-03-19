@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireInternalAuth } from '@/lib/internal-auth';
+import { logger } from '@/lib/logger';
 
 const opportunitySchema = z.object({
   rank: z.number().int().min(1),
@@ -72,7 +73,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    console.error('Error updating market scan result:', error);
+    logger.error('Error updating market scan result', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -3,6 +3,7 @@ import { requireAuth, canGeneratePack } from '@/lib/auth';
 import { createPack, listPacks } from '@/lib/services/pack-service';
 import { createPackSchema } from '@/lib/validations/pack-validation';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
@@ -19,7 +20,7 @@ export async function GET() {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error listing packs:', error);
+    logger.error('Error listing packs', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to list packs' },
       { status: 500 }
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error creating pack:', error);
+    logger.error('Error creating pack', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to create pack' },
       { status: 500 }
