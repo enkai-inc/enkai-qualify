@@ -41,19 +41,22 @@ export default function PackConfigurePage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchIdea() {
       try {
-        const response = await fetch(`/api/ideas/${ideaId}`);
+        const response = await fetch(`/api/ideas/${ideaId}`, { signal: controller.signal });
         if (!response.ok) throw new Error('Failed to fetch idea');
         const data = await response.json();
         setIdea(data);
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
     fetchIdea();
+    return () => controller.abort();
   }, [ideaId]);
 
   const toggleModule = (moduleId: string) => {

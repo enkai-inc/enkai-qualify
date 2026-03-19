@@ -64,11 +64,17 @@ class DataForSEOClient:
                     }
                 ],
             )
-            data = response.json()
+            response.raise_for_status()
+            try:
+                data = response.json()
+            except Exception as e:
+                raise ValueError(f"Failed to parse DataForSEO response: {e}")
 
         results = []
         for task in data.get("tasks", []):
-            for result in task.get("result", []):
+            if task.get("status_code") != 20000:
+                continue
+            for result in task.get("result", []) or []:
                 results.append(
                     KeywordData(
                         keyword=result["keyword"],
@@ -127,10 +133,16 @@ class DataForSEOClient:
                 auth=(self.login, self.password),
                 json=[{"keywords": [seed], "limit": limit}],
             )
-            data = response.json()
+            response.raise_for_status()
+            try:
+                data = response.json()
+            except Exception as e:
+                raise ValueError(f"Failed to parse DataForSEO response: {e}")
 
         keywords = []
         for task in data.get("tasks", []):
-            for result in task.get("result", []):
+            if task.get("status_code") != 20000:
+                continue
+            for result in task.get("result", []) or []:
                 keywords.append(result["keyword"])
         return keywords

@@ -296,7 +296,13 @@ async def main() -> None:
         separator = "&" if "?" in db_url else "?"
         db_url += f"{separator}sslmode=require"
 
-    async with asyncpg.create_pool(db_url) as pool:
+    async with asyncpg.create_pool(
+        db_url,
+        min_size=2,
+        max_size=10,
+        command_timeout=60,
+        max_inactive_connection_lifetime=300,
+    ) as pool:
         github = GitHubClient(settings)
         generator = IdeaGenerator(settings.anthropic_api_key)
 
