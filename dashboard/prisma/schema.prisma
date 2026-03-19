@@ -63,6 +63,8 @@ model Idea {
   @@index([teamId])
   @@index([teamId, status])
   @@index([createdAt])
+  @@index([userId, updatedAt])
+  @@index([teamId, updatedAt])
 }
 
 model IdeaVersion {
