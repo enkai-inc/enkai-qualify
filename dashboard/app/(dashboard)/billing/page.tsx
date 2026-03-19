@@ -70,8 +70,9 @@ function BillingContent() {
 
       if (!response.ok) throw new Error('Failed to create checkout session');
 
-      const { url } = await response.json();
-      window.location.href = url;
+      const data = await response.json();
+      if (!data.url) throw new Error('No checkout URL returned');
+      window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start checkout');
     }
@@ -79,19 +80,25 @@ function BillingContent() {
 
   const handleManageSubscription = async () => {
     if (!user) return;
+    const customerId = user.subscription?.stripeCustomerId;
+    if (!customerId) {
+      setError('No Stripe customer ID found. Please contact support.');
+      return;
+    }
     try {
       const response = await fetch('/api/billing/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer_id: user.subscription?.stripeCustomerId,
+          customer_id: customerId,
         }),
       });
 
       if (!response.ok) throw new Error('Failed to create portal session');
 
-      const { url } = await response.json();
-      window.location.href = url;
+      const data = await response.json();
+      if (!data.url) throw new Error('No portal URL returned');
+      window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to open portal');
     }
@@ -260,7 +267,7 @@ interface UsageCardProps {
 
 function UsageCard({ label, used, limit }: UsageCardProps) {
   const isUnlimited = limit === -1;
-  const percentage = isUnlimited ? 0 : Math.min((used / limit) * 100, 100);
+  const percentage = isUnlimited || limit <= 0 ? 0 : Math.min((used / limit) * 100, 100);
   const isNearLimit = !isUnlimited && percentage >= 80;
 
   return (
