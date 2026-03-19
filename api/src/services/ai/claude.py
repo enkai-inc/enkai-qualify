@@ -8,7 +8,10 @@ class ClaudeProvider(AIProvider):
     name = "claude"
 
     def __init__(self):
-        self.client = AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
+        self.client = AsyncAnthropic(api_key=api_key)
 
     async def generate_ideas(
         self, input: GenerationInput, count: int = 3
@@ -34,6 +37,11 @@ differentiators (array), risks (array)."""
         # Extract JSON from response
         start = content.find('[')
         end = content.rfind(']') + 1
-        ideas_data = json.loads(content[start:end])
+        if start == -1 or end == 0:
+            raise ValueError(f"No JSON array found in Claude response: {content[:200]}")
+        try:
+            ideas_data = json.loads(content[start:end])
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse Claude response as JSON: {e}. Content: {content[:200]}")
 
         return [GeneratedIdea(**idea) for idea in ideas_data]

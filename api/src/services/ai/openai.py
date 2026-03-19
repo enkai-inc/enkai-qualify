@@ -8,7 +8,10 @@ class OpenAIProvider(AIProvider):
     name = "gpt4"
 
     def __init__(self):
-        self.client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is not set")
+        self.client = AsyncOpenAI(api_key=api_key)
 
     async def generate_ideas(
         self, input: GenerationInput, count: int = 3
@@ -28,6 +31,12 @@ Return JSON array only, no other text."""
         )
 
         import json
-        data = json.loads(response.choices[0].message.content)
+        raw_content = response.choices[0].message.content
+        if not raw_content:
+            raise ValueError("Empty response from OpenAI")
+        try:
+            data = json.loads(raw_content)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse OpenAI response as JSON: {e}. Content: {raw_content[:200]}")
         ideas = data.get("ideas", data) if isinstance(data, dict) else data
         return [GeneratedIdea(**idea) for idea in ideas]
