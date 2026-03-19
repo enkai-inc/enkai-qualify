@@ -232,6 +232,7 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
         throw new Error('Failed to load idea');
       }
       const data = await response.json();
+      loadAbortController = null;
       set({
         idea: data.idea,
         versions: data.versions || [],
@@ -522,6 +523,8 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>((set,
 
   reset: () => {
     get().stopPolling();
+    loadAbortController?.abort();
+    loadAbortController = null;
     set(initialState);
   },
 }));

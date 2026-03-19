@@ -138,44 +138,51 @@ export async function getCurrentUser() {
     });
   }
 
-  // If user doesn't exist at all, create them (handle race condition)
-  try {
-    user = await prisma.user.create({
-      data: {
-        cognitoId,
-        email: cognitoUser.email,
-        name: cognitoUser.name || null,
-        teamId: DEFAULT_TEAM_ID,
-        subscription: {
-          create: {
-            tier: 'FREE',
-            periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+  // If user doesn't exist at all, create them (handle race condition with retry)
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      user = await prisma.user.create({
+        data: {
+          cognitoId,
+          email: cognitoUser.email,
+          name: cognitoUser.name || null,
+          teamId: DEFAULT_TEAM_ID,
+          subscription: {
+            create: {
+              tier: 'FREE',
+              periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+            },
           },
         },
-      },
-      include: {
-        subscription: true,
-        team: true,
-      },
-    });
-    return user;
-  } catch (error) {
-    // Handle race condition: another request created the user first
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      // Could be cognitoId or email conflict — try both
-      return await prisma.user.findUnique({
-        where: { cognitoId },
-        include: { subscription: true, team: true },
-      }) ?? await prisma.user.findUnique({
-        where: { email: cognitoUser.email },
-        include: { subscription: true, team: true },
+        include: {
+          subscription: true,
+          team: true,
+        },
       });
+      return user;
+    } catch (error) {
+      // Handle race condition: another request created the user first
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        // Could be cognitoId or email conflict — try both lookups
+        const found = await prisma.user.findUnique({
+          where: { cognitoId },
+          include: { subscription: true, team: true },
+        }) ?? await prisma.user.findUnique({
+          where: { email: cognitoUser.email },
+          include: { subscription: true, team: true },
+        });
+        if (found) return found;
+        // If neither lookup found the user, retry the create (transient race)
+        continue;
+      }
+      throw error;
     }
-    throw error;
   }
+  // Final fallback: should not reach here, but return null safely
+  return null;
 }
 
 /**

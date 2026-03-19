@@ -42,7 +42,7 @@ export async function GET(
       );
     }
 
-    const limits = TIER_LIMITS[subscription.tier as keyof typeof TIER_LIMITS];
+    const limits = TIER_LIMITS[subscription.tier as keyof typeof TIER_LIMITS] ?? TIER_LIMITS.FREE;
 
     return NextResponse.json(
       {

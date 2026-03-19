@@ -46,7 +46,8 @@ export async function GET() {
         },
       }
     );
-  } catch {
+  } catch (error) {
+    console.error('Error in /api/auth/me:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
