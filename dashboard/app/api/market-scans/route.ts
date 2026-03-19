@@ -12,6 +12,7 @@ export async function GET() {
     const scans = await prisma.marketScan.findMany({
       where: { teamId: user.teamId },
       orderBy: { createdAt: 'desc' },
+      take: 100,
       select: {
         id: true,
         industry: true,

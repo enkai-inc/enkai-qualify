@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
         const userId = session.metadata?.userId;
 
         if (!userId) {
-          console.error('No userId in checkout session metadata');
-          break;
+          console.error('No userId in checkout session metadata', { sessionId: session.id, customer: session.customer });
+          return NextResponse.json({ error: 'Missing userId in session metadata' }, { status: 400 });
         }
 
         // Get subscription details

@@ -5,6 +5,7 @@ import { IdeaStatus } from '@prisma/client';
 import { createIdeaSchema } from '@/lib/validations/idea-validation';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/lib/logger';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,6 +53,15 @@ export async function POST(request: NextRequest) {
     const user = await requireAuth();
     if (!user.teamId) {
       return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
+
+    // Rate limit: 10 idea creations per hour
+    const rateLimit = checkRateLimit(`ideas-create:${user.id}`, { maxRequests: 10, windowMs: 3600000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } }
+      );
     }
 
     // Check subscription limits

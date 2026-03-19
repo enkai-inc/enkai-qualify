@@ -538,6 +538,11 @@ export class EcsStack extends cdk.Stack {
         scaleInCooldown: cdk.Duration.seconds(60),
         scaleOutCooldown: cdk.Duration.seconds(60),
       });
+      dashboardScaling.scaleOnMemoryUtilization('MemoryScaling', {
+        targetUtilizationPercent: 75,
+        scaleInCooldown: cdk.Duration.seconds(60),
+        scaleOutCooldown: cdk.Duration.seconds(60),
+      });
 
       const apiScaling = this.apiService.autoScaleTaskCount({
         minCapacity: 2,
@@ -545,6 +550,11 @@ export class EcsStack extends cdk.Stack {
       });
       apiScaling.scaleOnCpuUtilization('CpuScaling', {
         targetUtilizationPercent: 70,
+        scaleInCooldown: cdk.Duration.seconds(60),
+        scaleOutCooldown: cdk.Duration.seconds(60),
+      });
+      apiScaling.scaleOnMemoryUtilization('MemoryScaling', {
+        targetUtilizationPercent: 75,
         scaleInCooldown: cdk.Duration.seconds(60),
         scaleOutCooldown: cdk.Duration.seconds(60),
       });
@@ -616,6 +626,23 @@ export class EcsStack extends cdk.Stack {
       });
       alb5xxAlarm.addAlarmAction(alarmAction);
       alb5xxAlarm.addOkAction(alarmAction);
+
+      // ALB response latency alarm
+      const albLatencyAlarm = new cloudwatch.Alarm(this, 'AlbLatencyAlarm', {
+        alarmName: `${projectName}-${environment}-alb-latency-high`,
+        alarmDescription: 'ALB target response time exceeds 2 seconds',
+        metric: this.alb.metrics.targetResponseTime({
+          period: cdk.Duration.minutes(5),
+          statistic: 'Average',
+        }),
+        threshold: 2,
+        evaluationPeriods: 3,
+        comparisonOperator:
+          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+      albLatencyAlarm.addAlarmAction(alarmAction);
+      albLatencyAlarm.addOkAction(alarmAction);
 
       // ECS API service CPU utilization alarm
       const apiCpuAlarm = new cloudwatch.Alarm(this, 'ApiCpuAlarm', {

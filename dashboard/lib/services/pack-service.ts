@@ -94,6 +94,7 @@ export async function listPacks(teamId: string) {
       },
     },
     orderBy: { createdAt: 'desc' },
+    take: 100,
   });
 
   return packs;
@@ -236,8 +237,21 @@ export async function regeneratePack(id: string, teamId: string) {
     },
   });
 
-  // Trigger async generation
-  generatePackAsync(id).catch(console.error);
+  // Trigger async generation with proper error handling
+  generatePackAsync(id).catch(async (err) => {
+    console.error('Pack regeneration failed:', err);
+    try {
+      await prisma.pack.update({
+        where: { id },
+        data: {
+          status: 'FAILED',
+          errorMessage: err instanceof Error ? err.message : String(err),
+        },
+      });
+    } catch (updateErr) {
+      console.error('Failed to update pack status after regeneration error:', updateErr);
+    }
+  });
 
   return prisma.pack.findUnique({
     where: { id },

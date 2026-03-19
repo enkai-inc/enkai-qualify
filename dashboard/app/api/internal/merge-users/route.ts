@@ -1,12 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireInternalAuth } from '@/lib/internal-auth';
 import { prisma } from '@/lib/db';
 
 /**
  * POST /api/internal/merge-users
  * Finds duplicate users (same email, different IDs) and merges their ideas
  * into the user with the real (non-internal) cognitoId.
+ * Requires internal auth and wraps all mutations in a transaction.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  try {
+    requireInternalAuth(request);
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   // Find users with synthetic internal- cognitoIds
   const internalUsers = await prisma.user.findMany({
     where: {
@@ -30,29 +38,31 @@ export async function POST() {
     });
 
     if (realUser && realUser.id !== internalUser.id) {
-      // Move all ideas from internal user to real user
-      const moveResult = await prisma.idea.updateMany({
-        where: { userId: internalUser.id },
-        data: { userId: realUser.id },
-      });
+      // Wrap all mutations in a transaction for atomicity
+      const mergeResult = await prisma.$transaction(async (tx) => {
+        const moveResult = await tx.idea.updateMany({
+          where: { userId: internalUser.id },
+          data: { userId: realUser.id },
+        });
 
-      // Move market scans too
-      const scanResult = await prisma.marketScan.updateMany({
-        where: { userId: internalUser.id },
-        data: { userId: realUser.id },
-      });
+        const scanResult = await tx.marketScan.updateMany({
+          where: { userId: internalUser.id },
+          data: { userId: realUser.id },
+        });
 
-      // Delete the internal user (subscription cascades)
-      await prisma.user.delete({
-        where: { id: internalUser.id },
+        await tx.user.delete({
+          where: { id: internalUser.id },
+        });
+
+        return { ideasMoved: moveResult.count, scansMoved: scanResult.count };
       });
 
       results.push({
         email: internalUser.email,
         internalUserId: internalUser.id,
         realUserId: realUser.id,
-        ideasMoved: moveResult.count,
-        scansMoved: scanResult.count,
+        ideasMoved: mergeResult.ideasMoved,
+        scansMoved: mergeResult.scansMoved,
         action: 'merged',
       });
     } else if (!realUser) {
@@ -72,7 +82,13 @@ export async function POST() {
   });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  try {
+    requireInternalAuth(request);
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   // Preview mode: show what would be merged without actually doing it
   const internalUsers = await prisma.user.findMany({
     where: {

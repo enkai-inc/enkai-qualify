@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canCreateIdea } from '@/lib/auth';
 import { branchFromVersion } from '@/lib/services/idea-service';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(
   request: NextRequest,
@@ -10,6 +11,15 @@ export async function POST(
     const user = await requireAuth();
     if (!user.teamId) {
       return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
+
+    // Rate limit: 20 branches per hour
+    const rateLimit = checkRateLimit(`branch:${user.id}`, { maxRequests: 20, windowMs: 3600000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } }
+      );
     }
 
     // Check subscription limits
