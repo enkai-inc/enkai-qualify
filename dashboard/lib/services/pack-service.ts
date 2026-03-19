@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { PackStatus } from '@prisma/client';
+import { logger } from '@/lib/logger';
 import { S3Client, GetObjectCommand, PutObjectCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { generatePackZip, PackFeature, PackValidation } from './pack-generator';
@@ -50,7 +51,7 @@ export async function createPack(input: CreatePackInput) {
   });
 
   generatePackAsync(pack.id).catch(async (err) => {
-    console.error('Pack generation failed:', err);
+    logger.error('Pack generation failed', { error: err instanceof Error ? err.message : String(err) });
     try {
       await prisma.pack.update({
         where: { id: pack.id },
@@ -60,7 +61,7 @@ export async function createPack(input: CreatePackInput) {
         },
       });
     } catch (updateErr) {
-      console.error('Failed to update pack status after generation error:', updateErr);
+      logger.error('Failed to update pack status after error', { error: updateErr instanceof Error ? updateErr.message : String(updateErr) });
     }
   });
 
@@ -120,7 +121,7 @@ async function generatePackAsync(packId: string) {
     ]);
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`Pack generation failed for ${packId}:`, errorMsg);
+    logger.error('Pack generation failed', { packId, error: errorMsg });
     await prisma.pack.update({
       where: { id: packId },
       data: { status: 'FAILED', errorMessage: errorMsg },
@@ -246,7 +247,7 @@ export async function regeneratePack(id: string, teamId: string) {
 
   // Trigger async generation with proper error handling
   generatePackAsync(id).catch(async (err) => {
-    console.error('Pack regeneration failed:', err);
+    logger.error('Pack regeneration failed', { error: err instanceof Error ? err.message : String(err) });
     try {
       await prisma.pack.update({
         where: { id },

@@ -21,10 +21,12 @@ export async function POST(request: NextRequest) {
     const origin = request.headers.get('origin');
     const ALLOWED_ORIGINS = [
       process.env.NEXT_PUBLIC_APP_URL,
-      'http://localhost:3000',
-      'http://localhost:3001',
+      ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000', 'http://localhost:3001'] : []),
     ].filter(Boolean);
-    const validOrigin = ALLOWED_ORIGINS.includes(origin ?? '') ? origin! : ALLOWED_ORIGINS[0] || 'http://localhost:3000';
+    const validOrigin = ALLOWED_ORIGINS.includes(origin ?? '') ? origin! : ALLOWED_ORIGINS[0];
+    if (!validOrigin) {
+      return NextResponse.json({ error: 'NEXT_PUBLIC_APP_URL not configured' }, { status: 500 });
+    }
     const returnUrl = `${validOrigin}/billing`;
 
     const session = await createCustomerPortalSession(
