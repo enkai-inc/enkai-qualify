@@ -18,6 +18,20 @@ from .scaffold import ScaffoldGenerator
 from .storage import PackStorage
 
 
+import re
+
+_SAFE_PROJECT_NAME = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$")
+
+
+def _sanitize_project_name(name: str) -> str:
+    """Sanitize project name for safe use in shell scripts and file paths."""
+    if _SAFE_PROJECT_NAME.match(name):
+        return name
+    # Strip unsafe characters, keep alphanumeric, dash, underscore, dot
+    sanitized = re.sub(r"[^a-zA-Z0-9._-]", "-", name)[:100]
+    return sanitized or "my-saas-project"
+
+
 def _safe_zip_path(root: str, file_path: str) -> str:
     """Ensure file_path stays within root directory."""
     import posixpath
@@ -376,7 +390,7 @@ class PackAssembler:
 
             # Add scripts
             if include_scripts:
-                scripts_content = self._generate_scripts(project_name)
+                scripts_content = self._generate_scripts(_sanitize_project_name(project_name))
                 for script_name, content in scripts_content.items():
                     zf.writestr(f"{root}/scripts/{script_name}", content)
 
