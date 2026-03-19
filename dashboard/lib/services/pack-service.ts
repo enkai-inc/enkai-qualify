@@ -172,17 +172,24 @@ async function doGeneratePack(packId: string) {
       : null,
   });
 
-  // Upload to S3
+  // Upload to S3 with timeout
   const s3Key = `packs/${packId}/bundle.zip`;
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: PACK_BUCKET,
-      Key: s3Key,
-      Body: zipBuffer,
-      ContentType: 'application/zip',
-      ContentDisposition: `attachment; filename="${packId}.zip"`,
-    })
-  );
+  const s3AbortController = new AbortController();
+  const s3TimeoutId = setTimeout(() => s3AbortController.abort(), 20_000);
+  try {
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: PACK_BUCKET,
+        Key: s3Key,
+        Body: zipBuffer,
+        ContentType: 'application/zip',
+        ContentDisposition: `attachment; filename="${packId}.zip"`,
+      }),
+      { abortSignal: s3AbortController.signal }
+    );
+  } finally {
+    clearTimeout(s3TimeoutId);
+  }
 
   // Generate presigned download URL
   const expiresAt = new Date(Date.now() + PRESIGNED_URL_EXPIRY * 1000);
