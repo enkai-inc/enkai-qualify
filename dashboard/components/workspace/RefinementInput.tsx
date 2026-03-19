@@ -23,7 +23,7 @@ export function RefinementInput() {
 
   useEffect(() => {
     if (error?.startsWith('RATE_LIMITED:')) {
-      const seconds = parseInt(error.split(':')[1], 10) || 60;
+      const seconds = parseInt(error.split(':')[1] ?? '60', 10) || 60;
       setRateLimitMessage(`Rate limited. Try again in ${seconds} seconds.`);
       clearError();
       if (rateLimitTimerRef.current) {
