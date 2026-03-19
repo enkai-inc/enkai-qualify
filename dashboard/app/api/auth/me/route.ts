@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 /**
  * Returns only safe subscription fields to the client.
@@ -47,7 +48,7 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error('Error in /api/auth/me:', error);
+    logger.error('Error in /api/auth/me', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

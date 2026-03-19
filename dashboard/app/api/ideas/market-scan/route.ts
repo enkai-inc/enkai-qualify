@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { createMarketScanIssue } from '@/lib/services/github-service';
 import { prisma } from '@/lib/db';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error creating market scan:', error);
+    logger.error('Error creating market scan', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to create market scan' },
       { status: 500 }

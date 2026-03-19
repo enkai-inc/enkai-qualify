@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getIdea } from '@/lib/services/idea-service';
 import { generateIdeaSummaryPdf } from '@/lib/pdf/idea-summary';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -40,7 +41,8 @@ export async function GET(
       validation
     );
 
-    const filename = `${idea.title.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase()}-summary.pdf`;
+    const sanitizedTitle = idea.title.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase() || 'idea';
+    const filename = `${sanitizedTitle}-summary.pdf`;
 
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
@@ -54,7 +56,7 @@ export async function GET(
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error generating PDF:', error);
+    logger.error('Error generating PDF', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 });
   }
 }

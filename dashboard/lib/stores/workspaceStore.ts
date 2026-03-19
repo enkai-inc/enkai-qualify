@@ -93,7 +93,7 @@ interface WorkspaceState {
   conversation: ConversationMessage[];
   isValidationPending: boolean;
   isRefinementPending: boolean;
-  pollIntervalId: ReturnType<typeof setInterval> | null;
+  pollIntervalId: ReturnType<typeof setTimeout> | null;
   pollErrorCount: number;
   hasConnectionError: boolean;
 }

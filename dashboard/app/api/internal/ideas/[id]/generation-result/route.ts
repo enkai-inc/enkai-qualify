@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireInternalAuth } from '@/lib/internal-auth';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/lib/logger';
 
 const generationResultSchema = z.object({
   title: z.string().min(1).max(200),
@@ -98,7 +99,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    console.error('Error storing generation result:', error);
+    logger.error('Error storing generation result', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

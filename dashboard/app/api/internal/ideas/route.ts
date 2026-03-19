@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireInternalAuth } from '@/lib/internal-auth';
 import { createIdeaSchema } from '@/lib/validations/idea-validation';
+import { logger } from '@/lib/logger';
 import { createIdea } from '@/lib/services/idea-service';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error('Error creating idea via internal API:', error);
+    logger.error('Error creating idea via internal API', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

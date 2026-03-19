@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireInternalAuth } from '@/lib/internal-auth';
 import { createPack } from '@/lib/services/pack-service';
+import { logger } from '@/lib/logger';
 
 const validationResultSchema = z.object({
   keywordScore: z.number().int().min(0).max(100),
@@ -83,7 +84,7 @@ export async function POST(
         }
       } catch (packError) {
         // Log but don't fail the validation callback
-        console.error('Auto pack generation failed to start:', packError);
+        logger.error('Auto pack generation failed to start', { error: packError instanceof Error ? packError.message : String(packError) });
       }
     }
 
@@ -98,7 +99,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    console.error('Error creating validation result:', error);
+    logger.error('Error creating validation result', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

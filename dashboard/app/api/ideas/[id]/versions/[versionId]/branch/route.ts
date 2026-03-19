@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canCreateIdea } from '@/lib/auth';
 import { branchFromVersion } from '@/lib/services/idea-service';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -49,7 +50,7 @@ export async function POST(
     if (error instanceof Error && error.message === 'Version not found') {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }
-    console.error('Error branching version:', error);
+    logger.error('Error branching version', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to branch version' },
       { status: 500 }

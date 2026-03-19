@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth';
 import { getIdea } from '@/lib/services/idea-service';
 import { createValidationIssue } from '@/lib/services/github-service';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 const featuresSchema = z.array(z.object({
   name: z.string(),
@@ -61,7 +62,7 @@ export async function POST(
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('Error creating validation issue:', error);
+    logger.error('Error creating validation issue', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to submit validation request' },
       { status: 500 }
