@@ -9,6 +9,9 @@ import { logger } from '@/lib/logger';
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') as IdeaStatus | null;
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
       : 'updatedAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
 
-    const result = await listIdeas(user.teamId!, {
+    const result = await listIdeas(user.teamId, {
       status: status ?? undefined,
       search,
       page,
@@ -47,6 +50,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
 
     // Check subscription limits
     const canCreate = await canCreateIdea(user.id);
@@ -68,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     const idea = await createIdea({
       userId: user.id,
-      teamId: user.teamId!,
+      teamId: user.teamId,
       title: parsed.data.title,
       description: parsed.data.description,
       industry: parsed.data.industry,

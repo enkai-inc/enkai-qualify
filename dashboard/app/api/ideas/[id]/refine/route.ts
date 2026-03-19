@@ -16,6 +16,9 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
 
     const rateLimit = checkRateLimit(`refine:${user.id}`, { maxRequests: 20, windowMs: 3600000 });
     if (!rateLimit.allowed) {
@@ -43,7 +46,7 @@ export async function POST(
     }
 
     // Get current idea
-    const result = await getIdea(id, user.teamId!);
+    const result = await getIdea(id, user.teamId);
     if (!result) {
       return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
     }

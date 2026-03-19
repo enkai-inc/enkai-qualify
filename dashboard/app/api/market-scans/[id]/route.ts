@@ -8,10 +8,13 @@ export async function GET(
 ) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
     const { id } = await params;
 
     const scan = await prisma.marketScan.findFirst({
-      where: { id, teamId: user.teamId! },
+      where: { id, teamId: user.teamId },
     });
 
     if (!scan) {

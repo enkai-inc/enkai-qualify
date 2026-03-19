@@ -8,9 +8,12 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
+    if (!user.teamId) {
+      return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
     const { id, versionId } = await params;
 
-    const idea = await restoreVersion(id, versionId, user.teamId!);
+    const idea = await restoreVersion(id, versionId, user.teamId);
 
     return NextResponse.json({
       idea,
