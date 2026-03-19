@@ -113,12 +113,15 @@ async function generatePackAsync(packId: string) {
     });
 
     // Race generation against timeout
-    await Promise.race([
-      doGeneratePack(packId),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Pack generation timed out after 30 seconds')), GENERATION_TIMEOUT_MS)
-      ),
-    ]);
+    let timeoutHandle: ReturnType<typeof setTimeout>;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(() => reject(new Error('Pack generation timed out after 30 seconds')), GENERATION_TIMEOUT_MS);
+    });
+    try {
+      await Promise.race([doGeneratePack(packId), timeoutPromise]);
+    } finally {
+      clearTimeout(timeoutHandle!);
+    }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Pack generation failed', { packId, error: errorMsg });

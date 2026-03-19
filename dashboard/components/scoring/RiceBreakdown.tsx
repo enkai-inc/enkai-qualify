@@ -76,7 +76,7 @@ export function RiceBreakdown({ score, className = "" }: RiceBreakdownProps) {
 
       <div className="space-y-3">
         {factors.map((factor) => {
-          const percentage = Math.min((factor.value / factor.max) * 100, 100);
+          const percentage = factor.max > 0 ? Math.min((factor.value / factor.max) * 100, 100) : 0;
           const displayPercentage = factor.inverted
             ? 100 - percentage
             : percentage;
