@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canGeneratePack } from '@/lib/auth';
 import { createPack, listPacks } from '@/lib/services/pack-service';
 import { createPackSchema } from '@/lib/validations/pack-validation';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function GET() {
   try {
@@ -29,6 +30,15 @@ export async function POST(request: NextRequest) {
     const user = await requireAuth();
     if (!user.teamId) {
       return NextResponse.json({ error: 'Team not configured' }, { status: 403 });
+    }
+
+    // Rate limit: 10 pack creations per hour
+    const rateLimit = checkRateLimit(`packs:${user.id}`, { maxRequests: 10, windowMs: 3600000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } }
+      );
     }
 
     // Check subscription limits

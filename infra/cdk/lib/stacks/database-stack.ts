@@ -3,6 +3,9 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as cloudwatch_actions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { Construct } from 'constructs';
 
 export interface DatabaseStackProps extends cdk.StackProps {
@@ -132,5 +135,59 @@ export class DatabaseStack extends cdk.Stack {
       description: 'ElastiCache Redis endpoint',
       exportName: `${projectName}-${environment}-redis-endpoint`,
     });
+
+    // Database alarms (production only)
+    if (isProd) {
+      const dbAlarmTopic = new sns.Topic(this, 'DbAlarmTopic', {
+        topicName: `${projectName}-${environment}-db-alarms`,
+        displayName: `${projectName} ${environment} Database Alarms`,
+      });
+      const dbAlarmAction = new cloudwatch_actions.SnsAction(dbAlarmTopic);
+
+      // RDS CPU utilization alarm
+      const dbCpuAlarm = new cloudwatch.Alarm(this, 'DbCpuAlarm', {
+        alarmName: `${projectName}-${environment}-db-cpu-high`,
+        alarmDescription: 'RDS CPU utilization exceeds 75%',
+        metric: this.databaseInstance.metricCPUUtilization({
+          period: cdk.Duration.minutes(5),
+        }),
+        threshold: 75,
+        evaluationPeriods: 3,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+      dbCpuAlarm.addAlarmAction(dbAlarmAction);
+      dbCpuAlarm.addOkAction(dbAlarmAction);
+
+      // RDS database connections alarm
+      const dbConnectionAlarm = new cloudwatch.Alarm(this, 'DbConnectionAlarm', {
+        alarmName: `${projectName}-${environment}-db-connections-high`,
+        alarmDescription: 'RDS database connections exceeds 80',
+        metric: this.databaseInstance.metricDatabaseConnections({
+          period: cdk.Duration.minutes(5),
+        }),
+        threshold: 80,
+        evaluationPeriods: 2,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+      dbConnectionAlarm.addAlarmAction(dbAlarmAction);
+      dbConnectionAlarm.addOkAction(dbAlarmAction);
+
+      // RDS free storage space alarm (< 5GB)
+      const dbStorageAlarm = new cloudwatch.Alarm(this, 'DbStorageAlarm', {
+        alarmName: `${projectName}-${environment}-db-storage-low`,
+        alarmDescription: 'RDS free storage space below 5GB',
+        metric: this.databaseInstance.metricFreeStorageSpace({
+          period: cdk.Duration.minutes(5),
+        }),
+        threshold: 5 * 1024 * 1024 * 1024,
+        evaluationPeriods: 1,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+      dbStorageAlarm.addAlarmAction(dbAlarmAction);
+      dbStorageAlarm.addOkAction(dbAlarmAction);
+    }
   }
 }
