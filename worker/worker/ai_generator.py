@@ -72,7 +72,7 @@ class IdeaGenerator:
     """Generate SaaS product ideas using Claude."""
 
     def __init__(self, api_key: str) -> None:
-        self._client = anthropic.Anthropic(api_key=api_key)
+        self._client = anthropic.Anthropic(api_key=api_key, timeout=120.0)
 
     def generate(self, params: IdeaParams) -> GeneratedIdea:
         """Generate an idea from parsed issue parameters."""

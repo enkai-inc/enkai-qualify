@@ -39,6 +39,7 @@ export interface MarketScanDetail {
 }
 
 const POLL_INTERVAL_MS = 10_000;
+const MAX_POLL_INTERVAL_MS = 60_000;
 
 interface MarketScanState {
   scans: MarketScanSummary[];
@@ -46,7 +47,8 @@ interface MarketScanState {
   isCreating: boolean;
   isLoading: boolean;
   error: string | null;
-  pollIntervalId: ReturnType<typeof setInterval> | null;
+  pollIntervalId: ReturnType<typeof setTimeout> | null;
+  pollErrorCount: number;
 }
 
 interface MarketScanActions {
@@ -65,6 +67,7 @@ const initialState: MarketScanState = {
   isLoading: false,
   error: null,
   pollIntervalId: null,
+  pollErrorCount: 0,
 };
 
 export const useMarketScanStore = create<MarketScanState & MarketScanActions>((set, get) => ({
@@ -144,30 +147,47 @@ export const useMarketScanStore = create<MarketScanState & MarketScanActions>((s
     const { pollIntervalId } = get();
     if (pollIntervalId) return;
 
-    const intervalId = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/market-scans/${id}`);
-        if (!response.ok) return;
-        const data = await response.json();
+    const schedulePoll = () => {
+      const errorCount = get().pollErrorCount;
+      const interval = errorCount >= 3
+        ? Math.min(POLL_INTERVAL_MS * Math.pow(2, errorCount - 2), MAX_POLL_INTERVAL_MS)
+        : POLL_INTERVAL_MS;
 
-        set({ currentScan: data });
+      const timeoutId = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/market-scans/${id}`);
+          if (!response.ok) {
+            const ec = get().pollErrorCount + 1;
+            set({ pollErrorCount: ec });
+            if (get().pollIntervalId) schedulePoll();
+            return;
+          }
+          const data = await response.json();
+          set({ currentScan: data, pollErrorCount: 0 });
 
-        if (data.status === 'COMPLETED' || data.status === 'FAILED') {
-          get().stopPolling();
+          if (data.status === 'COMPLETED' || data.status === 'FAILED') {
+            get().stopPolling();
+            return;
+          }
+        } catch {
+          const ec = get().pollErrorCount + 1;
+          set({ pollErrorCount: ec });
         }
-      } catch {
-        // Silently ignore poll errors
-      }
-    }, POLL_INTERVAL_MS);
 
-    set({ pollIntervalId: intervalId });
+        if (get().pollIntervalId) schedulePoll();
+      }, interval);
+
+      set({ pollIntervalId: timeoutId });
+    };
+
+    schedulePoll();
   },
 
   stopPolling: () => {
     const { pollIntervalId } = get();
     if (pollIntervalId) {
-      clearInterval(pollIntervalId);
-      set({ pollIntervalId: null });
+      clearTimeout(pollIntervalId);
+      set({ pollIntervalId: null, pollErrorCount: 0 });
     }
   },
 

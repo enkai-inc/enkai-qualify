@@ -963,5 +963,12 @@ export async function generatePackZip(params: PackGenerationParams): Promise<Buf
   }
 
   const buffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+
+  // Validate ZIP size (max 50MB)
+  const MAX_ZIP_SIZE = 50 * 1024 * 1024;
+  if (buffer.length > MAX_ZIP_SIZE) {
+    throw new Error(`Pack ZIP exceeds maximum size of 50MB (actual: ${Math.round(buffer.length / 1024 / 1024)}MB)`);
+  }
+
   return buffer;
 }
