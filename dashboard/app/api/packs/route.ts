@@ -12,7 +12,9 @@ export async function GET() {
     }
     const packs = await listPacks(user.teamId);
 
-    return NextResponse.json({ items: packs });
+    return NextResponse.json({ items: packs }, {
+      headers: { 'Cache-Control': 'no-store, private' },
+    });
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -26,6 +26,8 @@ export async function GET(
       ...pack,
       progress: progress.progress,
       progressMessage: progress.message,
+    }, {
+      headers: { 'Cache-Control': 'no-store, private' },
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
