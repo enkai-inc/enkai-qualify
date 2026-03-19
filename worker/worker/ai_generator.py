@@ -104,7 +104,11 @@ Generate a detailed, buildable product idea."""
         if content.type != "text":
             raise ValueError("Unexpected response type from Claude")
 
-        parsed = json.loads(content.text)
+        try:
+            parsed = json.loads(content.text)
+        except json.JSONDecodeError as e:
+            logger.error("json_parse_failed", method="generate", error=str(e), raw_content=content.text[:500])
+            raise ValueError(f"Failed to parse Claude response as JSON in generate: {e}")
         idea = GeneratedIdea(
             title=parsed["title"],
             description=parsed["description"],
@@ -149,7 +153,11 @@ Provide a detailed validation with realistic scores."""
         if content.type != "text":
             raise ValueError("Unexpected response type from Claude")
 
-        parsed = json.loads(content.text)
+        try:
+            parsed = json.loads(content.text)
+        except json.JSONDecodeError as e:
+            logger.error("json_parse_failed", method="validate", error=str(e), raw_content=content.text[:500])
+            raise ValueError(f"Failed to parse Claude response as JSON in validate: {e}")
         result = ValidationResult(
             keyword_score=parsed["keywordScore"],
             pain_point_score=parsed["painPointScore"],
@@ -200,7 +208,11 @@ Refine the idea based on this feedback."""
         if content.type != "text":
             raise ValueError("Unexpected response type from Claude")
 
-        parsed = json.loads(content.text)
+        try:
+            parsed = json.loads(content.text)
+        except json.JSONDecodeError as e:
+            logger.error("json_parse_failed", method="refine", error=str(e), raw_content=content.text[:500])
+            raise ValueError(f"Failed to parse Claude response as JSON in refine: {e}")
         refined = RefinedIdea(
             title=parsed["title"],
             description=parsed["description"],
