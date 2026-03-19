@@ -111,8 +111,14 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to generate idea');
+          let errorMsg = 'Failed to generate idea';
+          try {
+            const data = await response.json();
+            errorMsg = data.error || errorMsg;
+          } catch {
+            // Response wasn't JSON
+          }
+          throw new Error(errorMsg);
         }
 
         const data = await response.json();
@@ -227,8 +233,14 @@ export const useCreateIdeaStore = create<CreateIdeaState & CreateIdeaActions>(
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to save idea');
+          let errorMsg = 'Failed to save idea';
+          try {
+            const data = await response.json();
+            errorMsg = data.error || errorMsg;
+          } catch {
+            // Response wasn't JSON
+          }
+          throw new Error(errorMsg);
         }
 
         const idea = await response.json();

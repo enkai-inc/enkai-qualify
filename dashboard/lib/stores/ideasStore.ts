@@ -179,5 +179,9 @@ export const useIdeasStore = create<IdeasState & IdeasActions>((set, get) => ({
     }
   },
 
-  reset: () => set(initialState),
+  reset: () => {
+    fetchAbortController?.abort();
+    fetchAbortController = null;
+    set(initialState);
+  },
 }));
