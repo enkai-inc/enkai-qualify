@@ -69,7 +69,11 @@ export async function POST(request: NextRequest) {
         );
         const subscription = subscriptionResponse as SubscriptionWithPeriod;
 
-        const priceId = subscription.items.data[0]?.price.id;
+        const priceId = subscription.items.data.length > 0 ? subscription.items.data[0].price.id : undefined;
+        if (!priceId) {
+          logger.error('Subscription has no price items', { subscriptionId: subscription.id });
+          return NextResponse.json({ error: 'No price items in subscription' }, { status: 400 });
+        }
         const tier = getTierFromPriceId(priceId);
 
         // Use period from subscription or fallback to created date
@@ -112,7 +116,11 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        const priceId = subscription.items.data[0]?.price.id;
+        const priceId = subscription.items.data.length > 0 ? subscription.items.data[0].price.id : undefined;
+        if (!priceId) {
+          logger.error('Subscription update has no price items', { subscriptionId: subscription.id });
+          break;
+        }
         const tier = getTierFromPriceId(priceId);
 
         // Use period from subscription or fallback to calculated dates
