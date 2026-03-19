@@ -75,12 +75,20 @@ export const useMarketScanStore = create<MarketScanState & MarketScanActions>((s
 
   fetchScans: async () => {
     set({ isLoading: true, error: null });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     try {
-      const response = await fetch('/api/market-scans');
+      const response = await fetch('/api/market-scans', { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!response.ok) throw new Error('Failed to fetch market scans');
       const data = await response.json();
       set({ scans: data.scans, isLoading: false });
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        set({ error: 'Request timed out. Please try again.', isLoading: false });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : 'Failed to fetch market scans',
         isLoading: false,
@@ -103,8 +111,14 @@ export const useMarketScanStore = create<MarketScanState & MarketScanActions>((s
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to start market scan');
+        let errorMsg = 'Failed to start market scan';
+        try {
+          const data = await response.json();
+          errorMsg = data.error || errorMsg;
+        } catch {
+          // Response wasn't JSON — use default message
+        }
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
@@ -130,12 +144,20 @@ export const useMarketScanStore = create<MarketScanState & MarketScanActions>((s
 
   loadScan: async (id: string) => {
     set({ isLoading: true, error: null });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     try {
-      const response = await fetch(`/api/market-scans/${id}`);
+      const response = await fetch(`/api/market-scans/${id}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!response.ok) throw new Error('Failed to load market scan');
       const data = await response.json();
       set({ currentScan: data, isLoading: false });
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        set({ error: 'Request timed out. Please try again.', isLoading: false });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : 'Failed to load market scan',
         isLoading: false,
