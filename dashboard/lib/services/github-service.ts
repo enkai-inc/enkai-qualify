@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { createAppAuth } from '@octokit/auth-app';
+import { logger } from '@/lib/logger';
 
 const REPO_OWNER = process.env.GITHUB_REPO_OWNER || 'enkai-inc';
 const REPO_NAME = process.env.GITHUB_REPO_NAME || 'enkai-qualify';
@@ -27,10 +28,7 @@ async function ensureLabelsApplied(
   } catch (error) {
     // Log but don't throw — missing label is recoverable, failing the
     // entire issue creation flow is not.
-    console.warn(
-      `Failed to apply label to issue #${issue.number}:`,
-      error instanceof Error ? error.message : error
-    );
+    logger.warn(`Failed to apply label to issue #${issue.number}`, { error: error instanceof Error ? error.message : String(error) });
   }
 }
 

@@ -257,7 +257,7 @@ export async function regeneratePack(id: string, teamId: string) {
         },
       });
     } catch (updateErr) {
-      console.error('Failed to update pack status after regeneration error:', updateErr);
+      logger.error('Failed to update pack status after regeneration error', { error: updateErr instanceof Error ? updateErr.message : String(updateErr) });
     }
   });
 
