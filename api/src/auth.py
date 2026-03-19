@@ -1,6 +1,7 @@
 """Authentication middleware for ALB Cognito integration."""
 
 import os
+import time
 from functools import lru_cache
 from typing import Any
 
@@ -11,20 +12,39 @@ from fastapi import HTTPException, Request
 
 logger = structlog.get_logger()
 
-_ALB_KEY_CACHE: dict[str, str] = {}
+_MAX_CACHED_KEYS = 50
+_KEY_TTL_SECONDS = 3600  # 1 hour
+
+_ALB_KEY_CACHE: dict[str, tuple[str, float]] = {}
 
 
 def _get_alb_public_key(kid: str, region: str) -> str:
     """Fetch and cache ALB public key for JWT verification."""
+    now = time.monotonic()
     if kid in _ALB_KEY_CACHE:
-        return _ALB_KEY_CACHE[kid]
+        cached_key, cached_at = _ALB_KEY_CACHE[kid]
+        if now - cached_at < _KEY_TTL_SECONDS:
+            return cached_key
+        del _ALB_KEY_CACHE[kid]
 
     key_url = f"https://public-keys.auth.elb.{region}.amazonaws.com/{kid}"
-    resp = httpx.get(key_url, timeout=5.0)
-    resp.raise_for_status()
-    public_key = resp.text
-    _ALB_KEY_CACHE[kid] = public_key
-    return public_key
+    last_error = None
+    for attempt in range(2):
+        try:
+            resp = httpx.get(key_url, timeout=10.0)
+            resp.raise_for_status()
+            public_key = resp.text
+            # Evict oldest entries if cache is full
+            while len(_ALB_KEY_CACHE) >= _MAX_CACHED_KEYS:
+                oldest = min(_ALB_KEY_CACHE, key=lambda k: _ALB_KEY_CACHE[k][1])
+                del _ALB_KEY_CACHE[oldest]
+            _ALB_KEY_CACHE[kid] = (public_key, now)
+            return public_key
+        except (httpx.HTTPError, httpx.TimeoutException) as e:
+            last_error = e
+            if attempt == 0:
+                logger.warning("alb_key_fetch_retry", kid=kid, error=str(e))
+    raise last_error  # type: ignore[misc]
 
 
 async def get_current_user(request: Request) -> dict[str, Any]:

@@ -75,6 +75,7 @@ async def process_issue(
             issue.number,
             f"Failed to parse issue body: {e}\n\nPlease verify the issue format.",
         )
+        await github.add_label(issue.number, GENERATION_FAILED_LABEL)
         return
 
     # Generate idea with retries
@@ -152,6 +153,7 @@ async def process_validation_issue(
             issue.number,
             f"Failed to parse validation issue body: {e}\n\nPlease verify the issue format.",
         )
+        await github.add_label(issue.number, GENERATION_FAILED_LABEL)
         return
 
     # Get current idea version from DB
@@ -228,6 +230,7 @@ async def process_refinement_issue(
             issue.number,
             f"Failed to parse refinement issue body: {e}\n\nPlease verify the issue format.",
         )
+        await github.add_label(issue.number, GENERATION_FAILED_LABEL)
         return
 
     # Refine with retries

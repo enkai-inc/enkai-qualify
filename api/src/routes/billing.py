@@ -1,15 +1,24 @@
 """Billing API routes."""
 
+import re
 from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from ..auth import get_current_user
 from ..services.billing import StripeClient, SubscriptionService, UsageMeter
 
 logger = structlog.get_logger()
+
+_STRIPE_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_\-]{1,255}$")
+
+
+def _validate_stripe_id(value: str, field_name: str) -> str:
+    if not _STRIPE_ID_PATTERN.match(value):
+        raise ValueError(f"Invalid {field_name} format")
+    return value
 
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -21,6 +30,11 @@ class CheckoutRequest(BaseModel):
 
     price_id: str
     user_id: str
+
+    @field_validator("price_id")
+    @classmethod
+    def validate_price_id(cls, v: str) -> str:
+        return _validate_stripe_id(v, "price_id")
 
 
 class CheckoutResponse(BaseModel):
@@ -35,6 +49,11 @@ class PortalRequest(BaseModel):
     customer_id: str
     user_id: str
 
+    @field_validator("customer_id")
+    @classmethod
+    def validate_customer_id(cls, v: str) -> str:
+        return _validate_stripe_id(v, "customer_id")
+
 
 class PortalResponse(BaseModel):
     """Response with portal session URL."""
@@ -47,6 +66,11 @@ class ChargePackRequest(BaseModel):
 
     customer_id: str
     user_id: str
+
+    @field_validator("customer_id")
+    @classmethod
+    def validate_customer_id(cls, v: str) -> str:
+        return _validate_stripe_id(v, "customer_id")
 
 
 class ChargePackResponse(BaseModel):
