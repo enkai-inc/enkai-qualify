@@ -46,6 +46,7 @@ function getOctokit(): Octokit {
         privateKey,
         installationId,
       },
+      request: { timeout: 30000 },
     });
   }
 
@@ -54,7 +55,7 @@ function getOctokit(): Octokit {
   if (!token) {
     throw new Error('GITHUB_TOKEN or GITHUB_APP_* environment variables are not set');
   }
-  return new Octokit({ auth: token });
+  return new Octokit({ auth: token, request: { timeout: 30000 } });
 }
 
 export interface IdeaGenerationRequest {

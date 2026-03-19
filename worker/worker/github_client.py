@@ -117,35 +117,39 @@ class GitHubClient:
         headers = await self._headers()
         async with httpx.AsyncClient(timeout=self._HTTP_TIMEOUT) as client:
             # Add comment
-            await client.post(
+            resp = await client.post(
                 f"{GITHUB_API}/repos/{self._owner}/{self._repo}/issues/{number}/comments",
                 headers=headers,
                 json={"body": comment},
             )
+            resp.raise_for_status()
             # Close issue
-            await client.patch(
+            resp = await client.patch(
                 f"{GITHUB_API}/repos/{self._owner}/{self._repo}/issues/{number}",
                 headers=headers,
                 json={"state": "closed"},
             )
+            resp.raise_for_status()
         logger.info("issue_closed", number=number)
 
     async def add_comment(self, number: int, body: str) -> None:
         """Add a comment to an issue."""
         headers = await self._headers()
         async with httpx.AsyncClient(timeout=self._HTTP_TIMEOUT) as client:
-            await client.post(
+            resp = await client.post(
                 f"{GITHUB_API}/repos/{self._owner}/{self._repo}/issues/{number}/comments",
                 headers=headers,
                 json={"body": body},
             )
+            resp.raise_for_status()
 
     async def add_label(self, number: int, label: str) -> None:
         """Add a label to an issue."""
         headers = await self._headers()
         async with httpx.AsyncClient(timeout=self._HTTP_TIMEOUT) as client:
-            await client.post(
+            resp = await client.post(
                 f"{GITHUB_API}/repos/{self._owner}/{self._repo}/issues/{number}/labels",
                 headers=headers,
                 json={"labels": [label]},
             )
+            resp.raise_for_status()
